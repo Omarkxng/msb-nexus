@@ -386,7 +386,170 @@ body::after{
 .risk-inp{width:100%;background:var(--bg2);border:1px solid var(--borderB);color:var(--textB);font-family:var(--mono);font-size:11px;padding:4px 7px;outline:none;}
 .risk-inp:focus{border-color:var(--accent);}
 
-/* ─── CANDLE OVERLAY LEGEND ─── */
+/* ══════════════════════════════════════════════
+   MOBILE RESPONSIVE  (≤ 768px)
+   Layout: topbar → chart (45vh) → tab bar → panel sheet
+   ══════════════════════════════════════════════ */
+@media (max-width: 768px) {
+
+  /* ── reset grid to single column ── */
+  #app {
+    grid-template-rows: 52px 1fr 54px !important;
+    grid-template-columns: 1fr !important;
+    height: 100dvh;
+    overflow: hidden;
+  }
+
+  /* hide overlay-toggles row on mobile (accessible via ⚙) */
+  .overlay-toggles { display: none !important; }
+
+  /* ── topbar mobile ── */
+  #topbar {
+    padding: 0 10px;
+    gap: 6px;
+    overflow: hidden;
+  }
+
+  /* hide seps and bulky items */
+  .topbar-sep,
+  .tf-tabs,
+  .appid-wrap,
+  #notifBtn,
+  #soundBtn,
+  #freshBtn,
+  #statusBar { display: none !important; }
+
+  .logo { font-size: 16px; letter-spacing: 2px; flex-shrink: 0; }
+  .logo span { display: none; }
+
+  .price-ticker {
+    font-size: 20px;
+    border: none;
+    padding: 0 8px;
+    flex: 1;
+    text-align: center;
+  }
+  .price-ticker .chg { font-size: 11px; }
+
+  /* keep only scan + connect + settings */
+  #connectBtn { font-size: 9px; padding: 5px 9px; }
+  #scannerBtn { font-size: 9px; padding: 5px 9px; }
+  #settingsBtn { font-size: 12px; padding: 5px 9px; }
+
+  /* ── chart fills row 2 ── */
+  #chart-wrap {
+    grid-column: 1 !important;
+    grid-row: 2 !important;
+    height: 100%;
+    min-height: 0;
+  }
+
+  /* ── left/right panels become sliding sheets ── */
+  #left-panel, #right-panel {
+    position: fixed !important;
+    top: 52px;
+    left: 0; right: 0;
+    bottom: 54px;
+    z-index: 200;
+    background: var(--bg1);
+    overflow-y: auto;
+    grid-column: unset !important;
+    grid-row: unset !important;
+    transform: translateX(100%);
+    transition: transform .28s cubic-bezier(.2,.8,.3,1);
+    border: none !important;
+    border-top: 1px solid var(--borderB) !important;
+  }
+  #left-panel.mob-visible,
+  #right-panel.mob-visible {
+    transform: translateX(0);
+  }
+
+  /* ── bottom tab bar ── */
+  #mob-tabs {
+    grid-column: 1;
+    grid-row: 3;
+    display: flex !important;
+    align-items: stretch;
+    background: var(--bg1);
+    border-top: 1px solid var(--borderB);
+    z-index: 201;
+  }
+  .mob-tab {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    font-family: var(--mono);
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--textD);
+    cursor: pointer;
+    transition: all .15s;
+    border: none;
+    background: transparent;
+    padding: 6px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .mob-tab .tab-icon { font-size: 16px; line-height: 1; }
+  .mob-tab.active {
+    color: var(--cyan);
+    background: rgba(61,158,255,0.06);
+    border-top: 2px solid var(--accent);
+  }
+  .mob-tab.bull-tab.active { color: var(--bull); border-top-color: var(--bull); background: rgba(0,255,179,0.05); }
+  .mob-tab.bear-tab.active { color: var(--bear); border-top-color: var(--bear); background: rgba(255,68,102,0.05); }
+
+  /* ── scanner on mobile ── */
+  #scanner-overlay {
+    top: 52px !important;
+    bottom: 54px !important;
+  }
+
+  /* ── settings drawer on mobile ── */
+  #settings-drawer {
+    top: 52px !important;
+    height: calc(100dvh - 52px - 54px) !important;
+    bottom: 54px;
+    width: 100% !important;
+  }
+
+  /* ── bigger touch targets in panels ── */
+  .srow { padding: 5px 0; }
+  .slabel { font-size: 11px; }
+  .sval { font-size: 12px; }
+  .ptitle { font-size: 10px; margin-bottom: 10px; }
+  .panel-section { padding: 12px 14px; }
+  .bias-badge { font-size: 18px; padding: 12px; }
+  .ob-item { padding: 8px 10px; }
+  .ob-tag { font-size: 9px; padding: 2px 6px; }
+  .sltp-val { font-size: 14px; }
+  .sltp-lbl { font-size: 10px; }
+  .sltp-row { padding: 4px 0; }
+  .tp-row { padding: 6px 0; font-size: 11px; }
+  .risk-inp { font-size: 14px; padding: 7px 8px; }
+  .gate-row { padding: 5px 0; font-size: 11px; }
+  .gate-dot { width: 8px; height: 8px; margin-right: 7px; }
+  .spark-canvas { height: 56px; }
+
+  /* ── tf tabs in topbar (mobile — hidden but scanner uses them) ── */
+  .scan-header .tf-tabs { display: flex !important; flex-wrap: wrap; }
+  .scan-header .tf-tab { font-size: 10px; padding: 5px 10px; }
+  .scan-title { font-size: 15px; }
+  #scan-grid { grid-template-columns: 1fr 1fr !important; gap: 5px; padding: 8px 10px; }
+  .sc-sym { font-size: 11px; }
+  .sc-row { font-size: 9px; }
+  .scan-card { padding: 8px; }
+
+  /* hide corner decorations on mobile (too small to matter) */
+  #corner-tl,#corner-tr,#corner-bl,#corner-br { display: none; }
+}
+
+/* ── hide mob-tabs on desktop ── */
+#mob-tabs { display: none; }
+
 .overlay-toggles{
   grid-column:1/-1;grid-row:2;
   display:flex;flex-wrap:nowrap;gap:3px;padding:5px 12px;
@@ -666,7 +829,27 @@ body::after{
   </div>
 
 </div>
+
+<!-- ════════════════════ MOBILE BOTTOM TABS ════════════════════ -->
+<div id="mob-tabs">
+  <button class="mob-tab active" id="mt-chart" onclick="mobTab('chart')">
+    <span class="tab-icon">📈</span>CHART
+  </button>
+  <button class="mob-tab" id="mt-bias" onclick="mobTab('bias')">
+    <span class="tab-icon">🧭</span>BIAS
+  </button>
+  <button class="mob-tab" id="mt-trade" onclick="mobTab('trade')">
+    <span class="tab-icon">🎯</span>TRADE
+  </button>
+  <button class="mob-tab" id="mt-scan" onclick="mobTab('scan')">
+    <span class="tab-icon">⊞</span>SCAN
+  </button>
+  <button class="mob-tab" id="mt-settings" onclick="mobTab('settings')">
+    <span class="tab-icon">⚙</span>MORE
+  </button>
 </div>
+
+</div><!-- end #app -->
 
 <!-- ════════════════════ SCANNER OVERLAY ════════════════════ -->
 <div id="scanner-overlay">
@@ -1687,6 +1870,7 @@ function runAnalysis(barClose=false){
   updateHTFBias();
   updateSparkline();
   fireSetupAlert(_lockedTrade,currentSymbol);
+  updateMobTradeTab();
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -2308,6 +2492,75 @@ document.addEventListener('keydown',e=>{
       if(settingsOpen)toggleSettings();break;
   }
 });
+
+// ════════════════════════════════════════════════════════════════
+// MOBILE TAB NAVIGATION
+// ════════════════════════════════════════════════════════════════
+let _mobActiveTab = 'chart';
+
+function mobTab(tab) {
+  if(window.innerWidth > 768) return;
+  _mobActiveTab = tab;
+
+  // Update tab button states
+  document.querySelectorAll('.mob-tab').forEach(t => t.classList.remove('active'));
+  const btn = document.getElementById('mt-' + tab);
+  if(btn) btn.classList.add('active');
+
+  // Hide both panels first
+  document.getElementById('left-panel').classList.remove('mob-visible');
+  document.getElementById('right-panel').classList.remove('mob-visible');
+
+  // Close scanner/settings if switching away
+  if(tab !== 'scan' && _scannerOpen) {
+    _scannerOpen = false;
+    document.getElementById('scanner-overlay').classList.remove('open');
+    document.getElementById('scannerBtn').classList.remove('active');
+  }
+  if(tab !== 'settings' && settingsOpen) {
+    settingsOpen = false;
+    document.getElementById('settings-drawer').classList.remove('open');
+    document.getElementById('settingsBtn').classList.remove('active');
+  }
+
+  // Apply tab-specific colour tint
+  const btns = document.querySelectorAll('.mob-tab');
+  btns.forEach(b => b.classList.remove('bull-tab','bear-tab'));
+
+  switch(tab) {
+    case 'chart':
+      // Just show chart — both panels hidden
+      setTimeout(() => { if(chart && chart._resize) chart._resize(); }, 50);
+      break;
+    case 'bias':
+      document.getElementById('left-panel').classList.add('mob-visible');
+      break;
+    case 'trade':
+      document.getElementById('right-panel').classList.add('mob-visible');
+      // Tint based on current setup direction
+      if(_lockedTrade && !_lockedTrade.blocked) {
+        btn.classList.add(_lockedTrade.isBull ? 'bull-tab' : 'bear-tab');
+      }
+      break;
+    case 'scan':
+      toggleScanner();
+      break;
+    case 'settings':
+      toggleSettings();
+      break;
+  }
+}
+
+// Keep trade tab tinted after analysis runs
+function updateMobTradeTab() {
+  if(window.innerWidth > 768) return;
+  const btn = document.getElementById('mt-trade');
+  if(!btn) return;
+  btn.classList.remove('bull-tab','bear-tab');
+  if(_lockedTrade && !_lockedTrade.blocked) {
+    btn.classList.add(_lockedTrade.isBull ? 'bull-tab' : 'bear-tab');
+  }
+}
 
 // ════════════════════════════════════════════════════════════════
 // BOOT
