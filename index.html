@@ -2034,6 +2034,8 @@ const _scanAlertsSent={};
 
 function sendTelegramScan(t,sym,name,tf,dp){
   if(!t||t.blocked)return;
+  // Only allow 15m and 30m signals
+  if(tf!=='15m'&&tf!=='30m')return;
   var key=sym+'_'+tf+'_'+t.dir+'_'+sf(t.entry,dp);
   if(_scanAlertsSent[key])return;
   _scanAlertsSent[key]=true;
