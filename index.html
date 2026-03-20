@@ -151,17 +151,6 @@ body::after{content:'';position:fixed;inset:0;
   border-bottom:1px solid rgba(0,180,216,.2);}
 .strat-name{font-family:var(--disp);font-size:9px;letter-spacing:2px;color:var(--cyan);}
 .strat-sub{font-family:var(--mono);font-size:7px;color:var(--tx1);letter-spacing:1px;margin-top:2px;}
-.strat-video{padding:6px 11px;border-bottom:1px solid var(--b0);}
-.strat-video .v-label{font-family:var(--mono);font-size:7px;color:var(--tx1);letter-spacing:1px;
-  margin-bottom:4px;display:flex;align-items:center;gap:4px;}
-.strat-video .v-label::before{content:'';width:2px;height:8px;background:var(--acc);}
-.video-wrap{position:relative;width:100%;padding-bottom:56.25%;border-radius:2px;overflow:hidden;
-  border:1px solid var(--b1);background:var(--bg0);}
-.video-wrap iframe{position:absolute;top:0;left:0;width:100%;height:100%;}
-.v-toggle{font-family:var(--mono);font-size:7px;color:var(--acc);cursor:pointer;
-  background:none;border:none;padding:0;text-decoration:underline;letter-spacing:1px;}
-.v-toggle:hover{color:var(--cyan);}
-.video-collapsed .video-wrap{display:none;}
 
 /* Gate row */
 .gate-row{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:5px 9px;border-bottom:1px solid var(--b0);}
@@ -481,18 +470,6 @@ body::after{content:'';position:fixed;inset:0;
   <div class="strat-hdr">
     <div class="strat-name">fxalexg STRATEGY</div>
     <div class="strat-sub">BOS/CHoCH · OB RETEST · 8-GATE CONFLUENCE</div>
-  </div>
-
-  <!-- Strategy video (integrated) -->
-  <div class="strat-video video-collapsed" id="stratVideo">
-    <div class="v-label">
-      <span>STRATEGY TUTORIAL</span>
-      <button type="button" class="v-toggle" id="stratVideoToggle" onclick="toggleStratVideo()">show</button>
-    </div>
-    <div class="video-wrap">
-      <iframe src="https://www.youtube.com/embed/38yZ7ETnnis" title="fxalexg Strategy Tutorial"
-        frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
-    </div>
   </div>
 
   <!-- 8 gates -->
@@ -994,7 +971,15 @@ function getProfile(sym){
 }
 
 // ═══════════════════════════════════════════════════════════
-// S&R ENGINE
+// S&R ENGINE — Professional criteria:
+// 1. Major swing highs/lows
+// 2. Multiple rejections
+// 3. Clear obvious levels
+// 4. Strong price reactions (aggressive moves away)
+// 5. Role reversal (broken resistance = new support)
+// 6. Recent respect weighted higher
+// + Fibonacci confluence (50%, 61.8%)
+// + Break and retest detection
 // ═══════════════════════════════════════════════════════════
 function calcSR(candleArr,atrVal,vols,volSMA_,volSTD_,obArr){
   const n=candleArr.length;if(n<40)return[];
@@ -1004,39 +989,174 @@ function calcSR(candleArr,atrVal,vols,volSMA_,volSTD_,obArr){
   const tol=Math.max(atrVal*.4,price*baseTol/100);
   const cands=[];
   const pL=CFG.pivotLen;
+
+  // 1. Major swing highs and lows — only obvious turning points
   for(let i=pL;i<n-pL;i++){
     let isH=true,isL=true;
     for(let j=i-pL;j<=i+pL;j++){if(j===i)continue;if(hi[j]>=hi[i])isH=false;if(lo[j]<=lo[i])isL=false;}
-    const rw=1+(i/n)*.5;
-    if(isH)cands.push({p:hi[i],idx:i,isRes:true,src:'pivot',w:rw});
-    if(isL)cands.push({p:lo[i],idx:i,isRes:false,src:'pivot',w:rw});
+    // Recency weight — recent levels matter more
+    const rw=0.5+(i/n)*1.5;
+    // Strength weight — how aggressive was the move away?
+    let moveStrength=0;
+    if(isH&&i+3<n){const drop=hi[i]-Math.min(...cl.slice(i,Math.min(i+8,n)));moveStrength=drop/atrVal;}
+    if(isL&&i+3<n){const rise=Math.max(...cl.slice(i,Math.min(i+8,n)))-lo[i];moveStrength=rise/atrVal;}
+    const sw=Math.min(2,moveStrength*.4);
+    if(isH)cands.push({p:hi[i],idx:i,isRes:true,src:'pivot',w:rw+sw});
+    if(isL)cands.push({p:lo[i],idx:i,isRes:false,src:'pivot',w:rw+sw});
   }
-  if(obArr?.length)for(const ob of obArr){cands.push({p:ob.poc,idx:ob.idx,isRes:!ob.isBull,src:'ob',w:1.5+ob.score/100});cands.push({p:ob.top,idx:ob.idx,isRes:!ob.isBull,src:'ob',w:1.2});cands.push({p:ob.bottom,idx:ob.idx,isRes:ob.isBull,src:'ob',w:1.2});}
+
+  // OB zones
+  if(obArr&&obArr.length)for(const ob of obArr){
+    cands.push({p:ob.poc,idx:ob.idx,isRes:!ob.isBull,src:'ob',w:1.5+ob.score/100});
+    cands.push({p:ob.top,idx:ob.idx,isRes:!ob.isBull,src:'ob',w:1.2});
+    cands.push({p:ob.bottom,idx:ob.idx,isRes:ob.isBull,src:'ob',w:1.2});
+  }
+
+  // Round numbers
   const rStep=price>10000?100:price>1000?50:price>100?5:price>10?.5:.1;
   const rTop=Math.max(...hi.slice(-100)),rBot=Math.min(...lo.slice(-100));
-  for(let rp=Math.floor(rBot/rStep)*rStep;rp<=rTop;rp=Math.round((rp+rStep)*1e8)/1e8)cands.push({p:rp,idx:Math.floor(n/2),isRes:rp>price,src:'round',w:.8});
+  for(let rp=Math.floor(rBot/rStep)*rStep;rp<=rTop;rp=Math.round((rp+rStep)*1e8)/1e8)
+    cands.push({p:rp,idx:Math.floor(n/2),isRes:rp>price,src:'round',w:.8});
+
+  // Fibonacci levels from recent swing high/low
+  const recentHi=Math.max(...hi.slice(-80)),recentLo=Math.min(...lo.slice(-80));
+  const fibRange=recentHi-recentLo;
+  if(fibRange>0){
+    const fibLevels=[0.236,0.382,0.5,0.618,0.786];
+    for(const f of fibLevels){
+      const fp=recentHi-fibRange*f;
+      const fw=f===0.5||f===0.618?1.4:0.9; // weight 50% and 61.8% higher
+      cands.push({p:fp,idx:Math.floor(n/2),isRes:fp>price,src:'fib',w:fw,fibLevel:f});
+    }
+  }
+
+  // Merge candidates into zones
   const levels=[];
   for(const c of cands){
     let merged=false;
-    for(const lv of levels){if(Math.abs(lv.price-c.p)<=tol*1.8){lv.bandTop=Math.max(lv.bandTop,c.p+tol*.6);lv.bandBot=Math.min(lv.bandBot,c.p-tol*.6);lv.price=(lv.bandTop+lv.bandBot)/2;if(c.src==='ob')lv.hasOB=true;if(c.src==='round')lv.hasRound=true;merged=true;break;}}
-    if(!merged)levels.push({price:c.p,bandTop:c.p+tol*.6,bandBot:c.p-tol*.6,isRes:c.isRes,touches:0,rejections:0,hasOB:c.src==='ob',hasRound:c.src==='round',score:0,bounceRate:50});
-  }
-  const vM=volSMA_[n-1]||1,vT=vM+(volSTD_[n-1]||1)*1.2;
-  for(const lv of levels){
-    let t=0,rej=0,vs=0,b=0,brk=0;
-    for(let i=0;i<n;i++){
-      const tH=hi[i]>=lv.bandBot&&hi[i]<=lv.bandTop+atrVal*.4,tL=lo[i]<=lv.bandTop&&lo[i]>=lv.bandBot-atrVal*.4;
-      if(!(lv.isRes?tH:tL))continue;t++;
-      const bT=Math.max(cl[i],candleArr[i].open),bB=Math.min(cl[i],candleArr[i].open),rng=hi[i]-lo[i];
-      if(rng>0){if(lv.isRes){const wr=(hi[i]-bT)/rng;if(wr>=.35&&cl[i]<lv.bandBot)rej++;}else{const wr=(bB-lo[i])/rng;if(wr>=.35&&cl[i]>lv.bandTop)rej++;}}
-      if(vols[i]>=vT)vs++;
-      if(i<n-3){const fm=lv.isRes?lv.bandBot-cl[i+2]:cl[i+2]-lv.bandTop;if(fm>atrVal*.4)b++;else if(fm<-atrVal*.4)brk++;}
+    for(const lv of levels){
+      if(Math.abs(lv.price-c.p)<=tol*1.8){
+        lv.bandTop=Math.max(lv.bandTop,c.p+tol*.6);
+        lv.bandBot=Math.min(lv.bandBot,c.p-tol*.6);
+        lv.price=(lv.bandTop+lv.bandBot)/2;
+        if(c.src==='ob')lv.hasOB=true;
+        if(c.src==='round')lv.hasRound=true;
+        if(c.src==='fib'){lv.hasFib=true;lv.fibLevel=c.fibLevel;}
+        merged=true;break;
+      }
     }
-    lv.touches=t;lv.rejections=rej;lv.volSpikes=vs;
-    const br=(b+brk)>0?b/(b+brk):.5;lv.bounceRate=Math.round(br*100);
-    lv.score=Math.min(100,Math.min(35,t>=2?15+(t-2)*8:t*6)+Math.min(22,rej*7)+Math.min(12,vs*4)+Math.min(15,br*15)+(t/n)*8+(lv.hasOB?8:0)+(lv.hasRound?4:0));
+    if(!merged)levels.push({
+      price:c.p,bandTop:c.p+tol*.6,bandBot:c.p-tol*.6,
+      isRes:c.isRes,touches:0,rejections:0,
+      hasOB:c.src==='ob',hasRound:c.src==='round',
+      hasFib:c.src==='fib',fibLevel:c.fibLevel||null,
+      hasRoleReversal:false,hasBreakRetest:false,
+      score:0,bounceRate:50,recentRejections:0,
+    });
   }
-  return levels.filter(lv=>lv.touches>=CFG.srMinTouches&&lv.score>=CFG.srMinScore).sort((a,b)=>b.score-a.score).slice(0,CFG.srMaxLevels);
+
+  const vM=volSMA_[n-1]||1,vT=vM+(volSTD_[n-1]||1)*1.2;
+
+  for(const lv of levels){
+    let t=0,rej=0,vs=0,b=0,brk=0,recentRej=0,strongMoves=0;
+    let wasRes=lv.isRes,brkIdx=-1;
+
+    for(let i=0;i<n;i++){
+      const tH=hi[i]>=lv.bandBot&&hi[i]<=lv.bandTop+atrVal*.4;
+      const tL=lo[i]<=lv.bandTop&&lo[i]>=lv.bandBot-atrVal*.4;
+      if(!(lv.isRes?tH:tL))continue;
+      t++;
+      const bT=Math.max(cl[i],candleArr[i].open),bB=Math.min(cl[i],candleArr[i].open),rng=hi[i]-lo[i];
+
+      // 2. Rejection quality
+      if(rng>0){
+        if(lv.isRes){
+          const wR=(hi[i]-bT)/rng;
+          if(wR>=.35&&cl[i]<lv.bandBot){
+            rej++;
+            // 6. Recent respect — last 30 candles weighted more
+            if(i>=n-30)recentRej++;
+            // 4. Strong price reaction — how far did it move away?
+            if(i+5<n){const moveAway=hi[i]-Math.min(...cl.slice(i+1,Math.min(i+6,n)));if(moveAway>atrVal*1.5)strongMoves++;}
+          }
+        } else {
+          const wR=(bB-lo[i])/rng;
+          if(wR>=.35&&cl[i]>lv.bandTop){
+            rej++;
+            if(i>=n-30)recentRej++;
+            if(i+5<n){const moveAway=Math.max(...cl.slice(i+1,Math.min(i+6,n)))-lo[i];if(moveAway>atrVal*1.5)strongMoves++;}
+          }
+        }
+      }
+      if(vols[i]>=vT)vs++;
+      if(i<n-3){const fm=lv.isRes?lv.bandBot-cl[i+2]:cl[i+2]-lv.bandTop;if(fm>atrVal*.4)b++;else if(fm<-atrVal*.4){brk++;brkIdx=i;}}
+    }
+
+    // 5. Role reversal detection — did level flip from res to sup or vice versa?
+    if(brkIdx>0&&brkIdx<n-5){
+      const retestAfter=[];
+      for(let i=brkIdx+1;i<Math.min(brkIdx+30,n);i++){
+        const nearLevel=Math.abs(cl[i]-lv.price)<=tol*2;
+        if(nearLevel)retestAfter.push(i);
+      }
+      if(retestAfter.length>0){
+        lv.hasRoleReversal=true;
+        lv.hasBreakRetest=true; // Break and retest confirmed
+      }
+    }
+
+    lv.touches=t;lv.rejections=rej;lv.volSpikes=vs;lv.recentRejections=recentRej;lv.strongMoves=strongMoves;
+    const br=(b+brk)>0?b/(b+brk):.5;lv.bounceRate=Math.round(br*100);
+
+    // Professional scoring — weighted by all 6 criteria
+    const touchScore=Math.min(25,t>=2?10+(t-2)*6:t*4);          // criterion 2: multiple rejections
+    const rejScore=Math.min(20,rej*6);                            // criterion 2: rejection quality
+    const recentScore=Math.min(15,recentRej*8);                   // criterion 6: recent respect
+    const strongMoveScore=Math.min(12,strongMoves*5);             // criterion 4: strong reactions
+    const roleScore=lv.hasRoleReversal?15:0;                      // criterion 5: role reversal
+    const retestScore=lv.hasBreakRetest?10:0;                     // break and retest bonus
+    const fibScore=lv.hasFib?(lv.fibLevel===0.5||lv.fibLevel===0.618?10:5):0; // fibonacci
+    const obScore=lv.hasOB?8:0;
+    const roundScore=lv.hasRound?3:0;
+    const volScore=Math.min(8,vs*3);
+
+    lv.score=Math.min(100,touchScore+rejScore+recentScore+strongMoveScore+roleScore+retestScore+fibScore+obScore+roundScore+volScore);
+  }
+
+  return levels
+    .filter(lv=>lv.touches>=CFG.srMinTouches&&lv.score>=CFG.srMinScore)
+    .sort((a,b)=>b.score-a.score)
+    .slice(0,CFG.srMaxLevels);
+}
+
+// Check if price is in a break-and-retest situation at a level
+function checkBreakRetest(candleArr,srLevels,atrVal){
+  if(!candleArr||candleArr.length<10||!srLevels||!srLevels.length)return null;
+  const n=candleArr.length;
+  const price=candleArr[n-1].close;
+  const cl=candleArr.map(c=>c.close);
+  for(const lv of srLevels){
+    if(lv.score<40)continue;
+    // Look for break then retest in last 30 candles
+    const lookback=Math.min(30,n-1);
+    let brokeLevel=false,brkDir=null;
+    for(let i=n-lookback;i<n-2;i++){
+      // Was resistance broken upward?
+      if(lv.isRes&&cl[i]>lv.bandTop+atrVal*.3){brokeLevel=true;brkDir='up';break;}
+      // Was support broken downward?
+      if(!lv.isRes&&cl[i]<lv.bandBot-atrVal*.3){brokeLevel=true;brkDir='down';break;}
+    }
+    if(!brokeLevel)continue;
+    // Is price now retesting the level?
+    const nearLevel=Math.abs(price-lv.price)<=atrVal*1.5;
+    if(nearLevel){
+      return{level:lv,brkDir,isRetest:true,
+        tradeBull:brkDir==='up'&&!lv.isRes, // broke up through resistance, now retesting as support = LONG
+        tradeBear:brkDir==='down'&&lv.isRes  // broke down through support, now retesting as resistance = SHORT
+      };
+    }
+  }
+  return null;
 }
 
 // Rejection candle check
@@ -1161,6 +1281,7 @@ function analyseCandles(candleArr,symId){
   };
   AR=result;
   result.srLevels=calcSR(candleArr,atrVal,vols,vSMA,vSTD,finalOBs);
+  result.breakRetest=checkBreakRetest(candleArr,result.srLevels,atrVal);
   curSym=savedSym;
   return result;
 }
@@ -1234,6 +1355,13 @@ function calcSLTP(r,symId){
     if(!g8p)return{blocked:true,reason:'No rejection candle yet — wait for candle close',dir,gates,passCount,grade:gradeStr,gradeCol};
     if(passCount<6)return{blocked:true,reason:'Only '+passCount+'/8 gates — need 6+ for grade A',dir,gates,passCount,grade:gradeStr,gradeCol};
   }
+  // HARD EMA FILTER — EMAs must agree with direction on signal TF
+  // This prevents calling LONG in a downtrend and vice versa
+  const emaOk=isBull?(r.emaTrend==='bull'||e20[r.n-1]>e50[r.n-1]):(r.emaTrend==='bear'||e20[r.n-1]<e50[r.n-1]);
+  if(!emaOk){
+    if(typeof _scanMode==='undefined'||!_scanMode)return{blocked:true,reason:'EMA trend conflicts with direction — '+(isBull?'bearish':'bullish')+' structure',dir,gates,passCount,grade:gradeStr,gradeCol};
+    else return null; // In scan mode just skip this signal
+  }
 
   // SL (spike-aware, exact v34 logic)
   const spikeG=r.spikeAtr||atrVal*2,spikeDist=spikeG*prof.spG;
@@ -1287,7 +1415,8 @@ function calcSLTP(r,symId){
   return{dir,entry:price,sl,tp,rr,risk,reward,slSrc,tpSrc,conf,gates,
     grade:gradeStr,gradeCol,passCount,srLv,rejRes,
     hasSRConf:g7p&&g8p,lastMSBType:lastMSB?.type||null,
-    dolR,units,profit,rp,bal,blocked:false,symType:prof.t,spikeAtr:r.spikeAtr||0};
+    dolR,units,profit,rp,bal,blocked:false,symType:prof.t,spikeAtr:r.spikeAtr||0,
+    breakRetest:r.breakRetest||null};
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -2117,6 +2246,30 @@ function sendTelegramScan(t,sym,name,tf,dp){
   // Expire key after 30 minutes so same setup can re-alert if it resets
   setTimeout(function(){delete _scanAlertsSent[key];},30*60*1000);
   var ib=t.dir==='LONG';
+  var emaStatus=t.gates&&t.gates[0]&&t.gates[0].pass?'ALIGNED':'MIXED';
+  var htfStr='';
+  // Break and retest info
+  var brtLine='';
+  if(t.breakRetest&&t.breakRetest.isRetest){
+    var brt=t.breakRetest;
+    brtLine='BREAK & RETEST: '+(brt.brkDir==='up'?'Resistance broken → now support':'Support broken → now resistance');
+  }
+  var fibLine='';
+  if(t.srLv&&t.srLv.hasFib){
+    fibLine='Fibonacci: '+(t.srLv.fibLevel===0.5?'50%':t.srLv.fibLevel===0.618?'61.8%':Math.round(t.srLv.fibLevel*100)+'%')+' retracement';
+  }
+  var srDetails='';
+  if(t.srLv){
+    var extras=[];
+    if(t.srLv.hasRoleReversal)extras.push('Role Reversal');
+    if(t.srLv.hasBreakRetest)extras.push('Break+Retest');
+    if(t.srLv.hasFib)extras.push('Fib '+(t.srLv.fibLevel===0.5?'50%':t.srLv.fibLevel===0.618?'61.8%':Math.round(t.srLv.fibLevel*100)+'%'));
+    if(t.srLv.hasOB)extras.push('OB Zone');
+    srDetails=(t.srLv.isRes?'Resistance':'Support')+': '+sf(t.srLv.price,dp)
+      +' | Score: '+sf(t.srLv.score,0)+'%'
+      +' | '+t.srLv.rejections+'x rejected'
+      +(extras.length?' | '+extras.join(', '):'');
+  }
   var lines=[
     (ib?'LONG SIGNAL':'SHORT SIGNAL'),
     '',
@@ -2124,15 +2277,20 @@ function sendTelegramScan(t,sym,name,tf,dp){
     'Direction: '+t.dir,
     'Grade: '+t.grade+' ('+t.passCount+'/8 gates)',
     'Confidence: '+t.conf+'%',
+    'EMA Trend: '+emaStatus,
+    (t.lastMSBType?'MSB Type: '+t.lastMSBType:''),
     '',
     'Entry:  '+sf(t.entry,dp),
     'SL:     '+sf(t.sl,dp),
     'TP:     '+sf(t.tp,dp),
     'RR:     '+sf(t.rr,2)+':1',
     '',
+    (srDetails?'S&R: '+srDetails:''),
+    (brtLine?brtLine:''),
+    '',
     'Time: '+new Date().toLocaleTimeString()
-  ];
-  if(t.lastMSBType==='CHoCH')lines.splice(lines.length-2,0,'CHoCH - Reversal signal');
+  ].filter(function(l){return l!=='';});
+  if(t.lastMSBType==='CHoCH')lines.splice(1,0,'CHoCH REVERSAL SIGNAL');
   var msg=lines.join('\n');
   fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage'),{
     method:'POST',
@@ -2261,7 +2419,6 @@ function jumpToSym(sym){
 // SETTINGS / KB
 // ═══════════════════════════════════════════════════════════
 function toggleSettings(){_settOpen=!_settOpen;document.getElementById('settings')?.classList.toggle('open',_settOpen);}
-function toggleStratVideo(){const el=document.getElementById('stratVideo');const btn=document.getElementById('stratVideoToggle');if(!el)return;el.classList.toggle('video-collapsed');if(btn)btn.textContent=el.classList.contains('video-collapsed')?'show':'hide';}
 function showKB(open){const el=document.getElementById('kb');if(el)el.classList.toggle('open',open);}
 
 // ═══════════════════════════════════════════════════════════
