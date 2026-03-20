@@ -574,7 +574,7 @@ body::after{content:'';position:fixed;inset:0;
 
   <div class="d-sec">⏱ SCAN SETTINGS</div>
   <div class="set-row"><span>Scan Interval (mins)</span><input class="set-in" id="cfg-scanint" value="3" min="1" max="60" type="number"></div>
-  <div class="set-row"><span>Min Confidence %</span><input class="set-in" id="cfg-scanconf" value="75" min="60" max="100" type="number"></div>
+  <div class="set-row"><span>Min Confidence %</span><input class="set-in" id="cfg-scanconf" value="72" min="60" max="100" type="number"></div>
   <div class="set-row"><span>Min RR for Alert</span><input class="set-in" id="cfg-scanrr" value="2.0" min="1.5" max="5" type="number" step="0.1"></div>
   <button class="d-btn" style="margin-top:4px" onclick="applyScanSettings()">✓ APPLY SCAN SETTINGS</button>
   <div class="d-sec">⚙ STRATEGY SETTINGS</div>
@@ -894,7 +894,7 @@ let _lockedTrade=null;
 let _cm='solid',_settOpen=false,_scanOpen=false,_journalOpen=false;
 let _soundOn=false,_journal=[],_lastAlertKey='';
 let _scanMode=false;
-let _scanMinConf=75;
+let _scanMinConf=72;
 let _scanMinRR=2.0;
 let _scanResults=[],_scanSort='conf';
 const _cache={};
@@ -2427,7 +2427,8 @@ function autoScanAnalyse(syms,isMT5){
             console.log('[BLOCKED] '+sym+' '+tfL(tf)+' '+t.dir+' — '+reasons.join(', '));
           }
         }
-        var passesNormal=!_freeMode&&g2&&g7&&g8&&isChoCH&&t.passCount>=6&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&validTF;
+        // Normal mode: BOS or CHoCH + rejection candle required, 6+ gates, RR>=2, conf>=72
+        var passesNormal=!_freeMode&&g2&&g7&&g8&&t.passCount>=6&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&validTF;
         var passesFree=_freeMode&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf;
         if(passesNormal||passesFree){
           sendTelegramScan(t,sym,name,tfL(tf),getDP(sym));
