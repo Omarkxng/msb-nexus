@@ -2295,17 +2295,97 @@ let _autoScanTimer=null;
 let AUTO_SCAN_INTERVAL=3*60*1000; // 3 minutes (changeable via settings)
 
 function autoScan(){
-  console.log('[NEXUS] Auto scan running at '+new Date().toLocaleTimeString()+' — scanning 15m, 30m, 1H');
-  addAlert('Scanning…','info');
-  // Clear any cached data for non-15m/30m timeframes before scanning
-  Object.keys(_cache).forEach(function(k){
-    var endsWithBadTF=(!k.endsWith('900')&&!k.endsWith('1800')&&!k.endsWith('3600'));
-    if(endsWithBadTF)delete _cache[k];
-  });
-  runScanner();
+  var now=new Date().toLocaleTimeString();
+  console.log('[NEXUS] Auto scan at '+now+' — 15m, 30m, 1H');
+  addAlert('Auto scanning…','info');
   updateAutoScanCountdown(AUTO_SCAN_INTERVAL);
   clearTimeout(_autoScanTimer);
   _autoScanTimer=setTimeout(function(){autoScan();},AUTO_SCAN_INTERVAL);
+  // Run the appropriate scanner based on connection state
+  if(mt5Connected&&mt5ws&&mt5ws.readyState===WebSocket.OPEN){
+    // MT5 connected — fetch fresh candles then analyse
+    autoScanMT5();
+  } else if(isConn&&ws&&ws.readyState===WebSocket.OPEN){
+    // Deriv connected — use live scan
+    startLiveScan();
+  } else {
+    // Offline — analyse cached/demo data directly
+    autoScanDemo();
+  }
+}
+
+// Auto scan using MT5 bridge — fetches fresh candles then analyses
+async function autoScanMT5(){
+  var syms=Object.keys(mt5Symbols);
+  if(!syms.length)return;
+  var tfs=SCAN_TFS;
+  var total=syms.length*tfs.length;
+  var done=0;
+  for(var si=0;si<syms.length;si++){
+    var sym=syms[si];
+    for(var ti=0;ti<tfs.length;ti++){
+      var tf=tfs[ti];
+      var key=sym+tf;
+      // Request fresh candles from MT5
+      await new Promise(function(resolve){
+        _mt5ScanCBs[key]=resolve;
+        reqMT5Candles(sym,tf,500);
+        setTimeout(function(){if(_mt5ScanCBs[key]){delete _mt5ScanCBs[key];resolve();}},3000);
+      });
+      done++;
+    }
+  }
+  // Now analyse all fetched data
+  autoScanAnalyse(syms,true);
+}
+
+// Auto scan offline/demo mode
+async function autoScanDemo(){
+  var syms=SCAN_SYMS.map(function(s){return s.id;});
+  for(var si=0;si<syms.length;si++){
+    for(var ti=0;ti<SCAN_TFS.length;ti++){
+      var key=syms[si]+SCAN_TFS[ti];
+      if(!_cache[key])_cache[key]=genCandles(syms[si],SCAN_TFS[ti],500);
+      await new Promise(function(r){setTimeout(r,0);});
+    }
+  }
+  autoScanAnalyse(syms,false);
+}
+
+// Core analysis + Telegram firing — runs after candles are fetched
+function autoScanAnalyse(syms,isMT5){
+  var tfs=SCAN_TFS;
+  var fired=0;
+  for(var si=0;si<syms.length;si++){
+    var sym=syms[si];
+    var name=isMT5?(mt5Symbols[sym]||sym):(SCAN_SYMS.find(function(s){return s.id===sym;})||{n:sym}).n;
+    for(var ti=0;ti<tfs.length;ti++){
+      var tf=tfs[ti];
+      try{
+        var key=sym+tf;
+        var cd=_cache[key];
+        if(!cd||cd.length<50)continue;
+        var res=analyseCandles(cd,sym);
+        if(!res)continue;
+        var savedSym=curSym;curSym=sym;_scanMode=true;
+        var t=calcSLTP(res,sym);
+        _scanMode=false;curSym=savedSym;
+        if(!t||t.blocked)continue;
+        if(t.rr<_scanMinRR||t.conf<60)continue;
+        var gs=t.gates||[];
+        var g2=gs[1]&&gs[1].pass;
+        var g7=gs[6]&&gs[6].pass;
+        var g8=gs[7]&&gs[7].pass;
+        var isChoCH=t.lastMSBType==='CHoCH';
+        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600)){
+          sendTelegramScan(t,sym,name,tfL(tf),getDP(sym));
+          fired++;
+        }
+      }catch(e){console.warn('autoScanAnalyse err',sym,tf,e);}
+    }
+  }
+  console.log('[NEXUS] Scan complete — '+fired+' signals fired');
+  if(fired===0)console.log('[NEXUS] No ideal setups found this scan');
 }
 
 // Apply scan settings from drawer
