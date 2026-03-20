@@ -323,6 +323,7 @@ body::after{content:'';position:fixed;inset:0;
   <button class="tb-btn" id="soundBtn" onclick="toggleSound()">🔇 SOUND</button>
   <button class="tb-btn" onclick="toggleSettings()">⚙</button>
   <button class="tb-btn" onclick="showKB(true)">?</button>
+  <button class="tb-btn" onclick="sendTestTelegram()" title="Send test message to Telegram">📱 TEST</button>
   <button class="tb-btn" id="bridgePyBtn" onclick="downloadBridgePy()" title="Download mt5_bridge.py">⬇ MT5.PY</button>
   <div class="price-ticker"><span id="tickP">——</span><span class="price-chg" id="tickC"> +0.00%</span></div>
   <div class="stat-badge s-demo" id="statusBadge" style="margin-left:auto">◉ DEMO</div>
@@ -1417,7 +1418,7 @@ async function startMT5Scan(){
   }
   setTimeout(()=>{
     const mt5Results=[];
-    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
+    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
     _scanResults=[..._scanResults,...mt5Results];renderScan();
     if(prog)prog.textContent=_scanResults.length+' setups';
   },200);
@@ -1610,7 +1611,7 @@ function _finishLiveScan(){
         // Only telegram ideal setups: g2+g7+g8+6gates+RR2+conf65
         const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
         const isChoCH=t.lastMSBType==='CHoCH';
-        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
       }
     }catch(e){}}
     renderScan();
@@ -1627,7 +1628,7 @@ async function runDemoScan(){
       _scanResults.push({sym:s.id,n:s.n,r:res,t});
       const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
       const isChoCH=t.lastMSBType==='CHoCH';
-      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
     }
   }catch(e){}}}
   renderScan();
@@ -2024,6 +2025,34 @@ function applySettings(){
 // ═══════════════════════════════════════════════════════════
 
 // =============================================================
+// TELEGRAM TEST
+// =============================================================
+function sendTestTelegram(){
+  addAlert('Sending test to Telegram...','info');
+  var msg = [
+    'S&R NEXUS v2 — Test Message',
+    '',
+    'If you see this your Telegram is working correctly.',
+    '',
+    'Bot is scanning:',
+    '  Timeframes: 15m, 30m, 1H',
+    '  Min Confidence: 80%',
+    '  Min RR: 2:1',
+    '  Requires: CHoCH + 7/8 gates + HTF aligned',
+    '',
+    'Time: '+new Date().toLocaleTimeString()
+  ].join('\n');
+  fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:TG_CHAT,text:msg})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){addAlert('Test sent to Telegram ✓','bull');}
+    else{addAlert('Test failed: '+(d.description||'unknown'),'bear');console.warn('Test TG error',d);}
+  }).catch(function(e){addAlert('Test failed — check connection','bear');console.warn('Test fetch err',e);});
+}
+
+// =============================================================
 // TELEGRAM NOTIFICATIONS
 // =============================================================
 const TG_TOKEN='8775780390:AAH4PEqvN6hOHyaCsogQ8fLx6UrKH5_CNGE';
@@ -2050,7 +2079,7 @@ function sendTelegramScan(t,sym,name,tf,dp){
     if(isBullDir&&htfBull)htfAgreement++;
     if(!isBullDir&&htfBear)htfAgreement++;
   });
-  if(htfAgreement<2){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
+  if(htfAgreement<1){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
   var key=sym+'_'+tf+'_'+t.dir+'_'+sf(t.entry,dp);
   if(_scanAlertsSent[key])return;
   _scanAlertsSent[key]=true;
