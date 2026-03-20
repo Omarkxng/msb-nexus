@@ -324,6 +324,7 @@ body::after{content:'';position:fixed;inset:0;
   <button class="tb-btn" onclick="toggleSettings()">⚙</button>
   <button class="tb-btn" onclick="showKB(true)">?</button>
   <button class="tb-btn" onclick="sendTestTelegram()" title="Send test message to Telegram">📱 TEST</button>
+  <button class="tb-btn active" id="modeBtn" onclick="toggleScanMode()" title="Switch scan mode">🎯 NORMAL</button>
   <button class="tb-btn" id="bridgePyBtn" onclick="downloadBridgePy()" title="Download mt5_bridge.py">⬇ MT5.PY</button>
   <div class="price-ticker"><span id="tickP">——</span><span class="price-chg" id="tickC"> +0.00%</span></div>
   <div class="stat-badge s-demo" id="statusBadge" style="margin-left:auto">◉ DEMO</div>
@@ -2070,8 +2071,8 @@ const _scanAlertsSent={};
 
 function sendTelegramScan(t,sym,name,tf,dp){
   if(!t||t.blocked)return;
-  // Only allow 15m, 30m and 1h signals
-  if(tf!=='15m'&&tf!=='30m'&&tf!=='1h')return;
+  // Only allow 15m, 30m and 1h signals (unless free mode)
+  if(!_freeMode&&tf!=='15m'&&tf!=='30m'&&tf!=='1h')return;
   // HTF confirmation — at least 2 of 3 HTF timeframes must agree with direction
   var htfAgreement=0;
   var isBullDir=t.dir==='LONG';
@@ -2086,7 +2087,7 @@ function sendTelegramScan(t,sym,name,tf,dp){
     if(isBullDir&&htfBull)htfAgreement++;
     if(!isBullDir&&htfBear)htfAgreement++;
   });
-  if(htfAgreement<1){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
+  if(!_freeMode&&htfAgreement<1){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
   var key=sym+'_'+tf+'_'+t.dir+'_'+sf(t.entry,dp);
   if(_scanAlertsSent[key])return;
   _scanAlertsSent[key]=true;
@@ -2289,6 +2290,39 @@ window.addEventListener('load',()=>{
 });
 
 // ═══════════════════════════════════════════════════════════
+// SCAN MODE TOGGLE — NORMAL vs FREE
+// ═══════════════════════════════════════════════════════════
+let _freeMode=false;
+
+function toggleScanMode(){
+  _freeMode=!_freeMode;
+  var btn=document.getElementById('modeBtn');
+  if(_freeMode){
+    // FREE mode — show everything, original behaviour
+    _scanMinConf=60;
+    _scanMinRR=CFG.minRR;
+    if(btn){
+      btn.textContent='🌐 FREE';
+      btn.style.background='rgba(167,139,250,.2)';
+      btn.style.borderColor='rgba(167,139,250,.6)';
+      btn.style.color='var(--choch)';
+    }
+    addAlert('FREE MODE — all setups, any grade, any TF','info');
+  } else {
+    // NORMAL mode — strict filters
+    _scanMinConf=75;
+    _scanMinRR=2.0;
+    if(btn){
+      btn.textContent='🎯 NORMAL';
+      btn.style.background='';
+      btn.style.borderColor='';
+      btn.style.color='';
+    }
+    addAlert('NORMAL MODE — CHoCH A+ 75%+ RR2+','bull');
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // AUTO SCAN — runs every 5 minutes silently in background
 // ═══════════════════════════════════════════════════════════
 let _autoScanTimer=null;
@@ -2377,7 +2411,9 @@ function autoScanAnalyse(syms,isMT5){
         var g7=gs[6]&&gs[6].pass;
         var g8=gs[7]&&gs[7].pass;
         var isChoCH=t.lastMSBType==='CHoCH';
-        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600)){
+        var passesNormal=g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600);
+        var passesFree=_freeMode&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf;
+        if(passesNormal||passesFree){
           sendTelegramScan(t,sym,name,tfL(tf),getDP(sym));
           fired++;
         }
