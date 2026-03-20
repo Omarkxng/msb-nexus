@@ -907,7 +907,7 @@ const SCAN_SYMS=[
   {id:'JD75',n:'Jump 75'},{id:'JD100',n:'Jump 100'},
   {id:'STPRNG',n:'Step'},
 ];
-const SCAN_TFS=[60,300,600,900,1800,3600,14400];
+const SCAN_TFS=[900,1800]; // 15m and 30m only
 
 const sf=(v,d=2)=>(v==null||isNaN(+v)||!isFinite(+v))?'—':(+v).toFixed(d);
 const sn=(v,fb=0)=>{const n=+v;return(v==null||isNaN(n)||!isFinite(n))?fb:n;};
@@ -1417,7 +1417,7 @@ async function startMT5Scan(){
   }
   setTimeout(()=>{
     const mt5Results=[];
-    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;if(g2&&g7&&g8&&t.passCount>=6&&t.rr>=2&&t.conf>=65)sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
+    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
     _scanResults=[..._scanResults,...mt5Results];renderScan();
     if(prog)prog.textContent=_scanResults.length+' setups';
   },200);
@@ -1609,7 +1609,8 @@ function _finishLiveScan(){
         _scanResults.push({sym:s.id,n:s.n,r:res,t});
         // Only telegram ideal setups: g2+g7+g8+6gates+RR2+conf65
         const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
-        if(g2&&g7&&g8&&t.passCount>=6&&t.rr>=2&&t.conf>=65)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+        const isChoCH=t.lastMSBType==='CHoCH';
+        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
       }
     }catch(e){}}
     renderScan();
@@ -1625,7 +1626,8 @@ async function runDemoScan(){
     if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){
       _scanResults.push({sym:s.id,n:s.n,r:res,t});
       const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
-      if(g2&&g7&&g8&&t.passCount>=6&&t.rr>=2&&t.conf>=65)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+      const isChoCH=t.lastMSBType==='CHoCH';
+      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
     }
   }catch(e){}}}
   renderScan();
