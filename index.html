@@ -1417,7 +1417,7 @@ async function startMT5Scan(){
   }
   setTimeout(()=>{
     const mt5Results=[];
-    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
+    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800))sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
     _scanResults=[..._scanResults,...mt5Results];renderScan();
     if(prog)prog.textContent=_scanResults.length+' setups';
   },200);
@@ -1597,7 +1597,7 @@ function _pumpQueue(){
 function _updateScanProg(){const p=document.getElementById('scanProg');if(p)p.textContent=_liveScanProg+'/'+_liveScanTotal+' live';}
 function _finishLiveScan(){
   Object.entries(_liveScanResults).forEach(([k,v])=>{_cache[k]=v;});
-  clearInterval(_liveScanInterval);if(isConn)_liveScanInterval=setTimeout(()=>{if(isConn)startLiveScan();},5*60*1000);
+  clearInterval(_liveScanInterval); // timing handled by autoScan
   setTimeout(()=>{
     _scanResults=[];
     for(const s of SCAN_SYMS.filter(x=>!x.mt5))for(const tf of SCAN_TFS){try{
@@ -1610,7 +1610,7 @@ function _finishLiveScan(){
         // Only telegram ideal setups: g2+g7+g8+6gates+RR2+conf65
         const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
         const isChoCH=t.lastMSBType==='CHoCH';
-        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
       }
     }catch(e){}}
     renderScan();
@@ -1627,7 +1627,7 @@ async function runDemoScan(){
       _scanResults.push({sym:s.id,n:s.n,r:res,t});
       const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
       const isChoCH=t.lastMSBType==='CHoCH';
-      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80)sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=80&&(tf===900||tf===1800))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
     }
   }catch(e){}}}
   renderScan();
@@ -2071,6 +2071,8 @@ function sendTelegramScan(t,sym,name,tf,dp){
 
 function sendTelegram(t,sym,tf,dp){
   if(!t||t.blocked)return;
+  // Only fire on 15m or 30m charts
+  if(tf!=='15m'&&tf!=='30m')return;
   var key=t.dir+'_'+sym+'_'+sf(t.entry,dp);
   if(_tgLastKey===key)return;
   _tgLastKey=key;
@@ -2233,6 +2235,11 @@ let _autoScanTimer=null;
 const AUTO_SCAN_INTERVAL=1*60*1000; // 1 minute
 
 function autoScan(){
+  // Clear any cached data for non-15m/30m timeframes before scanning
+  Object.keys(_cache).forEach(function(k){
+    var endsWithBadTF=(!k.endsWith('900')&&!k.endsWith('1800'));
+    if(endsWithBadTF)delete _cache[k];
+  });
   runScanner();
   updateAutoScanCountdown(AUTO_SCAN_INTERVAL);
   clearTimeout(_autoScanTimer);
