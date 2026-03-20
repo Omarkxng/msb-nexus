@@ -571,6 +571,11 @@ body::after{content:'';position:fixed;inset:0;
   <input class="d-in" id="appId" placeholder="App ID (default: 1089)" value="1089">
   <button class="d-btn" onclick="toggleConnect()">▶ CONNECT LIVE</button>
 
+  <div class="d-sec">⏱ SCAN SETTINGS</div>
+  <div class="set-row"><span>Scan Interval (mins)</span><input class="set-in" id="cfg-scanint" value="3" min="1" max="60" type="number"></div>
+  <div class="set-row"><span>Min Confidence %</span><input class="set-in" id="cfg-scanconf" value="75" min="60" max="100" type="number"></div>
+  <div class="set-row"><span>Min RR for Alert</span><input class="set-in" id="cfg-scanrr" value="2.0" min="1.5" max="5" type="number" step="0.1"></div>
+  <button class="d-btn" style="margin-top:4px" onclick="applyScanSettings()">✓ APPLY SCAN SETTINGS</button>
   <div class="d-sec">⚙ STRATEGY SETTINGS</div>
   <div class="set-row"><span>Pivot Len</span><input class="set-in" id="cfg-piv" value="5"></div>
   <div class="set-row"><span>MSB Z-Score</span><input class="set-in" id="cfg-mz" value="0.5"></div>
@@ -888,6 +893,8 @@ let _lockedTrade=null;
 let _cm='solid',_settOpen=false,_scanOpen=false,_journalOpen=false;
 let _soundOn=false,_journal=[],_lastAlertKey='';
 let _scanMode=false;
+let _scanMinConf=75;
+let _scanMinRR=2.0;
 let _scanResults=[],_scanSort='conf';
 const _cache={};
 
@@ -1418,7 +1425,7 @@ async function startMT5Scan(){
   }
   setTimeout(()=>{
     const mt5Results=[];
-    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
+    for(const sym of syms)for(const tf of tfs){try{const key=sym+tf;if(_cache[key]){const res=analyseCandles(_cache[key],sym);if(res){const savedSym=curSym;curSym=sym;_scanMode=true;const t=calcSLTP(res,sym);_scanMode=false;curSym=savedSym;if(t&&!t.blocked&&t.rr>=CFG.minRR&&t.conf>=60){mt5Results.push({sym,n:mt5Symbols[sym]||sym,r:res,t,mt5:true});const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;const isChoCH=t.lastMSBType==='CHoCH';if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,sym,mt5Symbols[sym]||sym,tfL(tf),getDP(sym));}}}}catch(e){}}
     _scanResults=[..._scanResults,...mt5Results];renderScan();
     if(prog)prog.textContent=_scanResults.length+' setups';
   },200);
@@ -1611,7 +1618,7 @@ function _finishLiveScan(){
         // Only telegram ideal setups: g2+g7+g8+6gates+RR2+conf65
         const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
         const isChoCH=t.lastMSBType==='CHoCH';
-        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+        if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
       }
     }catch(e){}}
     renderScan();
@@ -1628,7 +1635,7 @@ async function runDemoScan(){
       _scanResults.push({sym:s.id,n:s.n,r:res,t});
       const gs=t.gates||[];const g2=gs[1]&&gs[1].pass,g7=gs[6]&&gs[6].pass,g8=gs[7]&&gs[7].pass;
       const isChoCH=t.lastMSBType==='CHoCH';
-      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=2&&t.conf>=75&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
+      if(g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600))sendTelegramScan(t,s.id,s.n,tfL(tf),getDP(s.id));
     }
   }catch(e){}}}
   renderScan();
@@ -2263,6 +2270,15 @@ window.addEventListener('load',()=>{
     document.getElementById('balance').addEventListener('input',()=>{try{localStorage.setItem('nexus2_balance',document.getElementById('balance').value);}catch(e){}});
     document.getElementById('riskPct').addEventListener('input',()=>{try{localStorage.setItem('nexus2_risk',document.getElementById('riskPct').value);}catch(e){}});
     updateRisk();loadJournal();
+    // Load saved scan settings
+    try{
+      var si=localStorage.getItem('nexus_scanint');
+      var sc=localStorage.getItem('nexus_scanconf');
+      var sr=localStorage.getItem('nexus_scanrr');
+      if(si){AUTO_SCAN_INTERVAL=parseFloat(si)*60*1000;document.getElementById('cfg-scanint').value=si;}
+      if(sc){_scanMinConf=parseFloat(sc);document.getElementById('cfg-scanconf').value=sc;}
+      if(sr){_scanMinRR=parseFloat(sr);document.getElementById('cfg-scanrr').value=sr;}
+    }catch(e){}
     if(chart)chart.resize();
     setTimeout(()=>{if(chart)chart.resize();loadDemoData();},150);
     // Auto-try MT5 bridge on startup
@@ -2276,7 +2292,7 @@ window.addEventListener('load',()=>{
 // AUTO SCAN — runs every 5 minutes silently in background
 // ═══════════════════════════════════════════════════════════
 let _autoScanTimer=null;
-const AUTO_SCAN_INTERVAL=3*60*1000; // 3 minutes
+let AUTO_SCAN_INTERVAL=3*60*1000; // 3 minutes (changeable via settings)
 
 function autoScan(){
   console.log('[NEXUS] Auto scan running at '+new Date().toLocaleTimeString()+' — scanning 15m, 30m, 1H');
@@ -2290,6 +2306,25 @@ function autoScan(){
   updateAutoScanCountdown(AUTO_SCAN_INTERVAL);
   clearTimeout(_autoScanTimer);
   _autoScanTimer=setTimeout(function(){autoScan();},AUTO_SCAN_INTERVAL);
+}
+
+// Apply scan settings from drawer
+function applyScanSettings(){
+  var mins=parseFloat(document.getElementById('cfg-scanint')?.value)||3;
+  var conf=parseFloat(document.getElementById('cfg-scanconf')?.value)||75;
+  var rr=parseFloat(document.getElementById('cfg-scanrr')?.value)||2.0;
+  mins=Math.max(1,Math.min(60,mins));
+  conf=Math.max(60,Math.min(100,conf));
+  rr=Math.max(1.5,Math.min(5,rr));
+  AUTO_SCAN_INTERVAL=mins*60*1000;
+  _scanMinConf=conf;
+  _scanMinRR=rr;
+  // Restart the timer with new interval
+  clearTimeout(_autoScanTimer);
+  _autoScanTimer=setTimeout(function(){autoScan();},AUTO_SCAN_INTERVAL);
+  updateAutoScanCountdown(AUTO_SCAN_INTERVAL);
+  addAlert('Scan: every '+mins+'min | Conf≥'+conf+'% | RR≥'+rr,'info');
+  try{localStorage.setItem('nexus_scanint',mins);localStorage.setItem('nexus_scanconf',conf);localStorage.setItem('nexus_scanrr',rr);}catch(e){}
 }
 
 // Show a small countdown in the topbar so you know when next scan fires
