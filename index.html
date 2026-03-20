@@ -2411,7 +2411,23 @@ function autoScanAnalyse(syms,isMT5){
         var g7=gs[6]&&gs[6].pass;
         var g8=gs[7]&&gs[7].pass;
         var isChoCH=t.lastMSBType==='CHoCH';
-        var passesNormal=g2&&g7&&g8&&isChoCH&&t.passCount>=7&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&(tf===900||tf===1800||tf===3600);
+        var validTF=(tf===900||tf===1800||tf===3600);
+        if(!_freeMode){
+          // Log what's blocking each signal
+          var reasons=[];
+          if(!g2)reasons.push('no BOS/CHoCH');
+          if(!g7)reasons.push('not at S&R');
+          if(!g8)reasons.push('no rejection candle');
+          if(!isChoCH)reasons.push('BOS not CHoCH');
+          if(t.passCount<6)reasons.push('only '+t.passCount+'/8 gates');
+          if(t.rr<_scanMinRR)reasons.push('RR '+t.rr.toFixed(2)+' < '+_scanMinRR);
+          if(t.conf<_scanMinConf)reasons.push('conf '+t.conf+'% < '+_scanMinConf+'%');
+          if(!validTF)reasons.push('TF '+tfL(tf)+' not allowed');
+          if(reasons.length>0){
+            console.log('[BLOCKED] '+sym+' '+tfL(tf)+' '+t.dir+' — '+reasons.join(', '));
+          }
+        }
+        var passesNormal=!_freeMode&&g2&&g7&&g8&&isChoCH&&t.passCount>=6&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&validTF;
         var passesFree=_freeMode&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf;
         if(passesNormal||passesFree){
           sendTelegramScan(t,sym,name,tfL(tf),getDP(sym));
