@@ -2247,9 +2247,11 @@ window.addEventListener('load',()=>{
 // AUTO SCAN — runs every 5 minutes silently in background
 // ═══════════════════════════════════════════════════════════
 let _autoScanTimer=null;
-const AUTO_SCAN_INTERVAL=1*60*1000; // 1 minute
+const AUTO_SCAN_INTERVAL=3*60*1000; // 3 minutes
 
 function autoScan(){
+  console.log('[NEXUS] Auto scan running at '+new Date().toLocaleTimeString()+' — scanning 15m, 30m, 1H');
+  addAlert('Scanning…','info');
   // Clear any cached data for non-15m/30m timeframes before scanning
   Object.keys(_cache).forEach(function(k){
     var endsWithBadTF=(!k.endsWith('900')&&!k.endsWith('1800')&&!k.endsWith('3600'));
