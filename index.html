@@ -1408,9 +1408,7 @@ function calcSLTP(r,symId){
   const bal=parseFloat(document.getElementById('balance')?.value)||1000;
   const rp=Math.min(parseFloat(document.getElementById('riskPct')?.value)||1,CFG.maxRiskPct);
   const dolR=bal*(rp/100);const units=risk>0?dolR/risk:0;const profit=units*reward;
-  // SWAP: output TP where SL was calculated and SL where TP was calculated
-  const slOut=tp,tpOut=sl;
-  return{dir,entry:price,sl:slOut,tp:tpOut,rr,risk,reward,slSrc:tpSrc,tpSrc:slSrc,conf,gates,
+  return{dir,entry:price,sl,tp,rr,risk,reward,slSrc,tpSrc,conf,gates,
     grade:gradeStr,gradeCol,passCount,srLv,rejRes,
     hasSRConf:g7p&&g8p,lastMSBType:lastMSB?.type||null,
     dolR,units,profit,rp,bal,blocked:false,symType:prof.t,spikeAtr:r.spikeAtr||0,
@@ -1980,6 +1978,8 @@ function sendTestTelegram(){
 // =============================================================
 var TG_TOKEN='';
 var TG_CHAT='';
+// Load from storage immediately
+try{var _st=localStorage.getItem('dn_tg_token');var _sc=localStorage.getItem('dn_tg_chat');if(_st)TG_TOKEN=_st;if(_sc)TG_CHAT=_sc;}catch(e){}
 function saveTelegram(){
   var tok=(document.getElementById('tgToken')?.value||'').trim();
   var chat=(document.getElementById('tgChat')?.value||'').trim();
@@ -2021,7 +2021,9 @@ function sendTelegramScan(t,sym,name,tf,dp){
     if(isBullDir&&htfBull)htfAgreement++;
     if(!isBullDir&&htfBear)htfAgreement++;
   });
-  if(!_freeMode&&htfAgreement<1){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
+  // Only apply HTF filter if we actually have HTF data cached
+  var htfDataAvailable=[3600,14400,86400].some(function(htf){var hc=_cache[sym+htf];return hc&&hc.length>=50;});
+  if(!_freeMode&&htfDataAvailable&&htfAgreement<1){console.log('HTF filter blocked '+sym+' '+tf+' '+t.dir+' ('+htfAgreement+'/3 agree)');return;}
   var key=sym+'_'+tf+'_'+t.dir+'_'+sf(t.entry,dp);
   if(_scanAlertsSent[key])return;
   _scanAlertsSent[key]=true;
@@ -2928,8 +2930,9 @@ function autoScan(){
   _autoScanTimer=setTimeout(function(){autoScan();},AUTO_SCAN_INTERVAL);
   // Run the appropriate scanner based on connection state
   if(isConn&&ws&&ws.readyState===WebSocket.OPEN){
-    // Deriv connected — use live scan
+    // Deriv connected — use live scan + fetch HTF data
     startLiveScan();
+    fetchHTFCache();
   } else {
     // Offline — analyse cached/demo data directly
     autoScanDemo();
@@ -3035,7 +3038,8 @@ function autoScanAnalyse(syms,isMT5){
             }
           }
           // Need at least one prior touch in last 3 bars to confirm level is holding
-          isConfirmed=recentTouches>=1;
+          // Only block if we have enough candle data
+          isConfirmed=recentTouches>=1||cd2.length<20;
           if(!isConfirmed)console.log('[FIRST TOUCH] '+sym+' '+tfL(tf)+' — waiting for confirmation');
         }
         var passesNormal=!_freeMode&&g2&&g7&&t.passCount>=6&&t.rr>=_scanMinRR&&t.conf>=_scanMinConf&&validTF&&isConfirmed;
@@ -3049,6 +3053,42 @@ function autoScanAnalyse(syms,isMT5){
   }
   console.log('[NEXUS] Scan complete — '+fired+' signals fired');
   if(fired===0)console.log('[NEXUS] No ideal setups found this scan');
+}
+
+// Fetch HTF candles for all symbols to power HTF filter
+function fetchHTFCache(){
+  if(!isConn||!ws||ws.readyState!==WebSocket.OPEN)return;
+  var htfTFs=[3600,14400,86400]; // H1, H4, Daily
+  var appId=(document.getElementById('appId')?.value||'').trim()||'129022';
+  var htfWS=new WebSocket('wss://ws.binaryws.com/websockets/v3?app_id='+appId);
+  var queue=[];
+  for(var si=0;si<SCAN_SYMS.length;si++){
+    for(var ti=0;ti<htfTFs.length;ti++){
+      var key=SCAN_SYMS[si].id+htfTFs[ti];
+      if(!_cache[key])queue.push({sym:SCAN_SYMS[si].id,tf:htfTFs[ti]});
+    }
+  }
+  if(!queue.length){htfWS.close();return;}
+  var qi=0;
+  htfWS.onopen=function(){pump();};
+  htfWS.onmessage=function(e){
+    try{
+      var d=JSON.parse(e.data);
+      if(d.msg_type==='candles'&&d.candles){
+        var sym=d.echo_req?.ticks_history||'';
+        var tf=parseInt(d.echo_req?.granularity||3600);
+        _cache[sym+tf]=d.candles.map(function(c){return{time:c.epoch,open:+c.open,high:+c.high,low:+c.low,close:+c.close,volume:100};});
+      }
+      qi++;
+      if(qi>=queue.length){htfWS.close();}else pump();
+    }catch(ex){qi++;if(qi>=queue.length)htfWS.close();else pump();}
+  };
+  htfWS.onerror=function(){htfWS.close();};
+  function pump(){
+    if(qi>=queue.length)return;
+    var item=queue[qi];
+    htfWS.send(JSON.stringify({ticks_history:item.sym,adjust_start_time:1,count:200,end:'latest',granularity:item.tf,style:'candles'}));
+  }
 }
 
 // Apply scan settings from drawer
