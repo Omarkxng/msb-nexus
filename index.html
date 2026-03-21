@@ -325,6 +325,7 @@ body::after{content:'';position:fixed;inset:0;
   <button class="tb-btn" onclick="showKB(true)">?</button>
   <button class="tb-btn" onclick="sendTestTelegram()" title="Send test message to Telegram">📱 TEST</button>
   <button class="tb-btn active" id="modeBtn" onclick="toggleScanMode()" title="Switch scan mode">🎯 NORMAL</button>
+  <button class="tb-btn" id="driftBtn" onclick="toggleDriftMode()" title="Toggle drift exhaustion scan">🌊 DRIFT</button>
   <button class="tb-btn" id="bridgePyBtn" onclick="downloadBridgePy()" title="Download mt5_bridge.py">⬇ MT5.PY</button>
   <div class="price-ticker"><span id="tickP">——</span><span class="price-chg" id="tickC"> +0.00%</span></div>
   <div class="stat-badge s-demo" id="statusBadge" style="margin-left:auto">◉ DEMO</div>
@@ -2467,13 +2468,288 @@ window.addEventListener('load',()=>{
     setTimeout(()=>connectMT5Bridge(),1500);
     // Auto-scan on startup then every 5 minutes
     setTimeout(()=>autoScan(),4000);
+    // Style drift button as active by default
+    var db=document.getElementById('driftBtn');
+    if(db){db.style.background='rgba(0,180,216,.2)';db.style.borderColor='rgba(0,180,216,.6)';db.style.color='var(--cyan)';}
   }));
 });
+
+
+// ═══════════════════════════════════════════════════════════
+// DRIFT EXHAUSTION ENGINE
+// Counter-drift strategy for Drop/Surge/Blueberry indices
+// Step A: Price at major H1 S&R zone
+// Step B: RSI extreme (>85 drops, <15 surges)
+// Step C: First reversal candle after drift
+// ═══════════════════════════════════════════════════════════
+
+// Symbols that support drift exhaustion trading
+const DRIFT_SYMS=[
+  'Drop75','Drop50','Drop25','Drop100',
+  'Surge75','Surge50','Surge25','Surge100',
+  'Blueberry Volatility 75','Blueberry Volatility 50',
+  'Blueberry Volatility 25','Blueberry Volatility 100',
+];
+
+// Map MT5 symbol names to drift type
+function getDriftType(symName){
+  const n=(symName||'').toLowerCase();
+  if(n.includes('drop'))return'drop';
+  if(n.includes('surge'))return'surge';
+  if(n.includes('blueberry')){
+    // Blueberry acts like drop (trending down) or surge (trending up)
+    return'blueberry';
+  }
+  return null;
+}
+
+// Count consecutive candles in same direction
+function countConsecutive(candleArr){
+  if(!candleArr||candleArr.length<2)return{count:0,dir:null};
+  const n=candleArr.length;
+  const last=candleArr[n-1];
+  const isBull=last.close>last.open;
+  let count=1;
+  for(let i=n-2;i>=0;i--){
+    const bull=candleArr[i].close>candleArr[i].open;
+    if(bull===isBull)count++;
+    else break;
+  }
+  return{count,dir:isBull?'bull':'bear',lastCandle:last};
+}
+
+// Check if current candle is first reversal after drift
+function checkDriftReversal(candleArr,driftType){
+  if(!candleArr||candleArr.length<5)return null;
+  const n=candleArr.length;
+  const cur=candleArr[n-1];
+  const prev=candleArr[n-2];
+
+  // Determine expected drift direction
+  // Drop: drifts DOWN (bear candles), reversal = first BULL candle
+  // Surge: drifts UP (bull candles), reversal = first BEAR candle  
+  // Blueberry: detect from context
+  let driftDir,reversalDir;
+  if(driftType==='drop'){driftDir='bear';reversalDir='bull';}
+  else if(driftType==='surge'){driftDir='bull';reversalDir='bear';}
+  else{
+    // Blueberry — detect drift from consecutive candles
+    const cons=countConsecutive(candleArr.slice(0,-1));
+    if(cons.count<5)return null;
+    driftDir=cons.dir;
+    reversalDir=driftDir==='bull'?'bear':'bull';
+  }
+
+  // Count consecutive drift candles before current
+  let driftCount=0;
+  for(let i=n-2;i>=Math.max(0,n-30);i--){
+    const isBull=candleArr[i].close>candleArr[i].open;
+    const isDrift=driftDir==='bull'?isBull:!isBull;
+    if(isDrift)driftCount++;
+    else break;
+  }
+
+  // Need at least 6 consecutive drift candles
+  if(driftCount<6)return null;
+
+  // Check current candle is reversal direction
+  const curBull=cur.close>cur.open;
+  const isReversal=reversalDir==='bull'?curBull:!curBull;
+  if(!isReversal)return null;
+
+  // Reversal candle should be relatively small (exhaustion, not explosion)
+  const curRange=cur.high-cur.low;
+  const avgRange=candleArr.slice(-10,-1).reduce(function(s,c){return s+(c.high-c.low);},0)/9;
+  const isSmall=curRange<=avgRange*1.5; // not too big
+
+  return{
+    driftDir,reversalDir,driftCount,
+    reversalCandle:cur,
+    isSmallCandle:isSmall,
+    strength:Math.min(100,driftCount*8+(isSmall?15:0)),
+  };
+}
+
+// Full drift exhaustion analysis for one symbol
+function analyseDrift(candleArr,h1CandleArr,symId,symName){
+  if(!candleArr||candleArr.length<20)return null;
+  const driftType=getDriftType(symName||symId);
+  if(!driftType)return null;
+
+  const n=candleArr.length;
+  const cl=candleArr.map(function(c){return c.close;});
+  const price=cl[n-1];
+  const atrVal=calcATR(candleArr,14);
+  if(!atrVal)return null;
+
+  // Step B: RSI extreme check
+  const rsi=calcRSI(cl,14);
+  const rsiExtreme=driftType==='drop'?rsi>85:(driftType==='surge'?rsi<15:(rsi>85||rsi<15));
+  if(!rsiExtreme)return null;
+
+  // Step C: Reversal candle check
+  const reversal=checkDriftReversal(candleArr,driftType);
+  if(!reversal)return null;
+
+  // Step A: Price at H1 S&R zone
+  let atSR=false,srLevel=null;
+  if(h1CandleArr&&h1CandleArr.length>=40){
+    const vols=h1CandleArr.map(function(c){return c.volume||100;});
+    const vSMA=sma(vols,50),vSTD=stdev(vols,50);
+    const h1SR=calcSR(h1CandleArr,calcATR(h1CandleArr,14),vols,vSMA,vSTD,[]);
+    for(var si=0;si<h1SR.length;si++){
+      const lv=h1SR[si];
+      if(lv.score<50)continue;
+      const dist=Math.abs(price-lv.price);
+      if(dist<=atrVal*3){atSR=true;srLevel=lv;break;}
+    }
+  }
+
+  // Calculate SL and TP
+  const isLong=reversal.reversalDir==='bull';
+  const sl=isLong?reversal.reversalCandle.low-atrVal*0.5:reversal.reversalCandle.high+atrVal*0.5;
+  const risk=Math.abs(price-sl);
+  if(risk<=0)return null;
+
+  // TP: next S&R level or ATR multiple
+  let tp=isLong?price+risk*2.5:price-risk*2.5;
+  const rr=Math.abs(tp-price)/risk;
+  if(rr<1.8)return null;
+
+  // Confidence score
+  const conf=Math.min(100,Math.round(
+    (rsiExtreme?25:0)+
+    (reversal.isSmallCandle?15:8)+
+    (atSR?25:10)+
+    Math.min(20,reversal.driftCount*2)+
+    (srLevel&&srLevel.hasRoleReversal?10:0)+
+    (srLevel&&srLevel.hasFib?5:0)
+  ));
+
+  if(conf<60)return null;
+
+  return{
+    type:'drift',
+    driftType,
+    dir:isLong?'LONG':'SHORT',
+    entry:price,sl,tp,rr,risk,
+    reward:Math.abs(tp-price),
+    rsi:Math.round(rsi*10)/10,
+    driftCount:reversal.driftCount,
+    isSmallCandle:reversal.isSmallCandle,
+    atSR,srLevel,
+    conf,
+    reversalCandle:reversal.reversalCandle,
+  };
+}
+
+// Run drift scan across all MT5 Drop/Surge/Blueberry symbols
+let _driftAlertsSent={};
+async function runDriftScan(){
+  if(!mt5Connected||!mt5ws||mt5ws.readyState!==WebSocket.OPEN)return;
+  const syms=Object.keys(mt5Symbols);
+  if(!syms.length)return;
+
+  for(var si=0;si<syms.length;si++){
+    const sym=syms[si];
+    const name=mt5Symbols[sym]||sym;
+    const driftType=getDriftType(name);
+    if(!driftType)continue; // skip non-drift symbols
+
+    // Fetch M5 candles for drift detection
+    const key5=sym+300;
+    await new Promise(function(resolve){
+      _mt5ScanCBs[key5]=resolve;
+      reqMT5Candles(sym,300,200); // 200 x M5 candles
+      setTimeout(function(){if(_mt5ScanCBs[key5]){delete _mt5ScanCBs[key5];resolve();}},3000);
+    });
+
+    // Fetch H1 candles for S&R context
+    const key1h=sym+3600;
+    if(!_cache[key1h]){
+      await new Promise(function(resolve){
+        _mt5ScanCBs[key1h]=resolve;
+        reqMT5Candles(sym,3600,100);
+        setTimeout(function(){if(_mt5ScanCBs[key1h]){delete _mt5ScanCBs[key1h];resolve();}},3000);
+      });
+    }
+
+    const m5cd=_cache[key5];
+    const h1cd=_cache[key1h];
+    if(!m5cd||m5cd.length<20)continue;
+
+    try{
+      const result=analyseDrift(m5cd,h1cd,sym,name);
+      if(!result)continue;
+
+      const dp=getDP(sym);
+      const alertKey=sym+'_drift_'+result.dir+'_'+sf(result.entry,dp);
+      if(_driftAlertsSent[alertKey])continue;
+      _driftAlertsSent[alertKey]=true;
+      setTimeout(function(){delete _driftAlertsSent[alertKey];},20*60*1000);
+
+      // Send Telegram
+      sendTelegramDrift(result,sym,name,dp);
+      addAlert('DRIFT: '+name+' '+result.dir+' RSI:'+result.rsi,'mt5');
+      console.log('[DRIFT] '+name+' '+result.dir+' RSI:'+result.rsi+' drift:'+result.driftCount+'c conf:'+result.conf+'%');
+    }catch(e){console.warn('Drift analysis error',sym,e);}
+  }
+}
+
+function sendTelegramDrift(r,sym,name,dp){
+  var ib=r.dir==='LONG';
+  var rsiStatus=r.driftType==='drop'?'EXTREME HIGH (exhaustion)':'EXTREME LOW (exhaustion)';
+  if(r.driftType==='blueberry')rsiStatus=r.rsi>50?'EXTREME HIGH':'EXTREME LOW';
+  var lines=[
+    (ib?'DRIFT LONG SIGNAL':'DRIFT SHORT SIGNAL'),
+    'Counter-Drift Exhaustion Setup',
+    '',
+    'Symbol: '+name+' (M5)',
+    'Direction: '+r.dir,
+    'Confidence: '+r.conf+'%',
+    '',
+    'RSI: '+r.rsi+' — '+rsiStatus,
+    'Drift candles: '+r.driftCount+' consecutive '+(r.driftType==='drop'?'DOWN':'UP'),
+    'Reversal candle: CONFIRMED'+(r.isSmallCandle?' (small — good)':''),
+    (r.atSR?'H1 S&R Zone: CONFIRMED'+(r.srLevel?' @ '+sf(r.srLevel.price,dp)+' score:'+sf(r.srLevel.score,0)+'%':''):'H1 S&R: approaching zone'),
+    '',
+    'Entry:  '+sf(r.entry,dp),
+    'SL:     '+sf(r.sl,dp),
+    'TP:     '+sf(r.tp,dp),
+    'RR:     '+sf(r.rr,2)+':1',
+    '',
+    'Time: '+new Date().toLocaleTimeString()
+  ].filter(function(l){return l!=='';});
+
+  var msg=lines.join('\n');
+  fetch('https://corsproxy.io/?'+encodeURIComponent('https://api.telegram.org/bot'+TG_TOKEN+'/sendMessage'),{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({chat_id:TG_CHAT,text:msg})
+  }).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){addAlert('Drift Telegram sent','mt5');}
+    else{console.warn('Drift TG err',d);}
+  }).catch(function(e){console.warn('Drift TG fetch err',e);});
+}
+
 
 // ═══════════════════════════════════════════════════════════
 // SCAN MODE TOGGLE — NORMAL vs FREE
 // ═══════════════════════════════════════════════════════════
 let _freeMode=false;
+let _driftMode=true; // drift scan runs alongside normal scan by default
+
+function toggleDriftMode(){
+  _driftMode=!_driftMode;
+  var btn=document.getElementById('driftBtn');
+  if(_driftMode){
+    if(btn){btn.textContent='🌊 DRIFT';btn.style.background='rgba(0,180,216,.2)';btn.style.borderColor='rgba(0,180,216,.6)';btn.style.color='var(--cyan)';}
+    addAlert('Drift scan ON — watching Drop/Surge/Blueberry','info');
+  } else {
+    if(btn){btn.textContent='🌊 DRIFT';btn.style.background='';btn.style.borderColor='';btn.style.color='';}
+    addAlert('Drift scan OFF','info');
+  }
+}
 
 function toggleScanMode(){
   _freeMode=!_freeMode;
@@ -2520,6 +2796,8 @@ function autoScan(){
   if(mt5Connected&&mt5ws&&mt5ws.readyState===WebSocket.OPEN){
     // MT5 connected — fetch fresh candles then analyse
     autoScanMT5();
+    // Also run drift exhaustion scan if enabled
+    if(_driftMode)setTimeout(function(){runDriftScan();},5000);
   } else if(isConn&&ws&&ws.readyState===WebSocket.OPEN){
     // Deriv connected — use live scan
     startLiveScan();
