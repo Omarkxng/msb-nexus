@@ -2584,25 +2584,48 @@ function analyseDrift(candleArr,h1CandleArr,symId,symName){
 
   // Step B: RSI extreme check
   const rsi=calcRSI(cl,14);
-  const rsiExtreme=driftType==='drop'?rsi>85:(driftType==='surge'?rsi<15:(rsi>85||rsi<15));
+  const rsiExtreme=driftType==='drop'?rsi>88:(driftType==='surge'?rsi<12:(rsi>88||rsi<12)); // raised threshold for quality
   if(!rsiExtreme)return null;
 
   // Step C: Reversal candle check
   const reversal=checkDriftReversal(candleArr,driftType);
   if(!reversal)return null;
 
-  // Step A: Price at H1 S&R zone
-  let atSR=false,srLevel=null;
-  if(h1CandleArr&&h1CandleArr.length>=40){
-    const vols=h1CandleArr.map(function(c){return c.volume||100;});
-    const vSMA=sma(vols,50),vSTD=stdev(vols,50);
-    const h1SR=calcSR(h1CandleArr,calcATR(h1CandleArr,14),vols,vSMA,vSTD,[]);
-    for(var si=0;si<h1SR.length;si++){
-      const lv=h1SR[si];
-      if(lv.score<50)continue;
-      const dist=Math.abs(price-lv.price);
-      if(dist<=atrVal*3){atSR=true;srLevel=lv;break;}
+  // Step A: Price at HTF S&R zone — check H1, H4 and Daily
+  // Higher TF levels are stronger — weighted accordingly
+  var atSR=false,srLevel=null,srTF='';
+  var htfSets=[
+    {cd:_cache[symId+86400],tf:'Daily',atrMult:5,minScore:55,weight:3},   // Daily — strongest
+    {cd:_cache[symId+14400],tf:'H4',atrMult:4,minScore:50,weight:2},      // H4 — strong
+    {cd:h1CandleArr,tf:'H1',atrMult:3,minScore:45,weight:1},              // H1 — baseline
+  ];
+  // Go through from highest to lowest TF — first match wins
+  for(var hi2=0;hi2<htfSets.length;hi2++){
+    var htf=htfSets[hi2];
+    if(!htf.cd||htf.cd.length<40)continue;
+    // Use more candles (500) to scrape back further in history
+    var htfVols=htf.cd.map(function(c){return c.volume||100;});
+    var htfVSMA=sma(htfVols,Math.min(100,htfVols.length-1));
+    var htfVSTD=stdev(htfVols,Math.min(100,htfVols.length-1));
+    var htfATR=calcATR(htf.cd,14);
+    // Lower srMinTouches temporarily to catch more levels from history
+    var savedMinTouches=CFG.srMinTouches,savedMinScore=CFG.srMinScore;
+    CFG.srMinTouches=2;CFG.srMinScore=htf.minScore;
+    var htfLevels=calcSR(htf.cd,htfATR,htfVols,htfVSMA,htfVSTD,[]);
+    CFG.srMinTouches=savedMinTouches;CFG.srMinScore=savedMinScore;
+    // Sort by score descending — strongest levels first
+    htfLevels.sort(function(a,b){return b.score-a.score;});
+    for(var li=0;li<htfLevels.length;li++){
+      var lv=htfLevels[li];
+      var dist=Math.abs(price-lv.price);
+      if(dist<=atrVal*htf.atrMult){
+        atSR=true;srLevel=lv;srTF=htf.tf;
+        // Bonus score for higher TF
+        lv._tfWeight=htf.weight;
+        break;
+      }
     }
+    if(atSR)break; // found a level, stop looking
   }
 
   // Calculate SL and TP
@@ -2616,21 +2639,28 @@ function analyseDrift(candleArr,h1CandleArr,symId,symName){
   const rr=Math.abs(tp-price)/risk;
   if(rr<1.8)return null;
 
-  // Confidence score
+  // Confidence score — higher TF S&R levels score more
+  var srBonus=0;
+  if(atSR&&srLevel){
+    var tfW=srLevel._tfWeight||1;
+    srBonus=Math.min(35,15*tfW); // Daily=45, H4=30, H1=15
+    if(srLevel.hasRoleReversal)srBonus+=12;
+    if(srLevel.hasBreakRetest)srBonus+=10;
+    if(srLevel.hasFib)srBonus+=6;
+    if(srLevel.rejections>=3)srBonus+=8;
+  }
   const conf=Math.min(100,Math.round(
     (rsiExtreme?25:0)+
     (reversal.isSmallCandle?15:8)+
-    (atSR?25:10)+
-    Math.min(20,reversal.driftCount*2)+
-    (srLevel&&srLevel.hasRoleReversal?10:0)+
-    (srLevel&&srLevel.hasFib?5:0)
+    (atSR?srBonus:8)+
+    Math.min(20,reversal.driftCount*2)
   ));
 
   if(conf<60)return null;
 
   return{
     type:'drift',
-    driftType,
+    driftType,srTF:srTF||'',
     dir:isLong?'LONG':'SHORT',
     entry:price,sl,tp,rr,risk,
     reward:Math.abs(tp-price),
@@ -2664,18 +2694,25 @@ async function runDriftScan(){
       setTimeout(function(){if(_mt5ScanCBs[key5]){delete _mt5ScanCBs[key5];resolve();}},3000);
     });
 
-    // Fetch H1 candles for S&R context
-    const key1h=sym+3600;
-    if(!_cache[key1h]){
-      await new Promise(function(resolve){
-        _mt5ScanCBs[key1h]=resolve;
-        reqMT5Candles(sym,3600,100);
-        setTimeout(function(){if(_mt5ScanCBs[key1h]){delete _mt5ScanCBs[key1h];resolve();}},3000);
-      });
+    // Fetch H1, H4 and Daily candles for S&R context — scrape back 500 candles
+    const htfFetches=[
+      {key:sym+3600, tf:3600, count:500},   // H1 — 500 candles = ~20 days
+      {key:sym+14400, tf:14400, count:500},  // H4 — 500 candles = ~83 days
+      {key:sym+86400, tf:86400, count:500},  // Daily — 500 candles = ~2 years
+    ];
+    for(var fi=0;fi<htfFetches.length;fi++){
+      var hf=htfFetches[fi];
+      if(!_cache[hf.key]){
+        await new Promise(function(resolve){
+          _mt5ScanCBs[hf.key]=resolve;
+          reqMT5Candles(sym,hf.tf,hf.count);
+          setTimeout(function(){if(_mt5ScanCBs[hf.key]){delete _mt5ScanCBs[hf.key];resolve();}},3000);
+        });
+      }
     }
 
     const m5cd=_cache[key5];
-    const h1cd=_cache[key1h];
+    const h1cd=_cache[sym+3600];
     if(!m5cd||m5cd.length<20)continue;
 
     try{
@@ -2711,7 +2748,7 @@ function sendTelegramDrift(r,sym,name,dp){
     'RSI: '+r.rsi+' — '+rsiStatus,
     'Drift candles: '+r.driftCount+' consecutive '+(r.driftType==='drop'?'DOWN':'UP'),
     'Reversal candle: CONFIRMED'+(r.isSmallCandle?' (small — good)':''),
-    (r.atSR?'H1 S&R Zone: CONFIRMED'+(r.srLevel?' @ '+sf(r.srLevel.price,dp)+' score:'+sf(r.srLevel.score,0)+'%':''):'H1 S&R: approaching zone'),
+    (r.atSR?((r.srTF||'H1')+' S&R Zone: CONFIRMED @ '+sf(r.srLevel.price,dp)+' | Score: '+sf(r.srLevel.score,0)+'%'+(r.srLevel.rejections?' | '+r.srLevel.rejections+'x rejected':'')+(r.srLevel.hasRoleReversal?' | ROLE REVERSAL':'')+(r.srLevel.hasBreakRetest?' | B&R RETEST':'')):'No HTF S&R zone nearby — weaker setup'),
     '',
     'Entry:  '+sf(r.entry,dp),
     'SL:     '+sf(r.sl,dp),
