@@ -2260,15 +2260,48 @@ function sendTelegramScan(t,sym,name,tf,dp){
     fibLine='Fibonacci: '+(t.srLv.fibLevel===0.5?'50%':t.srLv.fibLevel===0.618?'61.8%':Math.round(t.srLv.fibLevel*100)+'%')+' retracement';
   }
   var srDetails='';
-  if(t.srLv){
+  // Find the highest TF S&R level near entry price
+  var bestSRTF='';
+  var bestSRLv=null;
+  var srPrice=t.entry;
+  var srAtr=t.risk||50;
+  var htfSRSets=[
+    {key:sym+86400,label:'Daily'},
+    {key:sym+14400,label:'H4'},
+    {key:sym+3600,label:'H1'},
+  ];
+  for(var hsi=0;hsi<htfSRSets.length;hsi++){
+    var hss=htfSRSets[hsi];
+    var hcd=_cache[hss.key];
+    if(!hcd||hcd.length<40)continue;
+    var hvols=hcd.map(function(c){return c.volume||100;});
+    var hvSMA=sma(hvols,Math.min(50,hvols.length-1));
+    var hvSTD=stdev(hvols,Math.min(50,hvols.length-1));
+    var hatr=calcATR(hcd,14);
+    var savedMin=CFG.srMinTouches,savedScore=CFG.srMinScore;
+    CFG.srMinTouches=2;CFG.srMinScore=45;
+    var hlevels=calcSR(hcd,hatr,hvols,hvSMA,hvSTD,[]);
+    CFG.srMinTouches=savedMin;CFG.srMinScore=savedScore;
+    hlevels.sort(function(a,b){return b.score-a.score;});
+    for(var hli=0;hli<hlevels.length;hli++){
+      var hlv=hlevels[hli];
+      if(Math.abs(srPrice-hlv.price)<=srAtr*4){
+        bestSRLv=hlv;bestSRTF=hss.label;break;
+      }
+    }
+    if(bestSRLv)break;
+  }
+  // Fall back to signal's own SR level if no HTF found
+  if(!bestSRLv&&t.srLv){bestSRLv=t.srLv;bestSRTF=tf;}
+  if(bestSRLv){
     var extras=[];
-    if(t.srLv.hasRoleReversal)extras.push('Role Reversal');
-    if(t.srLv.hasBreakRetest)extras.push('Break+Retest');
-    if(t.srLv.hasFib)extras.push('Fib '+(t.srLv.fibLevel===0.5?'50%':t.srLv.fibLevel===0.618?'61.8%':Math.round(t.srLv.fibLevel*100)+'%'));
-    if(t.srLv.hasOB)extras.push('OB Zone');
-    srDetails=(t.srLv.isRes?'Resistance':'Support')+': '+sf(t.srLv.price,dp)
-      +' | Score: '+sf(t.srLv.score,0)+'%'
-      +' | '+t.srLv.rejections+'x rejected'
+    if(bestSRLv.hasRoleReversal)extras.push('Role Reversal');
+    if(bestSRLv.hasBreakRetest)extras.push('Break+Retest');
+    if(bestSRLv.hasFib)extras.push('Fib '+(bestSRLv.fibLevel===0.5?'50%':bestSRLv.fibLevel===0.618?'61.8%':Math.round((bestSRLv.fibLevel||0)*100)+'%'));
+    if(bestSRLv.hasOB)extras.push('OB Zone');
+    srDetails=bestSRTF+' '+(bestSRLv.isRes?'Resistance':'Support')+': '+sf(bestSRLv.price,dp)
+      +' | Score: '+sf(bestSRLv.score,0)+'%'
+      +' | '+bestSRLv.rejections+'x rejected'
       +(extras.length?' | '+extras.join(', '):'');
   }
   var lines=[
