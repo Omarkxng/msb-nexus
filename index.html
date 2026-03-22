@@ -4402,19 +4402,26 @@ function buildTGMsg(t, sym, tf) {
   const gr   = conf >= 80 ? '\u2B50\u2B50\u2B50 A+' : conf >= 70 ? '\u2B50\u2B50 A ' : conf >= 60 ? '\u2B50 B' : 'C';
   const zone = t.insideOB ? '\uD83D\uDCE6 Inside OB' : (t.atSRLevel ? '\uD83D\uDCCA At S/R' : '\uD83D\uDD0D Approaching');
   const mtf  = (t.components && t.components.ob && t.components.ob.mtfStack) ? '\n\u229E <b>MTF 4H OB STACK</b>' : '';
+  const isBull = t.dir === 'LONG';
+  const risk = Math.abs(t.entry - t.sl);
+  const tp1  = isBull ? t.entry + risk * 1.0 : t.entry - risk * 1.0;
+  const tp2  = t.tp;
+  const tp3  = isBull ? t.entry + risk * (t.rr * 1.5) : t.entry - risk * (t.rr * 1.5);
   return '<b>\uD83C\uDFAF ' + sym + ' ' + tfLabel(tf) + '</b>  ' + dir + '\n' +
     gr + '  Conf: <b>' + conf + '%</b>  RR: <b>' + sf(t.rr,2) + ':1</b>\n' +
     '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
     '\uD83D\uDCCD Entry: <b>' + sf(t.entry,dp) + '</b>\n' +
     '\uD83D\uDED1 SL:    <b>' + sf(t.sl,dp) + '</b>  <i>(' + (t.slSources||[]).join('+') + ')</i>\n' +
-    '\u2705 TP:    <b>' + sf(t.tp,dp) + '</b>  <i>(' + (t.tpSources||[]).join('+') + ')</i>\n' +
+    '\u2705 TP1:   <b>' + sf(tp1,dp) + '</b>  <i>(1:1 — close 33%)</i>\n' +
+    '\u2705 TP2:   <b>' + sf(tp2,dp) + '</b>  <i>(' + sf(t.rr,1) + ':1 — close 50%)</i>\n' +
+    '\u2705 TP3:   <b>' + sf(tp3,dp) + '</b>  <i>(EXT — trail rest)</i>\n' +
     zone + mtf + '\n' +
-    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
-    '<i>\u26A0\uFE0F Not financial advice.</i>';
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
 }
 
 function maybeSendTG(t, sym, tf) {
   if (!t || t.blocked || !_tgEnabled) return;
+  if (!isConnected) return; // never send on demo data
   const key = sym + tf + t.dir;
   const now = Date.now();
   if (_tgLastSent[key] && now - _tgLastSent[key] < TG_COOLDOWN) return;
@@ -4502,7 +4509,7 @@ function _runCScanWorker() {
 }
 
 function testTG() {
-  const msg = '✅ <b>MSB·OB·FS ULTRA v36 — TEST</b>\n\nTelegram alerts working!\n⏰ ' + new Date().toLocaleTimeString() + '\n\n⚠️ Not financial advice.';
+  const msg = '✅ <b>MSB·OB·FS ULTRA v36 — TEST</b>\n\nTelegram alerts working!\n⏰ ' + new Date().toLocaleTimeString();
   sendTG(msg);
   addAlert('TG test sent — check Telegram', 'bull');
 }
