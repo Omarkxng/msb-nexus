@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MSB · OB · FUTURE SWING — ULTRA v36</title>
+<title>MSB · OB · FUTURE SWING — ULTRA v36.5</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -642,7 +642,7 @@ body::after {
 
   <!-- TOPBAR -->
   <div id="topbar">
-    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36</span></div>
+    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36.3</span></div>
     <div class="tb-controls">
       <select class="tb-select" id="symbolSelect" onchange="onSymbolChange(this.value)">
         <option value="R_10">Volatility 10</option>
@@ -726,6 +726,11 @@ body::after {
       <div class="stat-row"><span class="stat-label">ATR %</span><span class="stat-val" id="atrPct">—</span></div>
       <div class="stat-row"><span class="stat-label">RSI (14)</span><span class="stat-val" id="rsiDisplay">—</span></div>
       <div class="stat-row"><span class="stat-label">EMA 20/50/200</span><span class="stat-val" id="emaTrend">—</span></div>
+      <div class="stat-row"><span class="stat-label">Trend Lines</span><span class="stat-val" id="trendLineCount">0</span></div>
+      <div class="stat-row"><span class="stat-label">TL Zone</span><span class="stat-val" id="trendLineZone">--</span></div>
+      <div class="stat-row"><span class="stat-label">Candle Pattern</span><span class="stat-val" id="candlePatternName">—</span></div>
+      <div class="stat-row"><span class="stat-label">Pattern Grade</span><span class="stat-val" id="candlePatternGrade">—</span></div>
+      <div class="stat-row"><span class="stat-label">Spike Events</span><span class="stat-val warn" id="spikeEventCount">0</span></div>
       <div class="stat-row"><span class="stat-label">Liq Sweeps</span><span class="stat-val" id="sweepCount">0</span></div>
       <div class="stat-row"><span class="stat-label">Active FVGs</span><span class="stat-val" id="fvgCount">—</span></div>
     </div>
@@ -789,6 +794,7 @@ body::after {
       <button class="ov-btn on-bull" id="ov-ema"     onclick="toggleOverlay('ema')">EMA 20/50/200</button>
       <button class="ov-btn on"      id="ov-sltp"    onclick="toggleOverlay('sltp')">SL/TP LINES</button>
       <button class="ov-btn on-bull" id="ov-sr"      onclick="toggleOverlay('sr')">S/R LEVELS</button>
+      <button class="ov-btn on-bull" id="ov-tl"      onclick="toggleOverlay('tl')">TREND LINES</button>
       <button class="ov-btn"         id="ov-session" onclick="toggleOverlay('session')">SESSIONS</button>
       <button class="ov-btn"         id="ov-vol"     onclick="toggleOverlay('vol')">VOLUME</button>
       <button class="ov-btn"         id="ov-sweep"   onclick="toggleOverlay('sweep')">LIQ SWEEPS</button>
@@ -826,6 +832,7 @@ body::after {
         <button class="scan-sort-btn"        id="filter1m"     onclick="setScanTFFilter(60)">1m</button>
         <button class="scan-sort-btn"        id="filter5m"     onclick="setScanTFFilter(300)">5m</button>
         <button class="scan-sort-btn"        id="filter15m"    onclick="setScanTFFilter(900)">15m</button>
+        <button class="scan-sort-btn"        id="filter30m"    onclick="setScanTFFilter(1800)">30m</button>
         <button class="scan-sort-btn"        id="filter1h"     onclick="setScanTFFilter(3600)">1h</button>
       </div>
       <div class="scanner-body" id="scannerBody">
@@ -1221,7 +1228,34 @@ window.LightweightCharts = (function() {
     }
 
 
-    // ── S/R Level Bands ──
+        // -- Trend Lines --
+    if (typeof OV !== 'undefined' && OV.tl && typeof analysisResult !== 'undefined' && analysisResult.trendLines) {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, PT-2, chartW, H-PT-PB+4); ctx.clip();
+      for (const tl of analysisResult.trendLines) {
+        const _tlcol = tl.isSupport ? '#00e5a0' : '#ff3d5a';
+        ctx.strokeStyle = _tlcol + (tl.touches >= 3 ? 'cc' : '77');
+        ctx.lineWidth   = tl.touches >= 3 ? 1.5 : 1;
+        ctx.setLineDash([6, 3]);
+        ctx.beginPath();
+        ctx.moveTo(0,      py(tl.slope * start + tl.intcp, lo, hi, H, PT, PB));
+        ctx.lineTo(chartW, py(tl.slope * end   + tl.intcp, lo, hi, H, PT, PB));
+        ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = _tlcol + '99';
+        for (const idx of (tl.touchIdxs || [])) {
+          if (idx < start || idx >= end) continue;
+          const _tx = (idx - start) * b + b / 2;
+          ctx.beginPath(); ctx.arc(Math.round(_tx), Math.round(py(tl.slope*idx+tl.intcp,lo,hi,H,PT,PB)), 3, 0, Math.PI*2); ctx.fill();
+        }
+        const _ly = py(tl.currentY, lo, hi, H, PT, PB);
+        if (_ly > PT && _ly < H - PB) {
+          ctx.fillStyle = _tlcol+'dd'; ctx.font='7px monospace'; ctx.textAlign='right';
+          ctx.fillText((tl.isSupport?'TLS':'TLR')+'x'+tl.touches, chartW-2, _ly-2);
+        }
+      }
+      ctx.restore();
+    }
+
+// ── S/R Level Bands ──
     if (typeof OV !== 'undefined' && OV.sr && typeof analysisResult !== 'undefined' && analysisResult.srLevels) {
       ctx.save(); ctx.beginPath(); ctx.rect(0, PT - 2, chartW, H - PT - PB + 4); ctx.clip();
       const srBandH = (typeof analysisResult.atr !== 'undefined') ? analysisResult.atr * 0.5 : 0;
@@ -1251,6 +1285,46 @@ window.LightweightCharts = (function() {
       ctx.restore();
     }
 
+
+    // ── Spike-and-Continue markers ──
+    if (typeof analysisResult !== 'undefined' && analysisResult.recentSpikeEvents) {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, PT-2, chartW, H-PT-PB+4); ctx.clip();
+      for (const spk of analysisResult.recentSpikeEvents) {
+        if (spk.idx < start || spk.idx >= end) continue;
+        const _scx = (spk.idx - start) * b + b / 2;
+        const _isBullSpk = spk.dir === 'bull';
+        const _slvl = _isBullSpk ? spk.spikeLow : spk.spikeHigh;
+        const _ySlvl = py(_slvl, lo, hi, H, PT, PB);
+        ctx.strokeStyle = '#ffa500aa'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+        ctx.beginPath(); ctx.moveTo(Math.max(0,_scx-b*2),_ySlvl); ctx.lineTo(Math.min(chartW,_scx+b*8),_ySlvl); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = '#ffa500'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'center';
+        const _label = '\u26a1' + (_isBullSpk ? '\u25b2' : '\u25bc');
+        ctx.fillText(_label, Math.round(_scx), _isBullSpk ? _ySlvl+14 : _ySlvl-6);
+      }
+      ctx.restore();
+    }
+
+    // ── Candle Pattern labels ──
+    if (typeof analysisResult !== 'undefined' && analysisResult.candlePatterns) {
+      ctx.save(); ctx.beginPath(); ctx.rect(0, PT-2, chartW, H-PT-PB+4); ctx.clip();
+      for (const pat of analysisResult.candlePatterns) {
+        if (pat.idx < start || pat.idx >= end || pat.strength < 2) continue;
+        const _pcx = (pat.idx - start) * b + b / 2;
+        const _pc  = state.candles[pat.idx];
+        if (!_pc) continue;
+        const _pBull = pat.dir === 'bull';
+        const _pCol  = _pBull ? '#00e5a0' : pat.dir === 'bear' ? '#ff3d5a' : '#ffa500';
+        const _pY    = py(_pBull ? _pc.low : _pc.high, lo, hi, H, PT, PB) + (_pBull ? 16 : -8);
+        ctx.fillStyle = _pCol + 'dd';
+        ctx.font = 'bold ' + (pat.strength >= 3 ? '8' : '7') + 'px monospace';
+        ctx.textAlign = 'center';
+        // Short label
+        const _lbl = pat.name.length > 8 ? pat.name.slice(0,8) : pat.name;
+        ctx.fillText((_pBull ? '▲ ' : '▼ ') + _lbl, Math.round(_pcx), Math.round(_pY));
+      }
+      ctx.restore();
+    }
 
     // ── Spike bar highlights ──
     if (typeof analysisResult !== 'undefined' && analysisResult.spikeFlags) {
@@ -1486,8 +1560,8 @@ window.LightweightCharts = (function() {
 const TG_TOKEN  = '8775780390:AAH4PEqvN6hOHyaCsogQ8fLx6UrKH5_CNGE';
 const TG_CHATID = '6369265351';
 let _tgEnabled  = true;
-const _tgLastSent = {}; // debounce: key=sym+tf+dir -> timestamp
-const TG_COOLDOWN = 5 * 60 * 1000; // 5 min per setup
+const _tgLastSent = {}; // debounce: key=sym+tf+dir+entry -> timestamp
+const TG_COOLDOWN = 2 * 60 * 60 * 1000; // 2 hours per unique setup
 
 // ── HEIKIN-ASHI ───────────────────────────────────────────
 let _haEnabled = false;
@@ -1565,20 +1639,20 @@ function getSymbolProfile(sym) {
     // ── Boom indices ─────────────────────────────────────────
     // Boom trends UP with sudden DOWN spikes. Only trade LONG (with trend).
     // Short positions get destroyed by the uptrend between spikes.
-    BOOM1000: { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull' },
-    BOOM500:  { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull' },
-    BOOM300:  { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull' },
+    BOOM1000: { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull', waitSpike: true },
+    BOOM500:  { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull', waitSpike: true },
+    BOOM300:  { type:'boom', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bull', waitSpike: true },
     // ── Crash indices ────────────────────────────────────────
     // Crash trends DOWN with sudden UP spikes. Only trade SHORT (with trend).
-    CRASH1000: { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear' },
-    CRASH500:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear' },
-    CRASH300:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear' },
+    CRASH1000: { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
+    CRASH500:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPick:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
+    CRASH300:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
     // ── Volatility indices ───────────────────────────────────
     R_10:  { type:'vol', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.04,maxSlPct:0.8,  entryFilter:'normal', trendBias: null },
     R_25:  { type:'vol', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.06,maxSlPct:0.9,  entryFilter:'normal', trendBias: null },
-    R_50:  { type:'vol', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.08,maxSlPct:1.0,  entryFilter:'normal', trendBias: null },
-    R_75:  { type:'vol', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.3, minSlPct:0.1, maxSlPct:1.0,  entryFilter:'normal', trendBias: null },
-    R_100: { type:'vol', slAtrMult:1.3, tpAtrMult:2.3, spikeGuard:0.3, minSlPct:0.12,maxSlPct:1.2,  entryFilter:'normal', trendBias: null },
+    R_50:  { type:'vol', slAtrMult:1.8, tpAtrMult:2.8, spikeGuard:0.5, minSlPct:0.10,maxSlPct:1.2,  entryFilter:'normal', trendBias: null, waitSpike: true },
+    R_75:  { type:'vol', slAtrMult:2.0, tpAtrMult:3.0, spikeGuard:0.8, minSlPct:0.15,maxSlPct:1.5,  entryFilter:'normal', trendBias: null, waitSpike: true },
+    R_100: { type:'vol', slAtrMult:2.0, tpAtrMult:3.0, spikeGuard:0.8, minSlPct:0.15,maxSlPct:1.5,  entryFilter:'normal', trendBias: null, waitSpike: true },
     // ── 1-second Volatility ──────────────────────────────────
     '1HZ10V':  { type:'vol1s', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.5, minSlPct:0.06,maxSlPct:2.0, entryFilter:'normal', trendBias: null },
     '1HZ100V': { type:'vol1s', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.15,maxSlPct:3.0, entryFilter:'normal', trendBias: null },
@@ -1595,7 +1669,7 @@ function getSymbolVolScale(sym) {
 }
 
 // ── OVERLAY VISIBILITY STATE ──────────────────────────────────
-const OV = { ob: true, fvg: true, msb: true, ema: true, sltp: true, sr: true, session: false, vol: false, sweep: false };
+const OV = { ob: true, fvg: true, msb: true, ema: true, sltp: true, sr: true, tl: true, session: false, vol: false, sweep: false };
 
 function toggleOverlay(key) {
   OV[key] = !OV[key];
@@ -1605,7 +1679,7 @@ function toggleOverlay(key) {
                   btn.classList.contains('on-warn') || btn.classList.contains('on-bear');
     btn.classList.remove('on','on-bull','on-bear','on-warn');
     if (!wasOn) {
-      const clsMap = { ob:'on', fvg:'on-warn', msb:'on', ema:'on-bull', sltp:'on', sr:'on-bull', session:'on', vol:'on', sweep:'on-warn' };
+      const clsMap = { ob:'on', fvg:'on-warn', msb:'on', ema:'on-bull', sltp:'on', sr:'on-bull', tl:'on-bull', session:'on', vol:'on', sweep:'on-warn' };
       btn.classList.add(clsMap[key] || 'on');
     }
   }
@@ -1667,6 +1741,21 @@ function toggleConnect() {
 let _wsSubscriptionId = null;
 let _wsReconnectTimer = null;
 let _wsConnectTimeout = null;
+
+// ── Confirmation TF (lower TF candle close check) ─────────────
+// Chart TF → Confirmation TF mapping:
+//   M1/M2        → M1 (same, no lower)
+//   M5/M15/M30   → M1
+//   1H/4H/1D     → M5
+let _confSubId   = null;   // WS subscription ID for conf TF
+let _confCandles = [];     // rolling buffer of last 10 conf TF bars
+let _confTF      = 60;     // actual confirmation TF granularity in seconds
+
+function getConfTF(chartTF) {
+  if (chartTF <= 60)   return 60;   // M1 chart → still M1
+  if (chartTF <= 1800) return 60;   // M5/M15/M30 → M1
+  return 300;                        // 1H/4H/1D → M5
+}
 
 function connectDeriv() {
   // Clean up any existing connection first
@@ -1757,6 +1846,7 @@ function disconnect() {
   if (ws) { try { ws.close(); } catch(e){} ws = null; }
   if (_liveScanWS) { try { _liveScanWS.close(); } catch(e){} _liveScanWS = null; }
   clearTimeout(_liveScanInterval); _liveScanInterval = null;
+  _confSubId = null; _confCandles = [];
   setStatus('demo', '◉ DEMO MODE');
   document.getElementById('connectBtn').textContent = 'CONNECT';
 }
@@ -1780,6 +1870,25 @@ function requestCandles() {
     style: 'candles',
     subscribe: 1,
   }));
+
+  // ── Subscribe to lower TF for candle close confirmation ───
+  _confTF = getConfTF(currentTF);
+  if (_confTF !== currentTF) {
+    if (_confSubId) {
+      try { ws.send(JSON.stringify({ forget: _confSubId })); } catch(e) {}
+      _confSubId = null;
+    }
+    _confCandles = [];
+    ws.send(JSON.stringify({
+      ticks_history: currentSymbol,
+      adjust_start_time: 1,
+      count: 20,
+      end: 'latest',
+      granularity: _confTF,
+      style: 'candles',
+      subscribe: 1,
+    }));
+  }
 }
 
 function handleWSMessage(data) {
@@ -1789,6 +1898,18 @@ function handleWSMessage(data) {
     return;
   }
   if (data.msg_type === 'candles') {
+    const reqGran = data.echo_req ? parseInt(data.echo_req.granularity) : currentTF;
+    // ── Confirmation TF feed ────────────────────────────────
+    if (reqGran === _confTF && _confTF !== currentTF) {
+      if (data.subscription) _confSubId = data.subscription.id;
+      _confCandles = data.candles.map(c => ({
+        time: c.epoch,
+        open: parseFloat(c.open), high: parseFloat(c.high),
+        low: parseFloat(c.low),   close: parseFloat(c.close),
+      }));
+      return; // don't process as main chart candles
+    }
+    // ── Main chart TF feed ──────────────────────────────────
     // Save subscription ID so we can forget it cleanly when switching symbol/tf
     if (data.subscription) _wsSubscriptionId = data.subscription.id;
     candles = data.candles.map(c => ({
@@ -1803,6 +1924,22 @@ function handleWSMessage(data) {
   }
   if (data.msg_type === 'ohlc') {
     const o = data.ohlc;
+    // ── Route to conf TF buffer if this is the lower TF feed ─
+    if (_confTF !== currentTF && parseInt(o.granularity) === _confTF) {
+      const barTime = parseInt(o.open_time);
+      const bar = {
+        time: barTime,
+        open: parseFloat(o.open), high: parseFloat(o.high),
+        low: parseFloat(o.low),   close: parseFloat(o.close),
+      };
+      if (_confCandles.length && _confCandles[_confCandles.length - 1].time === barTime) {
+        _confCandles[_confCandles.length - 1] = bar; // update forming bar
+      } else {
+        _confCandles.push(bar); // new bar
+        if (_confCandles.length > 20) _confCandles.shift(); // keep buffer small
+      }
+      return;
+    }
     const barTime = parseInt(o.open_time);
     const bar = {
       time:   barTime,
@@ -2154,15 +2291,27 @@ function analyseCandles(candleArr, symId) {
   const atrPct = closes[n-1] > 0 ? (atr / closes[n-1]) * 100 : 0;
 
 
-  // ── Spike Filter (Jump/Boom/Crash protection) ─────────────
-  // A bar is a spike if its range > 3× the 20-bar average range.
-  // Spike bars are excluded from MSB and OB detection.
+  // ── Spike Filter + Spike-and-Continue detection ──────────
   const barRanges = candleArr.map(c => c.high - c.low);
   const spikeFlags = barRanges.map((r, i) => {
     if (i < 20) return false;
     const avgRange = barRanges.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;
     return r > avgRange * 3.0;
   });
+  // Spike-and-continue: spike bar followed by close opposite to spike wick
+  const spikeEvents = [];
+  for (let i = 1; i < n - 1; i++) {
+    if (!spikeFlags[i]) continue;
+    const _sc = candleArr[i], _sn = candleArr[i + 1];
+    if (!_sn) continue;
+    const _tw = _sc.high - Math.max(_sc.open, _sc.close);
+    const _bw = Math.min(_sc.open, _sc.close) - _sc.low;
+    const _spikeDown = _bw > _tw * 1.5 && _sn.close > _sn.open;
+    const _spikeUp   = _tw > _bw * 1.5 && _sn.close < _sn.open;
+    if (_spikeDown) spikeEvents.push({ idx:i, dir:'bull', spikeLow:_sc.low, spikeHigh:_sc.high, ageBars:n-1-i, barTime:_sc.time });
+    if (_spikeUp)   spikeEvents.push({ idx:i, dir:'bear', spikeLow:_sc.low, spikeHigh:_sc.high, ageBars:n-1-i, barTime:_sc.time });
+  }
+  const recentSpikeEvents = spikeEvents.filter(s => s.ageBars <= 20);
 
   // Pivot Detection
   const pLen = CFG.pivotLen;
@@ -2493,6 +2642,9 @@ function analyseCandles(candleArr, symId) {
     srLevels, srSupport, srResistance, nearestSup, nearestRes, srZone,
     spikeFlags,
     spikeCount: spikeFlags.filter(Boolean).length,
+    spikeEvents, recentSpikeEvents,
+    candlePatterns: detectCandlePatterns(candleArr),
+    trendLines: calcTrendLines(candleArr, pivotHighs, pivotLows, atr),
   };
 }
 
@@ -2545,6 +2697,175 @@ function runAnalysis(barClose = false) {
 // ═══════════════════════════════════════════════════════════════
 // DASHBOARD UPDATE
 // ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// CANDLE PATTERN ENGINE
+// Returns array of { name, dir:'bull'|'bear'|'neutral', strength:1-3, idx }
+// ═══════════════════════════════════════════════════════════════
+
+// ═══════════════════════════════════════════════════════════════
+// TREND LINE ENGINE
+// ═══════════════════════════════════════════════════════════════
+function calcTrendLines(candleArr, pivotHighs, pivotLows, atr) {
+  if (!candleArr || candleArr.length < 20) return [];
+  const n = candleArr.length;
+  const tol = atr * 0.4;
+  const lines = [];
+  function fitLine(pivots, isSupport) {
+    for (let ai = 0; ai < pivots.length - 1; ai++) {
+      for (let bi = ai + 1; bi < pivots.length; bi++) {
+        const p1 = pivots[ai], p2 = pivots[bi];
+        if (p2.idx - p1.idx < 5) continue;
+        const slope = (p2.val - p1.val) / (p2.idx - p1.idx);
+        const intcp = p1.val - slope * p1.idx;
+        const anglePct = Math.abs(slope) / (p1.val || 1) * 100;
+        if (anglePct < 0.002 || anglePct > 0.5) continue;
+        if (isSupport  && slope < -0.0001) continue;
+        if (!isSupport && slope >  0.0001) continue;
+        const touchPivots = pivots.filter(p => Math.abs(p.val - (slope * p.idx + intcp)) <= tol);
+        if (touchPivots.length < 2) continue;
+        const currentY  = slope * (n - 1) + intcp;
+        const lastPrice = candleArr[n - 1].close;
+        if (Math.abs(currentY - lastPrice) > lastPrice * 0.08) continue;
+        const mostRecent = Math.max(...touchPivots.map(p => p.idx));
+        const ageBars    = n - 1 - mostRecent;
+        lines.push({ slope, intcp, currentY, isSupport, ageBars,
+          touches: touchPivots.length, touchIdxs: touchPivots.map(p => p.idx),
+          score: touchPivots.length * 20 + Math.max(0, 30 - ageBars) });
+      }
+    }
+  }
+  fitLine(pivotLows.filter(p => p.idx >= n - 80), true);
+  fitLine(pivotHighs.filter(p => p.idx >= n - 80), false);
+  const deduped = [];
+  for (const ln of lines.sort((a,b) => b.score - a.score)) {
+    const dup = deduped.some(d => d.isSupport === ln.isSupport &&
+      Math.abs(d.currentY - ln.currentY) < atr * 1.5 && Math.abs(d.slope - ln.slope) < 0.001);
+    if (!dup) deduped.push(ln);
+    if (deduped.length >= 6) break;
+  }
+  return deduped;
+}
+
+function detectCandlePatterns(candleArr) {
+  if (!candleArr || candleArr.length < 5) return [];
+  const n   = candleArr.length;
+  const pats = [];
+
+  function c(i)    { return candleArr[n - 1 - i]; }   // 0=current,1=prev,...
+  function body(i) { return Math.abs(c(i).close - c(i).open); }
+  function range(i){ return c(i).high - c(i).low; }
+  function bull(i) { return c(i).close > c(i).open; }
+  function topWick(i) { return c(i).high - Math.max(c(i).open, c(i).close); }
+  function botWick(i) { return Math.min(c(i).open, c(i).close) - c(i).low; }
+  function isStar(i)  { return body(i) <= range(i) * 0.1; }  // doji-like
+
+  const add = (name, dir, strength, i) =>
+    pats.push({ name, dir, strength, idx: n - 1 - i, barTime: c(i).time });
+
+  // ── 1. Bullish Engulfing ──────────────────────────────────
+  if (!bull(1) && bull(0) && c(0).open < c(1).close && c(0).close > c(1).open
+      && body(0) > body(1) * 1.2)
+    add('Engulfing', 'bull', 3, 0);
+
+  // ── 2. Bearish Engulfing ──────────────────────────────────
+  if (bull(1) && !bull(0) && c(0).open > c(1).close && c(0).close < c(1).open
+      && body(0) > body(1) * 1.2)
+    add('Engulfing', 'bear', 3, 0);
+
+  // ── 3. Hammer (bull reversal at bottom) ──────────────────
+  if (botWick(0) >= body(0) * 2.0 && topWick(0) <= body(0) * 0.5 && range(0) > 0)
+    add('Hammer', 'bull', 2, 0);
+
+  // ── 4. Shooting Star (bear reversal at top) ──────────────
+  if (topWick(0) >= body(0) * 2.0 && botWick(0) <= body(0) * 0.5 && range(0) > 0)
+    add('Shooting Star', 'bear', 2, 0);
+
+  // ── 5. Inverted Hammer (bull — after downtrend) ──────────
+  if (!bull(1) && topWick(0) >= body(0) * 2.0 && botWick(0) <= body(0) * 0.5)
+    add('Inverted Hammer', 'bull', 2, 0);
+
+  // ── 6. Hanging Man (bear — after uptrend) ────────────────
+  if (bull(1) && botWick(0) >= body(0) * 2.0 && topWick(0) <= body(0) * 0.5)
+    add('Hanging Man', 'bear', 2, 0);
+
+  // ── 7. Doji (indecision) ─────────────────────────────────
+  if (body(0) <= range(0) * 0.08 && range(0) > 0)
+    add('Doji', 'neutral', 1, 0);
+
+  // ── 8. Bullish Harami ────────────────────────────────────
+  if (!bull(1) && bull(0) && c(0).open > c(1).close && c(0).close < c(1).open
+      && body(0) < body(1) * 0.5)
+    add('Harami', 'bull', 2, 0);
+
+  // ── 9. Bearish Harami ────────────────────────────────────
+  if (bull(1) && !bull(0) && c(0).open < c(1).close && c(0).close > c(1).open
+      && body(0) < body(1) * 0.5)
+    add('Harami', 'bear', 2, 0);
+
+  // ── 10. Tweezer Bottom (bull) ────────────────────────────
+  if (!bull(1) && bull(0) && Math.abs(c(0).low - c(1).low) <= range(0) * 0.05)
+    add('Tweezer Bottom', 'bull', 2, 0);
+
+  // ── 11. Tweezer Top (bear) ───────────────────────────────
+  if (bull(1) && !bull(0) && Math.abs(c(0).high - c(1).high) <= range(0) * 0.05)
+    add('Tweezer Top', 'bear', 2, 0);
+
+  // ── 12. Bullish Pinbar (long lower wick, small body at top) ─
+  if (botWick(0) >= range(0) * 0.6 && body(0) <= range(0) * 0.25)
+    add('Pinbar', 'bull', 2, 0);
+
+  // ── 13. Bearish Pinbar (long upper wick, small body at bottom) ─
+  if (topWick(0) >= range(0) * 0.6 && body(0) <= range(0) * 0.25)
+    add('Pinbar', 'bear', 2, 0);
+
+  // ── 14. Morning Star (3-bar bull reversal) ───────────────
+  if (candleArr.length >= 3 && !bull(2) && isStar(1) && bull(0)
+      && body(2) > 0 && c(0).close > (c(2).open + c(2).close) / 2)
+    add('Morning Star', 'bull', 3, 0);
+
+  // ── 15. Evening Star (3-bar bear reversal) ───────────────
+  if (candleArr.length >= 3 && bull(2) && isStar(1) && !bull(0)
+      && body(2) > 0 && c(0).close < (c(2).open + c(2).close) / 2)
+    add('Evening Star', 'bear', 3, 0);
+
+  // ── 16. Three White Soldiers ─────────────────────────────
+  if (bull(0) && bull(1) && bull(2)
+      && c(0).close > c(1).close && c(1).close > c(2).close
+      && body(0) > 0 && body(1) > 0 && body(2) > 0
+      && topWick(0) <= body(0) * 0.3 && topWick(1) <= body(1) * 0.3)
+    add('3 White Soldiers', 'bull', 3, 0);
+
+  // ── 17. Three Black Crows ────────────────────────────────
+  if (!bull(0) && !bull(1) && !bull(2)
+      && c(0).close < c(1).close && c(1).close < c(2).close
+      && body(0) > 0 && body(1) > 0 && body(2) > 0
+      && botWick(0) <= body(0) * 0.3 && botWick(1) <= body(1) * 0.3)
+    add('3 Black Crows', 'bear', 3, 0);
+
+  // ── 18. Marubozu Bull (full body, almost no wicks) ───────
+  if (bull(0) && topWick(0) <= body(0)*0.05 && botWick(0) <= body(0)*0.05 && body(0) > 0)
+    add('Marubozu', 'bull', 2, 0);
+
+  // ── 19. Marubozu Bear ────────────────────────────────────
+  if (!bull(0) && topWick(0) <= body(0)*0.05 && botWick(0) <= body(0)*0.05 && body(0) > 0)
+    add('Marubozu', 'bear', 2, 0);
+
+  // ── 20. Dark Cloud Cover (bear) ──────────────────────────
+  if (bull(1) && !bull(0)
+      && c(0).open > c(1).high
+      && c(0).close < (c(1).open + c(1).close) / 2)
+    add('Dark Cloud', 'bear', 2, 0);
+
+  // ── 21. Piercing Line (bull) ─────────────────────────────
+  if (!bull(1) && bull(0)
+      && c(0).open < c(1).low
+      && c(0).close > (c(1).open + c(1).close) / 2)
+    add('Piercing Line', 'bull', 2, 0);
+
+  return pats;
+}
+
 function updateDashboard() {
   const r = analysisResult;
   if (!r.n) return;
@@ -2613,6 +2934,37 @@ function updateDashboard() {
     emaTEl.className = 'stat-val ' + (r.emaTrend === 'bull' ? 'bull' : r.emaTrend === 'bear' ? 'bear' : 'neutral');
   }
 
+  // Trend lines dashboard
+  const _tlsDash = r.trendLines || [];
+  const _tlCEl = document.getElementById('trendLineCount');
+  const _tlZEl = document.getElementById('trendLineZone');
+  if (_tlCEl) { _tlCEl.textContent = _tlsDash.length + ' (' + _tlsDash.filter(t=>t.isSupport).length + 'S ' + _tlsDash.filter(t=>!t.isSupport).length + 'R)'; _tlCEl.className = 'stat-val bright'; }
+  if (_tlZEl) {
+    const _ntlD = _tlsDash.find(t => Math.abs(t.currentY - r.currentPrice) <= r.atr * 1.2);
+    _tlZEl.textContent = _ntlD ? 'AT TL x' + _ntlD.touches : '--';
+    _tlZEl.className = 'stat-val ' + (_ntlD ? 'warn' : 'neutral');
+  }
+  // Candle patterns
+  const _cpats = r.candlePatterns || [];
+  const _bias = r.recentBull >= r.recentBear ? 'bull' : 'bear';
+  const _topCPat = _cpats.filter(p => p.dir === _bias).sort((a,b)=>b.strength-a.strength)[0];
+  const _cpNameEl = document.getElementById('candlePatternName');
+  const _cpGradeEl = document.getElementById('candlePatternGrade');
+  if (_cpNameEl) {
+    _cpNameEl.textContent = _topCPat ? _topCPat.name : ('—');
+    _cpNameEl.className = 'stat-val ' + (_topCPat ? (_topCPat.dir==='bull'?'bull':'bear') : 'neutral');
+  }
+  if (_cpGradeEl) {
+    _cpGradeEl.textContent = _topCPat ? ('★'.repeat(_topCPat.strength) + ' ' + _topCPat.dir.toUpperCase()) : '—';
+    _cpGradeEl.className = 'stat-val ' + (_topCPat ? (_topCPat.dir==='bull'?'bull':'bear') : 'neutral');
+  }
+  // Spike events
+  const spkEl = document.getElementById('spikeEventCount');
+  if (spkEl && r.recentSpikeEvents) {
+    const _aln = r.recentSpikeEvents.filter(s=>s.dir===(r.recentBull>=r.recentBear?'bull':'bear')).length;
+    spkEl.textContent = r.recentSpikeEvents.length + (_aln ? ' (' + _aln + '\u2713)' : '');
+    spkEl.className = 'stat-val ' + (_aln ? 'warn' : 'bright');
+  }
   // Liquidity sweeps
   const sweepEl = document.getElementById('sweepCount');
   if (sweepEl && r.recentSweeps) {
@@ -2994,13 +3346,14 @@ function calcSLTP(r) {
   }
 
   // ── GATE 2: Bias + Future Swing agree ────────────────────
+  // Boom/Crash directional bias remains a hard block (structural).
+  // FS conflict is a WARN only — reduces confluence but never blocks.
   if (profile.trendBias === 'bull' && !isBullBias) {
     failReasons.push('GATE2: Boom requires BULL bias');
   } else if (profile.trendBias === 'bear' && isBullBias) {
     failReasons.push('GATE2: Crash requires BEAR bias');
   } else if (r.fsDir && r.fsDir !== (isBull ? 'bull' : 'bear')) {
-    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality
-    failReasons.push('GATE2: Future Swing is ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias');
+    warnReasons.push('WARN G2: Future Swing projects ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias, confluence reduced');
   }
 
   // ── GATE 3: Price near aligned OB OR strong S/R ──────────
@@ -3012,6 +3365,9 @@ function calcSLTP(r) {
     s.strong && Math.abs(s.price - price) <= atr * 1.5 && (isBull ? s.isSupport : !s.isSupport)
   );
   const atSRLevel = !!nearSR;
+  const _tls   = r.trendLines || [];
+  const _nearTL = _tls.find(tl => Math.abs(tl.currentY - price) <= atr * 1.2 && (isBull ? tl.isSupport : !tl.isSupport));
+  const atTrendLine = !!_nearTL;
   if (!nearOB && !atSRLevel) {
     if (alignedOBs.length === 0) {
       warnReasons.push('NOTE G3: No ' + (isBull?'bull':'bear') + ' OB or S/R yet');
@@ -3022,6 +3378,8 @@ function calcSLTP(r) {
       const dist = isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2);
       failReasons.push('GATE3: Price too far from OB/S/R (' + dist + ' pts)');
     }
+  } else if (atTrendLine && !insideOB && !atSRLevel) {
+    warnReasons.push('NOTE G3: At trend line ' + (_nearTL.isSupport?'support':'resist') + ' ×' + _nearTL.touches + ' touches');
   } else if (atSRLevel && !insideOB) {
     warnReasons.push('NOTE: At S/R ×' + nearSR.touches + ' — ' + (nearSR.isSupport?'support':'resist') + ' confluence');
   } else if (!insideOB) {
@@ -3109,6 +3467,68 @@ function calcSLTP(r) {
     }
   })();
 
+  // ── CANDLE PATTERN CONFIRMATION (warning, not hard block) ──
+  if (r.candlePatterns && r.candlePatterns.length > 0) {
+    const _cp = r.candlePatterns.filter(p => p.dir === (isBull ? 'bull' : 'bear')).sort((a,b)=>b.strength-a.strength)[0];
+    const _cpOpp = r.candlePatterns.filter(p => p.dir !== 'neutral' && p.dir !== (isBull ? 'bull' : 'bear')).sort((a,b)=>b.strength-a.strength)[0];
+    if (_cp && _cp.strength >= 2) {
+      warnReasons.push('NOTE: ' + _cp.name + ' confirmed (' + (isBull?'bull':'bear') + ') ★'.repeat(_cp.strength));
+    } else if (_cpOpp && _cpOpp.strength >= 2) {
+      warnReasons.push('WARN: ' + _cpOpp.name + ' opposes trade direction — caution');
+    } else if (!_cp) {
+      warnReasons.push('NOTE: No confirming pattern on current bar');
+    }
+  }
+
+  // ── CHART PATTERN ADJUSTMENT (never hard block — adjust SL/confluence) ──
+  // Opposing patterns: warn + tag for SL widening + confluence penalty.
+  // Confirming patterns: positive note + confluence bonus (in scoring).
+  r._opposingPats = [];
+  if (r.chartPatterns && r.chartPatterns.length > 0) {
+    const tradeDir   = isBull ? 'bull' : 'bear';
+    const contDir    = isBull ? 'cont_bull' : 'cont_bear';
+    const oppContDir = isBull ? 'cont_bear' : 'cont_bull';
+
+    // Collect all opposing patterns (any type: H&S, continuation, reversal, wedge, etc.)
+    const opposingPats = r.chartPatterns.filter(p =>
+      p.confidence >= 65 &&
+      (p.dir === oppContDir ||
+       (p.type === 'reversal' && p.dir !== tradeDir && p.dir !== contDir))
+    ).sort((a, b) => b.confidence - a.confidence);
+
+    for (const op of opposingPats) {
+      r._opposingPats.push(op);
+      const breaking = op.desc && op.desc.includes('BREAKING');
+      if (op.confidence >= 80 || breaking) {
+        warnReasons.push('WARN G8: ' + op.name + (breaking ? ' BREAKING' : '') + ' opposes trade — SL widened, reduce size');
+      } else {
+        warnReasons.push('NOTE G8: ' + op.name + ' forming against trade — monitoring');
+      }
+    }
+
+    // Confirming chart patterns — positive notes
+    const confirmPats = r.chartPatterns.filter(p =>
+      p.confidence >= 65 && (p.dir === tradeDir || p.dir === contDir)
+    ).sort((a, b) => b.confidence - a.confidence);
+    for (const cp of confirmPats.slice(0, 2)) {
+      const breaking = cp.desc && cp.desc.includes('BREAKING');
+      warnReasons.push('NOTE G8: ' + cp.name + (breaking ? ' BREAKING' : '') + ' confirms direction — ' + (cp.desc || ''));
+    }
+  }
+
+  // ── GATE 7: Spike-and-Continue ─────────────────────────
+  if (profile && profile.waitSpike) {
+    const _g7spk = (r.recentSpikeEvents || []);
+    const _g7aligned = _g7spk.find(s => s.dir === (isBull ? 'bull' : 'bear') && s.ageBars <= 10);
+    if (_g7aligned) {
+      warnReasons.push('NOTE G7: Spike-and-continue confirmed ' + _g7aligned.ageBars + 'b ago');
+    } else if (!_g7spk.find(s => s.ageBars <= 20)) {
+      warnReasons.push('WARN G7: No spike yet on ' + (r.symId||'') + ' — wait for liquidity hunt');
+    } else {
+      warnReasons.push('WARN G7: Spike does not align — wait for ' + (isBull?'bull':'bear') + ' spike-continue');
+    }
+  }
+
   // ── RESULT ────────────────────────────────────────────────
   if (failReasons.length > 0) {
     return { blocked: true, failReasons, warnReasons, dir, isBull };
@@ -3124,6 +3544,57 @@ function calcSLTP(r) {
 
   let sl = null, slSources = [];
 
+  // ── A0_SWEEP: Liquidity Sweep SL — HIGHEST PRIORITY ─────────
+  // If a sweep happened in the trade direction within last 8 bars,
+  // place SL just beyond the sweep extreme (the wick that grabbed stops).
+  // This is the ideal SL location — BELOW the stop-hunt candle wick.
+  const CFG_SWEEP_ATR_MULT = 1.5; // extra ATR buffer beyond sweep wick
+  if (r.recentSweeps && r.recentSweeps.length > 0) {
+    const candleArr2 = r.candleArr || [];
+    const n2 = candleArr2.length;
+    // Find most recent sweep aligned with our trade direction (within last 8 bars)
+    const alignedSweep = r.recentSweeps
+      .filter(sw => sw.dir === (isBull ? 'bull' : 'bear') && (n2 - 1 - sw.idx) <= 8)
+      .sort((a, b) => b.idx - a.idx)[0];
+    if (alignedSweep && candleArr2[alignedSweep.idx]) {
+      const swCandle = candleArr2[alignedSweep.idx];
+      // For bull sweep: SL goes below the wick low of the sweep candle
+      // For bear sweep: SL goes above the wick high of the sweep candle
+      const sweepExtreme = isBull ? swCandle.low : swCandle.high;
+      const sweepBuffer = atr * CFG_SWEEP_ATR_MULT + spikeGuardDist * 0.5;
+      const sweepSLCand = isBull
+        ? sweepExtreme - sweepBuffer
+        : sweepExtreme + sweepBuffer;
+      const sweepDist = Math.abs(price - sweepSLCand);
+      if (sweepDist >= minSlDist && sweepDist <= maxSlDist
+          && (isBull ? sweepSLCand < price : sweepSLCand > price)) {
+        sl = sweepSLCand;
+        slSources = ['SWEEP-LOW'];
+        warnReasons.push('✓ SL placed below liquidity sweep wick (' + (n2 - 1 - alignedSweep.idx) + 'b ago)');
+      }
+    }
+  }
+
+  // A0: Spike-extreme SL
+  if (sl === null && profile && profile.waitSpike && r.recentSpikeEvents) {
+    const _spkSL = r.recentSpikeEvents.filter(s => s.dir===(isBull?'bull':'bear') && s.ageBars<=8)
+      .sort((a,b)=>a.ageBars-b.ageBars)[0];
+    if (_spkSL) {
+      const _spkCand = isBull ? _spkSL.spikeLow - atr*0.2 : _spkSL.spikeHigh + atr*0.2;
+      const _spkDist = Math.abs(price - _spkCand);
+      if (_spkDist >= minSlDist && _spkDist <= maxSlDist && (isBull ? _spkCand < price : _spkCand > price)) {
+        sl = _spkCand; slSources = ['SPIKE-EXT'];
+      }
+    }
+  }
+
+  // A0b: Trend line SL
+  if (sl === null && atTrendLine && _nearTL) {
+    const _tlc = isBull ? _nearTL.currentY - atr*0.25 : _nearTL.currentY + atr*0.25;
+    const _tld = Math.abs(price - _tlc);
+    if (_tld >= minSlDist && _tld <= maxSlDist && (isBull ? _tlc < price : _tlc > price))
+      { sl = _tlc; slSources = ['TREND-LINE']; }
+  }
   // A1: S/R structural SL — place beyond nearest strong S/R
   const srLevs = r.srLevels || [];
   if (isBull) {
@@ -3201,6 +3672,26 @@ function calcSLTP(r) {
   const risk = Math.abs(price - sl);
   if (risk <= 0) return null;
 
+  // ── PATTERN SL ADJUSTMENT ─────────────────────────────────
+  // Any opposing chart pattern widens SL — severity scales with
+  // pattern confidence and whether it is actively breaking.
+  // Multiple patterns stack, capped at 1.5× ATR total extra.
+  if (r._opposingPats && r._opposingPats.length > 0) {
+    let totalExtra = 0;
+    for (const op of r._opposingPats) {
+      const conf     = op.confidence || 65;
+      const breaking = op.desc && op.desc.includes('BREAKING');
+      const baseMult = op.type === 'continuation'
+        ? (breaking ? 1.0 : 0.6)   // cont breaking=1.0×, forming=0.6×
+        : (breaking ? 0.8 : 0.4);  // reversal breaking=0.8×, forming=0.4×
+      totalExtra += atr * baseMult * (conf / 100);
+    }
+    totalExtra = Math.min(totalExtra, atr * 1.5);
+    sl = isBull ? sl - totalExtra : sl + totalExtra;
+    if (Math.abs(price - sl) > maxSlDist) sl = isBull ? price - maxSlDist : price + maxSlDist;
+    slSources = [...slSources, 'PAT-ADJ'];
+  }
+
   // TP calculation — max distance capped tightly by profile
   const maxTpDist = Math.min(price * 0.08, atr * profile.tpAtrMult * 2.5);
   let tp = null, tpSources = [];
@@ -3273,11 +3764,34 @@ function calcSLTP(r) {
   const swingScore  = (tpSources[0] === 'SWING' || tpSources[0] === 'PROJ') ? 18 : 0;
   const rrScore     = Math.min(18, Math.round((rr / 3) * 18));
   const fsBonus     = (r.fsDir === (isBull ? 'bull' : 'bear')) ? 8 : 0;
+  const fsPenalty   = (r.fsDir && r.fsDir !== (isBull ? 'bull' : 'bear')) ? -10 : 0;
   const emaBonus    = (r.emaTrend === (isBull ? 'bull' : 'bear')) ? 8 : 0;
   const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? 'bull' : 'bear'))) ? 5 : 0;
   const profileBonus = profile.trendBias === (isBull ? 'bull' : 'bear') ? 8 : 0;
-  const mtfBonus = (bestOB && bestOB.mtfStack) ? 15 : 0;
-  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus);
+  const mtfBonus    = (bestOB && bestOB.mtfStack) ? 15 : 0;
+  const spikeBonus  = (profile && profile.waitSpike && r.recentSpikeEvents &&
+    r.recentSpikeEvents.find(s => s.dir===(isBull?'bull':'bear') && s.ageBars<=10)) ? 12 : 0;
+  const tlBonus     = (atTrendLine && _nearTL) ? Math.min(12, _nearTL.touches * 4) : 0;
+  // Candle pattern bonus
+  const _pats = r.candlePatterns || [];
+  const _alignedPats = _pats.filter(p => p.dir === (isBull ? 'bull' : 'bear'));
+  const _topPat = _alignedPats.sort((a,b) => b.strength - a.strength)[0];
+  const patBonus = _topPat ? Math.min(15, _topPat.strength * 5) : 0;
+  // Chart pattern bonus (confirming)
+  const _confChartPat = (r.chartPatterns || []).find(p =>
+    p.confidence >= 65 && (p.dir === (isBull ? 'bull' : 'bear') || p.dir === (isBull ? 'cont_bull' : 'cont_bear'))
+  );
+  const chartPatBonus = _confChartPat ? Math.min(18, Math.round(_confChartPat.confidence / 100 * 18)) : 0;
+  // Opposing chart pattern penalty
+  const _oppPats = r._opposingPats || [];
+  const patPenalty = _oppPats.reduce((acc, op) => {
+    const breaking = op.desc && op.desc.includes('BREAKING');
+    const base = op.type === 'continuation'
+      ? (breaking ? -18 : -10)
+      : (breaking ? -12 : -6);
+    return acc + Math.round(base * ((op.confidence || 65) / 100));
+  }, 0);
+  const confluence  = Math.max(0, Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + fsPenalty + emaBonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus + chartPatBonus + patPenalty));
 
   const components = {
     ob:    { active: !!bestOB,            label: 'OB',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },
@@ -3286,7 +3800,58 @@ function calcSLTP(r) {
     swing: { active: tpSources[0] === 'SWING' || tpSources[0] === 'PROJ', label: 'SWING', score: Math.min(100, rr / 3 * 100) },
   };
 
-  const basis = 'SL:' + slSources.join('+') + ' | TP:' + tpSources.join('+') + ' | ' + profile.type.toUpperCase();
+  // ── CANDLE CLOSE CONFIRMATION ────────────────────────────
+  // Use a LOWER timeframe for faster confirmation:
+  //   Chart M5/M15/M30 → check M1 bars
+  //   Chart 1H/4H/1D   → check M5 bars
+  // LOOKBACK: scanner fires every few mins so the confirming bar may have
+  // already passed. We look back through the last (chartTF / confTF) bars
+  // to catch any confirmation candle that closed since the last scan.
+  const confArr = (isConnected && _confCandles.length >= 3 && _confTF !== currentTF)
+    ? _confCandles
+    : (r.candleArr || []);
+  const confTFLabel = (isConnected && _confCandles.length >= 3 && _confTF !== currentTF)
+    ? tfLabel(_confTF)
+    : tfLabel(currentTF);
+  const nCC = confArr.length;
+  // How many conf-TF bars fit in one chart-TF bar — that's our lookback window
+  const confLookback = Math.max(2, Math.ceil(currentTF / (_confTF || currentTF)));
+  let candleCloseConfirmed = false;
+  let candleCloseWarning = '';
+  let confirmedBarsAgo = null;
+  if (nCC >= 2) {
+    // Check last N completed bars (skip the very last which may still be forming)
+    const checkFrom = Math.max(0, nCC - 1 - confLookback);
+    for (let ci = nCC - 2; ci >= checkFrom; ci--) {
+      const bar  = confArr[ci];
+      const prev = confArr[ci - 1] || bar;
+      const bullClose = bar.close > bar.open && bar.close > prev.close;
+      const bearClose = bar.close < bar.open && bar.close < prev.close;
+      if (isBull && bullClose) {
+        candleCloseConfirmed = true;
+        confirmedBarsAgo = (nCC - 2) - ci; // how many bars ago it happened
+        break;
+      }
+      if (!isBull && bearClose) {
+        candleCloseConfirmed = true;
+        confirmedBarsAgo = (nCC - 2) - ci;
+        break;
+      }
+    }
+    if (!candleCloseConfirmed) {
+      candleCloseWarning = 'WARN: No ' + (isBull ? 'bullish' : 'bearish') + ' ' + confTFLabel
+        + ' close in last ' + confLookback + ' bars — wait for confirmation';
+    }
+  } else {
+    candleCloseConfirmed = true; // not enough bars — don't block
+  }
+  if (!candleCloseConfirmed && candleCloseWarning) {
+    warnReasons.push(candleCloseWarning);
+  }
+
+  const basis = 'SL:' + slSources.join('+') + ' | TP:' + tpSources.join('+') + ' | ' + profile.type.toUpperCase()
+    + (slSources[0] === 'SWEEP-LOW' ? ' | ⚡SWEEP-SL' : '')
+    + (candleCloseConfirmed ? ' | ✓CLOSE(' + confTFLabel + ')' : ' | ⚠NO-CLOSE(' + confTFLabel + ')');
 
   const balance       = parseFloat(document.getElementById('accountBalance')?.value) || 1000;
   const riskPctRaw    = parseFloat(document.getElementById('riskPct')?.value) || 1.0;
@@ -3307,6 +3872,14 @@ function calcSLTP(r) {
     riskPct: riskPctCapped, balance, maxConsecLosses,
     profileType: profile.type, spikeAtr,
     warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,
+    atTrendLine: !!atTrendLine, nearTL: _nearTL || null,
+    bestPattern: _topPat || null, patBonus,
+    chartPatBonus, patPenalty, fsPenalty,
+    opposingPats: r._opposingPats || [],
+    sweepSL: slSources[0] === 'SWEEP-LOW',
+    candleCloseConfirmed,
+    confTFLabel,
+    confirmedBarsAgo,
   };
 }
 
@@ -3443,6 +4016,8 @@ function updateSLTP(forceRecalc = true) {
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G5 MOM✓</span>' +
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G6 HTF✓</span>' +
     '</div>' +
+    (t.bestPattern ? '<div style="font-family:var(--font-mono);font-size:8px;padding:3px 7px;margin-bottom:5px;border-radius:1px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.25);color:' + (t.bestPattern.dir==="bull"?'var(--bull)':'var(--bear)') + '">'
+      + '★'.repeat(t.bestPattern.strength) + ' ' + t.bestPattern.name + ' — pattern confirmation</div>' : '') +
     '<div style="font-family:var(--font-mono);font-size:8px;padding:2px 6px;margin-bottom:5px;text-align:center;border-radius:1px;background:rgba(0,180,216,0.08);border:1px solid rgba(0,180,216,0.2);color:var(--cyan)">TYPE: ' + (t.profileType||'—').toUpperCase() + (t.spikeAtr ? ' | SPIKE ATR: ' + sf(t.spikeAtr, getDP()) : '') + '</div>' +
     '<div class="trade-dir ' + (isBull?'trade-long':'trade-short') + '">' + arrow + ' ' + t.dir + '</div>' +
     '<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">' +
@@ -3457,6 +4032,8 @@ function updateSLTP(forceRecalc = true) {
       (t.components.sr && t.components.sr.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">S/R ✓×' + (t.components.sr.touches||0) + '</span>' : '') +
       '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">ATR ✓</span>' +
       (t.components.swing.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:var(--warn)">SWING ✓</span>' : '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(96,125,139,0.1);border:1px solid var(--border);color:var(--text-dim)">SWING ✗</span>') +
+      (t.sweepSL ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(255,165,0,0.15);border:1px solid rgba(255,165,0,0.5);color:var(--warn)">⚡ SWEEP SL</span>' : '') +
+      (t.candleCloseConfirmed ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.4);color:var(--bull)">✓ ' + (t.confTFLabel||'') + ' CLOSE' + (t.confirmedBarsAgo > 0 ? ' -' + t.confirmedBarsAgo + 'b' : '') + '</span>' : '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.4);color:var(--warn)">⚠ WAIT ' + (t.confTFLabel||'') + ' CLOSE</span>') +
     '</div>' +
     '<div class="stat-row"><span class="stat-label">ENTRY</span><span class="stat-val bright">' + sf(t.entry,dp) + '</span></div>' +
     '<div class="stat-row"><span class="stat-label">TAKE PROFIT</span><span class="stat-val bull">' + sf(t.tp,dp) + '</span></div>' +
@@ -3488,7 +4065,7 @@ function updateSLTP(forceRecalc = true) {
   // Draw price lines on chart
   const entryLine = candleSeries.createPriceLine({ price: t.entry, color: '#00b4d888', lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: 'ENTRY' });
   const tpLine    = candleSeries.createPriceLine({ price: t.tp, color: '#00e5a0cc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: 'TP ' + sf(t.tp,dp) });
-  const slLine    = candleSeries.createPriceLine({ price: t.sl, color: '#ff3d5acc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: 'SL ' + sf(t.sl,dp) });
+  const slLine    = candleSeries.createPriceLine({ price: t.sl, color: '#ff3d5acc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: (t.sweepSL ? '⚡SWEEP-SL ' : 'SL ') + sf(t.sl,dp) });
   sltpLines.push(entryLine, tpLine, slLine);
 }
 
@@ -3615,7 +4192,7 @@ function updateSettings() {
   CFG.atrSlMult     = parseFloat(document.getElementById('set_atrSlMult').value) || 1.2;
   CFG.atrTpMult     = parseFloat(document.getElementById('set_atrTpMult').value) || 2.5;
   CFG.obSlBuf       = parseFloat(document.getElementById('set_obSlBuf').value)   || 5;
-  CFG.minRR         = parseFloat(document.getElementById('set_minRR')?.value)    || 1.5;
+  CFG.minRR         = parseFloat(document.getElementById('set_minRR')?.value)    || 1.3;
   CFG.maxRiskPct    = parseFloat(document.getElementById('set_maxRiskPct')?.value) || 2.0;
   CFG.swingLen      = parseInt(document.getElementById('set_swingLen').value)    || 10;
   CFG.swingSamples  = parseInt(document.getElementById('set_swingSamples').value)|| 8;
@@ -3679,11 +4256,11 @@ const _scanCandleCache = {};
 
 function setScanTFFilter(tf) {
   _scanTFFilter = tf;
-  ['filterAllTF','filter1m','filter5m','filter15m','filter1h'].forEach(id => {
+  ['filterAllTF','filter1m','filter5m','filter15m','filter30m','filter1h'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const map = {0:'filterAllTF', 60:'filter1m', 300:'filter5m', 900:'filter15m', 3600:'filter1h'};
+  const map = {0:'filterAllTF', 60:'filter1m', 300:'filter5m', 900:'filter15m', 1800:'filter30m', 3600:'filter1h'};
   const el = document.getElementById(map[tf]);
   if (el) el.classList.add('active');
   renderScanResults();
@@ -3730,7 +4307,7 @@ function setScanSort(mode) {
 // ═══════════════════════════════════════════════════════════════
 
 // Scan TF list — always scan these TFs regardless of chart TF
-const SCAN_TFS = [60, 300, 900, 3600, 14400]; // 1m, 5m, 15m, 1h, 4h
+const SCAN_TFS = [60, 300, 900, 1800, 3600, 14400]; // 1m, 5m, 15m, 30m, 1h, 4h
 
 let _liveScanResults = {};   // {sym+tf: candles[]} — live fetched candles
 let _liveQueue       = [];   // queue of {sym, tf} to fetch live
@@ -3883,7 +4460,7 @@ function _updateLiveScanProgress() {
 function _finishLiveScan() {
   const prog = document.getElementById('scanProgress');
   // Telegram alerts for all valid scan setups
-  setTimeout(() => { for (const item of (_scanResults||[])) { if (item.t && !item.t.blocked && item.t.confluence >= 70) maybeSendTG(item.t, item.sym, item.tf); } }, 500);
+  setTimeout(() => { for (const item of (_scanResults||[])) { if (item.t && !item.t.blocked && item.t.confluence >= 55) maybeSendTG(item.t, item.sym, item.tf); } }, 500);
   if (prog) prog.textContent = 'Analysing ' + _liveScanTotal + ' datasets…';
   // Schedule next auto-refresh in 5 minutes
   clearTimeout(_liveScanInterval);
@@ -3955,19 +4532,23 @@ function renderScanResults() {
     if (!t || t.blocked) return false;
     // Must have actual SL/TP numbers
     if (!t.sl || !t.tp || !t.rr) return false;
-    // Gate 4 check: confluence 70%+
-    if (t.confluence < 70) return false;
-    // Gate 2 check: RR must be at least minRR
+    // Confluence floor: 55%+ (70 was too strict — filtered most valid setups)
+    if (t.confluence < 55) return false;
+    // RR must meet minimum
     if (t.rr < CFG.minRR) return false;
-    // READY check: price must be near or inside an aligned OB (actionable now)
+    // READY check: price near aligned OB (2.5×ATR) OR near strong S/R (2×ATR)
     const isBull = t.dir === 'LONG';
+    const atr    = res.atr || 1;
+    const price  = item.price;
     const alignedOBs = (res.activeOBs || []).filter(o => isBull ? o.isBull : !o.isBull);
-    const atr = res.atr || 1;
-    const price = item.price;
     const readyOB = alignedOBs.find(o =>
-      price <= o.top + atr * 2 && price >= o.bottom - atr * 2
+      price <= o.top + atr * 2.5 && price >= o.bottom - atr * 2.5
     );
-    if (!readyOB) return false;
+    const readySR = (res.srLevels || []).find(s =>
+      s.strong && Math.abs(s.price - price) <= atr * 2 &&
+      (isBull ? s.isSupport : !s.isSupport)
+    );
+    if (!readyOB && !readySR) return false;
     return true;
   }
 
@@ -3985,7 +4566,7 @@ function renderScanResults() {
   if (prog) prog.textContent = tfFiltered.length + ' setups | ' + skipped + ' filtered | ' + _scanResults.length + ' scanned';
 
   if (sorted.length === 0) {
-    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 70%+ | RR ' + CFG.minRR + ':1+ | Price within 2x ATR of OB</span></div>';
+    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 55%+ | RR ' + CFG.minRR + ':1+ | Price near OB or strong S/R</span></div>';
     return;
   }
 
@@ -4082,6 +4663,7 @@ function switchToSymbol(sym, tf) {
 let _notifEnabled = false;
 let _soundEnabled = false;
 let _lastSetupDir = null;
+let _lastSetupEntry = null;
 
 function toggleNotifications() {
   if (!_notifEnabled) {
@@ -4131,8 +4713,10 @@ function playAlertTone(freq, vol) {
 function fireSetupAlert(t, sym) {
   if (!t || t.blocked || !t.rr) return;
   const dir = t.dir;
-  if (dir === _lastSetupDir) return; // don't repeat same direction
+  const entryR = Math.round((t.entry || 0) * 100) / 100;
+  if (dir === _lastSetupDir && entryR === _lastSetupEntry) return; // same setup, don't repeat
   _lastSetupDir = dir;
+  _lastSetupEntry = entryR;
   const msg = '🎯 ' + sym + ' ' + dir + ' setup — RR ' + sf(t.rr,2) + ':1 | Conf ' + t.confluence + '%';
   addAlert(msg, t.dir === 'LONG' ? 'bull' : 'bear');
   if (_soundEnabled) playAlertTone(t.dir === 'LONG' ? 660 : 440, 0.15);
@@ -4399,15 +4983,55 @@ function buildTGMsg(t, sym, tf) {
   const dp   = (sym.includes('R_10') || sym.includes('1HZ10V')) ? 3 : 2;
   const dir  = t.dir === 'LONG' ? '\uD83D\uDFE2 LONG' : '\uD83D\uDD34 SHORT';
   const conf = t.confluence || 0;
-  const gr   = conf >= 80 ? '\u2B50\u2B50\u2B50 A+' : conf >= 70 ? '\u2B50\u2B50 A ' : conf >= 60 ? '\u2B50 B' : 'C';
-  const zone = t.insideOB ? '\uD83D\uDCE6 Inside OB' : (t.atSRLevel ? '\uD83D\uDCCA At S/R' : '\uD83D\uDD0D Approaching');
+  // Grade — quality tier based on confluence + zone + HPZ
+  const hasPremiumZone = t.isHPZ || (t.components && t.components.ob && t.components.ob.mtfStack);
+  const gr = (conf >= 82 && hasPremiumZone) ? '\u2B50\u2B50\u2B50\u2B50 S-TIER'
+           : conf >= 78 ? '\u2B50\u2B50\u2B50 A+'
+           : conf >= 70 ? '\u2B50\u2B50 A'
+           : '\u2B50 B';
+  // TF tier badge
+  const tfTier = (tf === 900)  ? '\uD83D\uDD36 15M'
+               : (tf === 1800) ? '\uD83D\uDD37 30M'
+               : (tf === 3600) ? '\uD83D\uDFE1 1H'
+               : '\uD83D\uDFE0 4H';
+  const zone = t.insideOB ? '\uD83D\uDCE6 Inside OB' : '\uD83D\uDCCA At S/R';
+  const hpz  = t.isHPZ ? '\n\u2605 <b>HIGH PROBABILITY ZONE</b>' : '';
   const mtf  = (t.components && t.components.ob && t.components.ob.mtfStack) ? '\n\u229E <b>MTF 4H OB STACK</b>' : '';
+  const pat = t.bestPattern
+    ? ('\n\u270f ' + '\u2605'.repeat(t.bestPattern.strength) + ' <b>' + t.bestPattern.name + '</b> (' + t.bestPattern.dir + ')')
+    : '';
+  const spk = (t.warnReasons && t.warnReasons.find(w => w.includes('G7') && w.includes('confirmed')))
+    ? '\n\u26a1 <b>SPIKE-AND-CONTINUE confirmed</b>'
+    : '';
+  const tln = (t.atTrendLine && t.nearTL)
+    ? ('\n\ud83d\udcd0 <b>Trend line ' + (t.nearTL.isSupport?'support':'resist') + ' x' + t.nearTL.touches + ' touches</b>')
+    : '';
+  // ── Sweep SL badge ─────────────────────────────────────────
+  const sweepSlLine = t.sweepSL
+    ? '\n\u26a1 <b>SL below liquidity sweep wick</b> — stop-hunt protected'
+    : '';
+  // ── Candle close confirmation ───────────────────────────────
+  const closeConfLine = t.candleCloseConfirmed
+    ? '\n\u2705 <b>' + (t.confTFLabel||'') + ' close confirmed</b>'
+      + (t.confirmedBarsAgo != null && t.confirmedBarsAgo > 0 ? ' (' + t.confirmedBarsAgo + ' bars ago)' : ' — enter now')
+    : '\n\u26a0\ufe0f <b>No ' + (t.confTFLabel||'') + ' close yet</b> — wait for bar to close in trade direction before entering';
   const isBull = t.dir === 'LONG';
   const risk = Math.abs(t.entry - t.sl);
   const tp1  = isBull ? t.entry + risk * 1.0 : t.entry - risk * 1.0;
   const tp2  = t.tp;
   const tp3  = isBull ? t.entry + risk * (t.rr * 1.5) : t.entry - risk * (t.rr * 1.5);
-  return '<b>\uD83C\uDFAF ' + sym + ' ' + tfLabel(tf) + '</b>  ' + dir + '\n' +
+  // Positive notes only
+  const noteLines = (t.warnReasons || [])
+    .filter(w => w.startsWith('NOTE') && !w.includes('wait') && !w.includes('No ') && !w.includes('Approaching'))
+    .map(w => '\u2139 ' + w.replace(/^NOTE ?G?\d*: ?/, ''))
+    .join('\n');
+  // All active warnings (exclude the candle close one — already handled above)
+  const warnLines = (t.warnReasons || [])
+    .filter(w => (w.startsWith('WARN') || w.includes('opposes') || w.includes('conflict') || w.includes('counter-momentum'))
+      && !w.includes('candle close') && !w.includes('No candle close'))
+    .map(w => '\u26a0\ufe0f ' + w.replace(/^WARN ?G?\d*: ?/, ''))
+    .join('\n');
+  return '<b>\uD83C\uDFAF ' + sym + ' ' + tfLabel(tf) + '</b>  ' + dir + '  ' + tfTier + '\n' +
     gr + '  Conf: <b>' + conf + '%</b>  RR: <b>' + sf(t.rr,2) + ':1</b>\n' +
     '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
     '\uD83D\uDCCD Entry: <b>' + sf(t.entry,dp) + '</b>\n' +
@@ -4415,17 +5039,60 @@ function buildTGMsg(t, sym, tf) {
     '\u2705 TP1:   <b>' + sf(tp1,dp) + '</b>  <i>(1:1 — close 33%)</i>\n' +
     '\u2705 TP2:   <b>' + sf(tp2,dp) + '</b>  <i>(' + sf(t.rr,1) + ':1 — close 50%)</i>\n' +
     '\u2705 TP3:   <b>' + sf(tp3,dp) + '</b>  <i>(EXT — trail rest)</i>\n' +
-    zone + mtf + '\n' +
+    zone + hpz + mtf + pat + spk + tln + sweepSlLine + closeConfLine +
+    (warnLines ? '\n\u2500\u2500\u2500\u2500\u2500\u2500\n' + warnLines : '') +
+    (noteLines ? '\n' + noteLines : '') + '\n' +
     '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
 }
 
 function maybeSendTG(t, sym, tf) {
   if (!t || t.blocked || !_tgEnabled) return;
   if (!isConnected) return; // never send on demo data
-  const key = sym + tf + t.dir;
+
+  // ── QUALITY GATE: Tiered rules by timeframe ──────────────
+  // M1 and M5 excluded — too noisy for TG alerts
+  if (tf === 60 || tf === 300) return;
+
+  const conf = t.confluence || 0;
+  const rr   = t.rr || 0;
+  const hasZone = t.insideOB || t.atSRLevel || t.atTrendLine
+    || (t.warnReasons && t.warnReasons.some(w => w.includes('Approaching OB') || w.includes('At S/R')));
+
+  if (tf === 14400) {
+    // ── 4H: strong setup — higher TF means longer hold, needs conviction
+    if (conf < 70) return;
+    if (rr < 1.8) return;
+    if (!hasZone) return;
+
+  } else if (tf === 3600) {
+    // ── 1H: solid confluence + near a zone
+    if (conf < 68) return;
+    if (rr < 1.6) return;
+    if (!hasZone) return;
+
+  } else if (tf === 1800) {
+    // ── 30M: decent confluence, must be at or near a zone
+    if (conf < 65) return;
+    if (rr < 1.4) return;
+    if (!hasZone) return;
+
+  } else if (tf === 900) {
+    // ── 15M: lowest TF allowed — needs zone + minimum confluence
+    if (conf < 65) return;
+    if (rr < 1.3) return;
+    if (!hasZone) return;
+  }
+
+  // ── Cooldown check ───────────────────────────────────────
+  // Key includes entry price (rounded to 2dp) so the SAME setup at the
+  // SAME level is blocked for 2h, but a new entry at a different price
+  // fires immediately even on the same symbol/tf/dir.
+  const entryRounded = Math.round((t.entry || 0) * 100) / 100;
+  const key = sym + tf + t.dir + entryRounded;
   const now = Date.now();
   if (_tgLastSent[key] && now - _tgLastSent[key] < TG_COOLDOWN) return;
   _tgLastSent[key] = now;
+
   const msg = buildTGMsg(t, sym, tf);
   if (msg) sendTG(msg);
 }
@@ -4441,7 +5108,7 @@ let _cscanWorker = null;
 
 function _buildCScanWorker() {
   // Inline the worker as a Blob URL so no separate file is needed
-  const workerSrc = '\n// ═══════════════════════════════════════════════════════════════\n// MSB ULTRA — CONTINUOUS SCAN WEB WORKER\n// Runs analyseCandles + calcSLTP off the main thread\n// Communicates via postMessage\n// ═══════════════════════════════════════════════════════════════\n\nconst CFG = {\n  pivotLen: 5,\n  msbZScore: 0.5,\n  obLookback: 10,\n  maxOBs: 10,\n  hpzThreshold: 70,\n  atrLen: 14,\n  atrSlMult: 1.2,    // tighter default — 1.5 was too wide for synthetic indices\n  atrTpMult: 2.5,    // reduced from 3.0\n  obSlBuf: 5,        // reduced from 10% — OB edges are structural, less buffer needed\n  swingLen: 10,\n  swingSamples: 8,\n  volPercentile: 90,\n  maxRiskPct: 2.0,   // hard cap: never risk more than this % regardless of input\n  minRR: 1.3,        // minimum RR — lower = more frequent signals\n};\n\nconst SCAN_SYMBOLS = [\n  {id:\'R_10\',name:\'Vol 10\'},{id:\'R_25\',name:\'Vol 25\'},{id:\'R_50\',name:\'Vol 50\'},\n  {id:\'R_75\',name:\'Vol 75\'},{id:\'R_100\',name:\'Vol 100\'},{id:\'1HZ10V\',name:\'Vol 10 1s\'},\n  {id:\'1HZ100V\',name:\'Vol 100 1s\'},\n  {id:\'BOOM1000\',name:\'Boom 1000\'},{id:\'BOOM500\',name:\'Boom 500\'},{id:\'BOOM300\',name:\'Boom 300\'},\n  {id:\'CRASH1000\',name:\'Crash 1000\'},{id:\'CRASH500\',name:\'Crash 500\'},{id:\'CRASH300\',name:\'Crash 300\'},\n  {id:\'STPRNG\',name:\'Step\'},\n  {id:\'JD10\',name:\'Jump 10\'},{id:\'JD25\',name:\'Jump 25\'},{id:\'JD50\',name:\'Jump 50\'},\n  {id:\'JD75\',name:\'Jump 75\'},{id:\'JD100\',name:\'Jump 100\'},\n];\n\nconst SCAN_TFS = [60, 300, 900, 3600, 14400];\n\nlet _scanCandleCache = {};\n\nfunction getSymbolProfile(sym) {\n  const s = sym || currentSymbol;\n  // type: \'jump\' | \'boom\' | \'crash\' | \'vol\' | \'step\' | \'vol1s\'\n  // slAtrMult: base SL ATR multiplier for this symbol type\n  // tpAtrMult: base TP ATR multiplier\n  // spikeGuard: extra ATR added to SL to clear spike wicks\n  // minSlPct:   minimum SL as % of price (floor — never tighter than this)\n  // maxSlPct:   maximum SL as % of price (cap — never wider than this)\n  // entryFilter: how strict confirmation must be before entry\n  //   \'strict\' = needs OB + MSB + FS all aligned\n  //   \'normal\' = OB + MSB\n  //   \'loose\'  = MSB only\n  const profiles = {\n    // ── Jump Indices ──────────────────────────────────────────\n    // Jump spikes are RANDOM and instant. SL must be wider than spike ATR.\n    // A 1-bar spike on JD100 can be 300+ points. Use 3x ATR minimum.\n    JD10:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD25:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD50:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD75:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD100: { type:\'jump\', slAtrMult:2.8, tpAtrMult:4.0, spikeGuard:1.0, minSlPct:0.2, maxSlPct:3.0, entryFilter:\'strict\', trendBias: null },\n    // ── Boom indices ─────────────────────────────────────────\n    // Boom trends UP with sudden DOWN spikes. Only trade LONG (with trend).\n    // Short positions get destroyed by the uptrend between spikes.\n    BOOM1000: { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM500:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM300:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    // ── Crash indices ────────────────────────────────────────\n    // Crash trends DOWN with sudden UP spikes. Only trade SHORT (with trend).\n    CRASH1000: { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH500:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH300:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    // ── Volatility indices ───────────────────────────────────\n    R_10:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.04,maxSlPct:0.8,  entryFilter:\'normal\', trendBias: null },\n    R_25:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.06,maxSlPct:0.9,  entryFilter:\'normal\', trendBias: null },\n    R_50:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.08,maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_75:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.3, minSlPct:0.1, maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_100: { type:\'vol\', slAtrMult:1.3, tpAtrMult:2.3, spikeGuard:0.3, minSlPct:0.12,maxSlPct:1.2,  entryFilter:\'normal\', trendBias: null },\n    // ── 1-second Volatility ──────────────────────────────────\n    \'1HZ10V\':  { type:\'vol1s\', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.5, minSlPct:0.06,maxSlPct:2.0, entryFilter:\'normal\', trendBias: null },\n    \'1HZ100V\': { type:\'vol1s\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.15,maxSlPct:3.0, entryFilter:\'normal\', trendBias: null },\n    // ── Step Index ───────────────────────────────────────────\n    STPRNG: { type:\'step\', slAtrMult:1.2, tpAtrMult:2.0, spikeGuard:0.1, minSlPct:0.02,maxSlPct:0.8, entryFilter:\'loose\', trendBias: null },\n  };\n  return profiles[s] || { type:\'vol\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.5, minSlPct:0.1, maxSlPct:2.5, entryFilter:\'normal\', trendBias: null };\n}\nfunction getSymbolVolScale(sym) {\n  const p = getSymbolProfile(sym || currentSymbol);\n  return p.slAtrMult / 1.2; // normalise to old scale\n}\nfunction getDP(sym) {\n  const s = sym || currentSymbol;\n  if (s.includes(\'R_10\') || s.includes(\'1HZ10V\')) return 3;\n  if (s.includes(\'STPRNG\')) return 2;\n  return 2;\n}\nfunction tfLabel(tf) {\n  return {60:\'1m\',120:\'2m\',300:\'5m\',600:\'10m\',900:\'15m\',1800:\'30m\',3600:\'1h\',14400:\'4h\',86400:\'1D\'}[tf] || tf+\'s\';\n}\nfunction sma(arr, len) {\n  // O(n) sliding window SMA\n  const result = new Array(arr.length).fill(0);\n  let sum = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sum += arr[i];\n    if (i >= len) sum -= arr[i - len];\n    if (i >= len - 1) result[i] = sum / len;\n  }\n  return result;\n}\nfunction stdev(arr, len) {\n  // O(n) Welford-style rolling stdev\n  const result = new Array(arr.length).fill(0);\n  let sumX = 0, sumX2 = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sumX  += arr[i];  sumX2  += arr[i] * arr[i];\n    if (i >= len) { sumX -= arr[i-len]; sumX2 -= arr[i-len] * arr[i-len]; }\n    if (i >= len - 1) {\n      const mean = sumX / len;\n      const variance = sumX2 / len - mean * mean;\n      result[i] = variance > 0 ? Math.sqrt(variance) : 0;\n    }\n  }\n  return result;\n}\nfunction calcRSI(closes, len) {\n  if (closes.length < len + 1) return 50;\n  let gains = 0, losses = 0;\n  for (let i = closes.length - len; i < closes.length; i++) {\n    const d = closes[i] - closes[i - 1];\n    if (d > 0) gains += d; else losses -= d;\n  }\n  const avgGain = gains / len;\n  const avgLoss = losses / len;\n  if (avgLoss === 0) return 100;\n  const rs = avgGain / avgLoss;\n  return 100 - (100 / (1 + rs));\n}\nfunction calcEMA(arr, len) {\n  const result = new Array(arr.length).fill(0);\n  const k = 2 / (len + 1);\n  let ema = arr[0];\n  result[0] = ema;\n  for (let i = 1; i < arr.length; i++) {\n    ema = arr[i] * k + ema * (1 - k);\n    result[i] = ema;\n  }\n  return result;\n}\nfunction calcATR(candles, len) {\n  if (candles.length < len + 1) return 0;\n  // True ranges\n  const tr = candles.map((c, i) => {\n    if (i === 0) return c.high - c.low;\n    return Math.max(c.high - c.low, Math.abs(c.high - candles[i-1].close), Math.abs(c.low - candles[i-1].close));\n  });\n  // Seed with SMA of first `len` bars\n  let atr = tr.slice(0, len).reduce((a, b) => a + b, 0) / len;\n  for (let i = len; i < tr.length; i++) {\n    atr = (atr * (len - 1) + tr[i]) / len; // Wilder smoothing\n  }\n  return atr;\n}\nfunction calcSpikeATR(candleArr, lookback) {\n  if (!candleArr || candleArr.length < 10) return 0;\n  const recent = candleArr.slice(-Math.min(lookback, candleArr.length));\n  const barMoves = recent.map(c => c.high - c.low);\n  barMoves.sort((a, b) => b - a);\n  // Take average of top 10% worst bars\n  const topN = Math.max(1, Math.floor(barMoves.length * 0.1));\n  const sum = barMoves.slice(0, topN).reduce((a, b) => a + b, 0);\n  return sum / topN;\n}\nfunction percentRank(arr, len, idx) {\n  const start = Math.max(0, idx - len + 1);\n  const window = arr.slice(start, idx + 1);\n  const val = arr[idx];\n  const below = window.filter(v => v < val).length;\n  return (below / window.length) * 100;\n}\nfunction sf(val, dp) {\n  if (val === null || val === undefined || isNaN(Number(val)) || !isFinite(Number(val))) return \'—\';\n  return Number(val).toFixed(dp === undefined ? 2 : dp);\n}\nfunction sn(val, fallback) {\n  const n = Number(val);\n  return (val === null || val === undefined || isNaN(n) || !isFinite(n)) ? (fallback || 0) : n;\n}\nfunction formatVol(v) {\n  const n = Number(v) || 0;\n  if (n >= 1e6) return sf(n/1e6,1)+\'M\';\n  if (n >= 1e3) return sf(n/1e3,0)+\'K\';\n  return Math.floor(n).toString();\n}\nfunction generateDemoCandles(symbol, tf, count) {\n  const now = Math.floor(Date.now() / 1000);\n  const bars = [];\n  const basePrice =\n    symbol === \'BOOM1000\' || symbol === \'CRASH1000\' ? 3000 :\n    symbol === \'BOOM500\'  || symbol === \'CRASH500\'  ? 3500 :\n    symbol === \'BOOM300\'  || symbol === \'CRASH300\'  ? 4000 :\n    symbol.includes(\'R_10\')  ? 5200 :\n    symbol.includes(\'R_25\')  ? 4800 :\n    symbol.includes(\'R_50\')  ? 4500 :\n    symbol.includes(\'R_75\')  ? 4200 :\n    symbol.includes(\'R_100\') ? 3900 :\n    symbol.includes(\'JD\')    ? 2000 : 1000;\n\n  let price = basePrice;\n  const vltMap = {\n    R_10:0.0008, R_25:0.002, R_50:0.005, R_75:0.0085, R_100:0.012,\n    BOOM1000:0.004, BOOM500:0.005, BOOM300:0.006,\n    CRASH1000:0.004, CRASH500:0.005, CRASH300:0.006,\n    STPRNG:0.001,\n    JD10:0.006,JD25:0.009,JD50:0.012,JD75:0.015,JD100:0.018,\n    \'1HZ10V\':0.001,\'1HZ100V\':0.014,\n  };\n  const vlt = vltMap[symbol] || 0.008;\n\n  // Boom: mostly rises, occasional sharp spike DOWN; Crash: opposite\n  const isBoom  = symbol.includes(\'BOOM\');\n  const isCrash = symbol.includes(\'CRASH\');\n  // Spike probability per bar\n  const spikeProb = isBoom ? 0.003 : isCrash ? 0.003 : 0;\n  // Spike magnitude (multiplier of ATR)\n  const spikeMag  = isBoom ? -0.08 : 0.08; // Boom spikes down, Crash spikes up\n\n  const dp = symbol.includes(\'R_10\') || symbol.includes(\'1HZ10V\') ? 3 : 2;\n  let trendBias = 0, trendBarsLeft = 0;\n\n  for (let i = count - 1; i >= 0; i--) {\n    if (trendBarsLeft <= 0) {\n      // Boom/Crash trend strongly in one direction between spikes\n      if (isBoom)  trendBias = 0.0015 + Math.random() * 0.001;  // upward drift\n      else if (isCrash) trendBias = -(0.0015 + Math.random() * 0.001); // downward drift\n      else trendBias = (Math.random() - 0.5) * 0.003;\n      trendBarsLeft = Math.floor(Math.random() * 40) + 10;\n    }\n    trendBarsLeft--;\n\n    let baseMove = (Math.random() - 0.5 + trendBias) * vlt;\n\n    // Inject spike bar\n    const isSpike = spikeProb > 0 && Math.random() < spikeProb;\n    if (isSpike) {\n      baseMove = spikeMag * (0.5 + Math.random() * 0.5);\n      trendBarsLeft = 0; // reset trend after spike\n    }\n\n    const range = Math.abs(baseMove) * price + price * vlt * 0.5;\n    const open  = price;\n    const close = price * (1 + baseMove);\n    const high  = Math.max(open, close) + Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const low   = Math.min(open, close) - Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const movePct  = Math.abs(close - open) / open;\n    const volMult  = isSpike ? 8 + Math.random() * 4 : (Math.random() < 0.05 ? 3 + Math.random() * 4 : 1);\n    const normalVol = Math.round(movePct * 100000 * (0.5 + Math.random()) * volMult);\n    bars.push({\n      time: now - i * tf,\n      open: parseFloat(open.toFixed(dp)), high: parseFloat(high.toFixed(dp)),\n      low: parseFloat(low.toFixed(dp)),   close: parseFloat(close.toFixed(dp)),\n      volume: Math.max(100, Math.min(99999, normalVol)),\n    });\n    price = close;\n  }\n  return bars;\n}\nfunction analyseCandles(candleArr, symId) {\n  if (candleArr.length < 50) return null;\n  const savedSym = currentSymbol;\n  currentSymbol = symId; // for getDP / getSymbolVolScale\n  const n = candleArr.length;  const closes = candleArr.map(c => c.close);\n  const highs  = candleArr.map(c => c.high);\n  const lows   = candleArr.map(c => c.low);\n  const opens  = candleArr.map(c => c.open);\n  const vols   = candleArr.map(c => c.volume);\n\n  // Momentum Z-Score\n  const changes = closes.map((c, i) => i > 0 ? c - closes[i-1] : 0);\n  const avgChange = sma(changes, 50);\n  const stdChange = stdev(changes, 50);\n  const momentumZ = stdChange[n-1] !== 0 ? (changes[n-1] - avgChange[n-1]) / stdChange[n-1] : 0;\n\n  // Volume stats — pre-compute percentile ranks for all bars (O(n log n) once)\n  const volPctRank = percentRank(vols, 100, n-1);\n  const _volRankCache = new Float32Array(n);\n  { const _sorted = vols.slice().sort((a,b) => a-b);\n    for (let _i = 0; _i < n; _i++) {\n      const _v = vols[_i]; let _lo2 = 0, _hi2 = _sorted.length;\n      while (_lo2 < _hi2) { const _m = (_lo2+_hi2)>>1; if (_sorted[_m] < _v) _lo2=_m+1; else _hi2=_m; }\n      _volRankCache[_i] = _lo2 / _sorted.length * 100;\n    }\n  }\n  const volSMA = sma(vols, 100);\n  const volSTD = stdev(vols, 100);\n  const volZScore = volSTD[n-1] !== 0 ? (vols[n-1] - volSMA[n-1]) / volSTD[n-1] : 0;\n\n  // ATR (Wilder, proper period) — must use candleArr NOT global candles\n  const atr = calcATR(candleArr, CFG.atrLen);\n  const atrPct = closes[n-1] > 0 ? (atr / closes[n-1]) * 100 : 0;\n\n\n  // ── Spike Filter (Jump/Boom/Crash protection) ─────────────\n  // A bar is a spike if its range > 3× the 20-bar average range.\n  // Spike bars are excluded from MSB and OB detection.\n  const barRanges = candleArr.map(c => c.high - c.low);\n  const spikeFlags = barRanges.map((r, i) => {\n    if (i < 20) return false;\n    const avgRange = barRanges.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;\n    return r > avgRange * 3.0;\n  });\n\n  // Pivot Detection\n  const pLen = CFG.pivotLen;\n  const pivotHighs = [], pivotLows = [];\n  for (let i = pLen; i < n - pLen; i++) {\n    let isHigh = true, isLow = true;\n    for (let j = i - pLen; j <= i + pLen; j++) {\n      if (j === i) continue;\n      if (highs[j] >= highs[i]) isHigh = false;\n      if (lows[j]  <= lows[i])  isLow  = false;\n    }\n    if (isHigh && !spikeFlags[i]) pivotHighs.push({ idx: i, val: highs[i] });\n    if (isLow  && !spikeFlags[i]) pivotLows.push({ idx: i, val: lows[i] });\n  }\n\n  // MSB Detection\n  const msbBull = [], msbBear = [];\n  let lastPH = null, lastPL = null, prevPH = null, prevPL = null;\n\n  for (let i = 1; i < n; i++) {\n    const newPH = pivotHighs.find(p => p.idx === i - pLen);\n    const newPL = pivotLows.find(p => p.idx === i - pLen);\n    if (newPH) { prevPH = lastPH; lastPH = newPH; }\n    if (newPL) { prevPL = lastPL; lastPL = newPL; }\n    if (!lastPH || !lastPL) continue;\n    const mZ = stdChange[i] !== 0 ? (changes[i] - avgChange[i]) / stdChange[i] : 0;\n    if (closes[i] > lastPH.val && closes[i-1] <= lastPH.val && mZ > CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPH && lastPH.val > prevPH.val;\n      const volConfBull = volPctRank >= 45;\n      msbBull.push({ idx: i, level: lastPH.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bull\', volConfirmed: volConfBull });\n    }\n    if (closes[i] < lastPL.val && closes[i-1] >= lastPL.val && mZ < -CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPL && lastPL.val < prevPL.val;\n      const volConfBear = volPctRank >= 45;\n      msbBear.push({ idx: i, level: lastPL.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bear\', volConfirmed: volConfBear });\n    }\n  }\n\n  // OB Detection\n  const localObArray = [];\n  for (const msb of [...msbBull, ...msbBear]) {\n    const isBull = msb.dir === \'bull\';\n    let obIdx = -1;\n    for (let k = 1; k <= CFG.obLookback; k++) {\n      const ci = msb.idx - k;\n      if (ci < 0) break;\n      if ((isBull && closes[ci] < opens[ci]) || (!isBull && closes[ci] > opens[ci])) { obIdx = ci; break; }\n    }\n    if (obIdx < 0) continue;\n\n    const obTop  = highs[obIdx];\n    const obBot  = lows[obIdx];\n    const obSize = obTop - obBot;\n    const bodyRatio = obSize > 0 ? Math.abs(closes[obIdx] - opens[obIdx]) / obSize : 0.5;\n    const volPct = _volRankCache[obIdx] || 0;\n    const mZi = stdChange[obIdx] !== 0 ? (changes[obIdx] - avgChange[obIdx]) / stdChange[obIdx] : 0;\n    const vZi = volSTD[obIdx] !== 0 ? (vols[obIdx] - volSMA[obIdx]) / volSTD[obIdx] : 0;\n\n    // FIX: normalised score, capped properly\n    const rawScore =\n      Math.min(Math.abs(mZi), 4) * 15 +\n      volPct * 0.4 +\n      bodyRatio * 20 +\n      Math.min(vZi, 3) * 5;\n    const score = Math.min(100, rawScore);\n    const ageBars = n - 1 - obIdx;\n    const ageDecay = Math.max(0, 1 - Math.floor(ageBars / 20) * 0.20); // -20% per 20 bars\n    const isHPZ = (score * ageDecay) >= CFG.hpzThreshold;\n\n    const overlaps = localObArray.some(o =>\n      ((obTop <= o.top && obTop >= o.bottom) || (obBot <= o.top && obBot >= o.bottom)));\n    if (overlaps) continue;\n\n    let touchCount = 0, mitigated = false, mitigatedAt = -1;\n    for (let j = obIdx + 1; j < n; j++) {\n      const entered = isBull ? (lows[j] <= obTop && lows[j] >= obBot) : (highs[j] >= obBot && highs[j] <= obTop);\n      if (entered) touchCount++;\n      const mit = isBull ? lows[j] < obBot : highs[j] > obTop;\n      if (mit) { mitigated = true; mitigatedAt = j; break; }\n    }\n\n    localObArray.push({\n      idx: obIdx, top: obTop, bottom: obBot, poc: (obTop + obBot) / 2,\n      isBull, score: parseFloat((score * ageDecay).toFixed(1)), rawScore: score, ageBars, isHPZ, mitigated, mitigatedAt, touchCount,\n      msbType: msb.type, barTime: candleArr[obIdx].time,\n    });\n  }\n  // Only keep OBs that are at least pLen bars old (confirmed, not forming)\n  const finalObArray = localObArray.filter(o => o.idx < n - pLen).slice(-CFG.maxOBs);\n\n  // ═══════════════════════════════════════════════════════════\n  // FIX: Future Swing — rebuilt from scratch each call\n  // Uses pivot pairs (PH-PL or PL-PH) to compute swing %\n  // ═══════════════════════════════════════════════════════════\n  const swingPcts = [];\n  const allPivots = [\n    ...pivotHighs.map(p => ({ ...p, type: \'H\' })),\n    ...pivotLows.map(p => ({ ...p, type: \'L\' })),\n  ].sort((a, b) => a.idx - b.idx);\n\n  for (let k = 1; k < allPivots.length; k++) {\n    const prev = allPivots[k - 1];\n    const curr = allPivots[k];\n    if (prev.type === curr.type) continue; // skip same-type\n    // Only include "meaningful" swings — filter micro-noise\n    if (curr.idx - prev.idx < 2) continue;\n    let pct;\n    if (prev.type === \'L\' && curr.type === \'H\') {\n      pct = (curr.val - prev.val) / prev.val * 100; // bull swing\n    } else {\n      pct = (prev.val - curr.val) / curr.val * 100; // bear swing (positive %)\n    }\n    // Filter out implausibly large or near-zero swings\n    if (Math.abs(pct) > 0.01 && Math.abs(pct) < 30) {\n      swingPcts.push({ pct, bullish: prev.type === \'L\', fromIdx: prev.idx, toIdx: curr.idx });\n    }\n  }\n\n  // Keep last N samples\n  const recentSwings = swingPcts.slice(-CFG.swingSamples);\n  const absPcts = recentSwings.map(s => Math.abs(s.pct));\n  const avgSwingPct = absPcts.length > 0 ? absPcts.reduce((a, b) => a + b, 0) / absPcts.length : 0;\n  const minSwingPct = absPcts.length > 0 ? Math.min(...absPcts) : 0;\n  const maxSwingPct = absPcts.length > 0 ? Math.max(...absPcts) : 0;\n\n  // Determine next expected direction from last pivot pair\n  let fsDir = null, fsTarget = null, fsFromPrice = null, fsFromIdx = null;\n  const lastPivH = pivotHighs[pivotHighs.length - 1];\n  const lastPivL = pivotLows[pivotLows.length - 1];\n\n  if (lastPivH && lastPivL) {\n    const currentP = closes[n - 1];\n    if (lastPivH.idx > lastPivL.idx) {\n      // Last confirmed swing ended at a HIGH → next expected move: DOWN\n      fsDir = \'bear\';\n      fsFromPrice = lastPivH.val;\n      fsFromIdx = lastPivH.idx;\n      // Target = project DOWN from the recent pivot high\n      fsTarget = lastPivH.val * (1 - avgSwingPct / 100);\n      // Sanity: target must be below current price for a bear setup\n      if (fsTarget >= currentP) fsTarget = currentP * (1 - avgSwingPct / 100);\n    } else {\n      // Last confirmed swing ended at a LOW → next expected move: UP\n      fsDir = \'bull\';\n      fsFromPrice = lastPivL.val;\n      fsFromIdx = lastPivL.idx;\n      fsTarget = lastPivL.val * (1 + avgSwingPct / 100);\n      // Sanity: target must be above current price for a bull setup\n      if (fsTarget <= currentP) fsTarget = currentP * (1 + avgSwingPct / 100);\n    }\n  }\n\n  // Bias + buy/sell vol\n  const lookback50 = 50;\n  const recentBull = msbBull.filter(m => m.idx >= n - lookback50).length;\n  const recentBear = msbBear.filter(m => m.idx >= n - lookback50).length;\n\n  let buyVolSum = 0, sellVolSum = 0;\n  for (const c of candleArr.slice(-50)) {\n    if (c.close > c.open) buyVolSum += c.volume;\n    else sellVolSum += c.volume;\n  }\n\n  // Trend strength: ratio of dominant bias MSBs\n  const totalMSB50 = recentBull + recentBear;\n  const trendStrength = totalMSB50 > 0 ? Math.max(recentBull, recentBear) / totalMSB50 : 0.5;\n\n  const rsi = calcRSI(closes, 14);\n  const spikeAtr = calcSpikeATR(candleArr, 100);\n\n  // ── EMA 20 / 50 / 200 ─────────────────────────────────────\n  const ema20  = calcEMA(closes, 20);\n  const ema50  = calcEMA(closes, 50);\n  const ema200 = calcEMA(closes, 200);\n  const emaTrend = ema20[n-1] > ema50[n-1] && ema50[n-1] > ema200[n-1] ? \'bull\'\n                 : ema20[n-1] < ema50[n-1] && ema50[n-1] < ema200[n-1] ? \'bear\' : \'mixed\';\n\n  // ── Fair Value Gaps (FVG / Imbalance) ─────────────────────\n  // A bull FVG: candle[i-2].high < candle[i].low  (gap up)\n  // A bear FVG: candle[i-2].low  > candle[i].high (gap down)\n  const fvgZones = [];\n  for (let i = 2; i < n; i++) {\n    if (lows[i] > highs[i-2]) {\n      // Bull FVG\n      fvgZones.push({ top: lows[i], bottom: highs[i-2], isBull: true, idx: i, filled: false });\n    } else if (highs[i] < lows[i-2]) {\n      // Bear FVG\n      fvgZones.push({ top: lows[i-2], bottom: highs[i], isBull: false, idx: i, filled: false });\n    }\n  }\n  // Check if each FVG has been filled (price returned into zone)\n  for (const fvg of fvgZones) {\n    for (let j = fvg.idx + 1; j < n; j++) {\n      if (lows[j] <= fvg.top && highs[j] >= fvg.bottom) { fvg.filled = true; break; }\n    }\n  }\n  // Keep only last 20 unfilled FVGs\n  const activeFVGs = fvgZones.filter(f => !f.filled).slice(-20);\n\n  // ── Liquidity Sweeps ──────────────────────────────────────\n  // Sweep: wick breaks a recent pivot level but candle closes back inside\n  const liqSweeps = [];\n  for (let i = pLen + 1; i < n; i++) {\n    // Check if this bar\'s high swept a recent pivot high but closed below it (bear trap)\n    const recentPH = pivotHighs.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const ph of recentPH) {\n      if (highs[i] > ph.val && closes[i] < ph.val) {\n        liqSweeps.push({ idx: i, level: ph.val, dir: \'bear\', type: \'SWEEP HIGH\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n    // Check if this bar\'s low swept a recent pivot low but closed above it (bull trap)\n    const recentPL = pivotLows.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const pl of recentPL) {\n      if (lows[i] < pl.val && closes[i] > pl.val) {\n        liqSweeps.push({ idx: i, level: pl.val, dir: \'bull\', type: \'SWEEP LOW\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n  }\n  const recentSweeps = liqSweeps.slice(-10);\n\n\n  // ── MTF OB Stack detection (4H confluence) ───────────────\n  const _htfKey4H = symId + 14400;\n  const _htfC4H   = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_htfKey4H] : null;\n  let _htfOBs4H   = [];\n  // Use cached 4H OB analysis — recompute only when 4H candle cache changes\n  const _htfCacheKey = symId + \'_htf4H_obs\';\n  if (typeof _scanCandleCache !== \'undefined\') {\n    if (!_scanCandleCache[_htfCacheKey] && _htfC4H && _htfC4H.length >= 50) {\n      try {\n        const _htfR = analyseCandles(_htfC4H, symId);\n        if (_htfR) _scanCandleCache[_htfCacheKey] = _htfR.activeOBs || [];\n      } catch(_e) {}\n    }\n    _htfOBs4H = _scanCandleCache[_htfCacheKey] || [];\n  }\n  const activeOBsFinal = finalObArray.filter(o => !o.mitigated).map(ob => {\n    const stacked = _htfOBs4H.find(h =>\n      (ob.top >= h.bottom && ob.top <= h.top) || (ob.bottom >= h.bottom && ob.bottom <= h.top)\n    );\n    return Object.assign({}, ob, { mtfStack: !!stacked, htfOBScore: stacked ? stacked.score : 0 });\n  });\n\n  // S/R LEVEL ENGINE — cluster + touch-count based (cached per candle count)\n  // ══════════════════════════════════════════════════════════\n  let srLevels = [], srSupport = [], srResistance = [], nearestSup = null, nearestRes = null, srZone = \'OPEN\';\n  {\n    const _srKey    = symId + \'_sr_\' + n;\n    const _srCached = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_srKey] : null;\n    if (_srCached) {\n      // Fast path: reclassify cached clusters against current price only\n      const _cp = closes[n - 1];\n      srLevels = _srCached.map(s => Object.assign({}, s, {\n        isSupport: s.price <= _cp,\n        dist: Math.abs(s.price - _cp),\n      })).sort((a, b) => a.dist - b.dist).slice(0, 16);\n    } else {\n      // Full compute: cluster pivots → count touches → build levels\n      const srCandidates = [\n        ...pivotHighs.map(p => p.val),\n        ...pivotLows.map(p => p.val),\n      ];\n      const srClusterZone = atr * 0.6;\n      const srClusters = [];\n      for (const val of srCandidates) {\n        const existing = srClusters.find(c => Math.abs(c.price - val) <= srClusterZone);\n        if (existing) {\n          existing.price = (existing.price * existing.count + val) / (existing.count + 1);\n          existing.count++;\n        } else {\n          srClusters.push({ price: val, count: 1, touches: 0 });\n        }\n      }\n      const srTouchZone = atr * 0.8;\n      for (const cl of srClusters) {\n        cl.touches = 0;\n        for (let i = 0; i < n; i++) {\n          if (highs[i] >= cl.price - srTouchZone && lows[i] <= cl.price + srTouchZone) cl.touches++;\n        }\n      }\n      const _cp2 = closes[n - 1];\n      srLevels = srClusters\n        .filter(c => c.touches >= 2)\n        .map(c => ({\n          price:     parseFloat(c.price.toFixed(6)),\n          touches:   c.touches,\n          strong:    c.touches >= 3,\n          isSupport: c.price <= _cp2,\n          dist:      Math.abs(c.price - _cp2),\n        }))\n        .sort((a, b) => a.dist - b.dist)\n        .slice(0, 16);\n      // Cache for subsequent ticks within the same bar\n      if (typeof _scanCandleCache !== \'undefined\') {\n        _scanCandleCache[_srKey] = srLevels.map(s => ({ price: s.price, touches: s.touches, strong: s.strong }));\n      }\n    }\n    // Shared post-processing for both paths\n    srSupport    = srLevels.filter(s =>  s.isSupport).sort((a, b) => b.price - a.price);\n    srResistance = srLevels.filter(s => !s.isSupport).sort((a, b) => a.price - b.price);\n    nearestSup   = srSupport[0]    || null;\n    nearestRes   = srResistance[0] || null;\n    if (nearestSup && nearestRes) {\n      const _sd = closes[n-1] - nearestSup.price;\n      const _rd = nearestRes.price - closes[n-1];\n      if      (_sd <= atr * 1.2) srZone = \'AT SUPPORT\';\n      else if (_rd <= atr * 1.2) srZone = \'AT RESIST\';\n      else                        srZone = \'MID RANGE\';\n    }\n  }\n\n  currentSymbol = savedSym; // restore before returning\n  return {\n    symId, rsi, spikeAtr, candleArr,\n    ema20, ema50, ema200, emaTrend,\n    activeFVGs, recentSweeps,\n    momentumZ, volPctRank, volZScore, atr, atrPct,\n    msbBull, msbBear, recentBull, recentBear,\n    totalBullMSBs: msbBull.length, totalBearMSBs: msbBear.length,\n    activeOBs: activeOBsFinal,\n    buyVol: buyVolSum, sellVol: sellVolSum,\n    recentSwings, avgSwingPct, minSwingPct, maxSwingPct,\n    fsDir, fsTarget, fsFromPrice, fsFromIdx,\n    currentPrice: closes[n-1],\n    trendStrength, n,\n    srLevels, srSupport, srResistance, nearestSup, nearestRes, srZone,\n    spikeFlags,\n    spikeCount: spikeFlags.filter(Boolean).length,\n  };\n}\nfunction calcSLTP(r) {\n  const price   = r.currentPrice;\n  const atr     = r.atr;\n  const active  = r.activeOBs || [];\n  const profile = getSymbolProfile(r.symId);\n\n  if (!price || !atr || atr <= 0) return null;\n\n  // ══════════════════════════════════════════════════════════\n  // THE 5-GATE ENTRY SYSTEM\n  // Gates 1-4 are HARD gates — all must pass for a trade.\n  // Gate 5 is a WARNING only — shown but doesn\'t block.\n  // This ensures trades show regularly while keeping quality.\n  // ══════════════════════════════════════════════════════════\n\n  const isBullBias = r.recentBull >= r.recentBear;\n  const isBull     = isBullBias;\n  const dir        = isBull ? \'LONG\' : \'SHORT\';\n  const failReasons = [];\n  const warnReasons = [];\n\n  // ── GATE 1: EMA trend alignment ───────────────────────────\n  // EMA20 vs EMA50 must agree with bias direction.\n  // (Not requiring all 3 EMAs — that\'s too strict for ranging markets)\n  const ema20val = r.ema20 ? r.ema20[r.n - 1] : null;\n  const ema50val = r.ema50 ? r.ema50[r.n - 1] : null;\n  const emaShortAligned = ema20val && ema50val\n    ? (isBull ? ema20val > ema50val : ema20val < ema50val)\n    : true; // if no EMA data, don\'t block\n  if (!emaShortAligned) {\n    failReasons.push(\'GATE1: EMA 20 vs 50 not aligned with bias\');\n  }\n  // Full EMA alignment (20/50/200) shown as warning not hard block\n  if (r.emaTrend === \'mixed\') {\n    warnReasons.push(\'NOTE: EMA 200 mixed — partial trend alignment\');\n  }\n\n  // ── GATE 2: Bias + Future Swing agree ────────────────────\n  if (profile.trendBias === \'bull\' && !isBullBias) {\n    failReasons.push(\'GATE2: Boom requires BULL bias\');\n  } else if (profile.trendBias === \'bear\' && isBullBias) {\n    failReasons.push(\'GATE2: Crash requires BEAR bias\');\n  } else if (r.fsDir && r.fsDir !== (isBull ? \'bull\' : \'bear\')) {\n    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality\n    failReasons.push(\'GATE2: Future Swing is \' + r.fsDir + \' — conflicts with \' + (isBull?\'bull\':\'bear\') + \' bias\');\n  }\n\n  // ── GATE 3: Price near aligned OB OR strong S/R ──────────\n  const alignedOBs = active.filter(o => isBull ? o.isBull : !o.isBull);\n  const nearOB = alignedOBs.find(o => price <= o.top + atr * 2 && price >= o.bottom - atr * 2);\n  const insideOB = alignedOBs.find(o => price <= o.top && price >= o.bottom);\n  const srLevels = r.srLevels || [];\n  const nearSR = srLevels.find(s =>\n    s.strong && Math.abs(s.price - price) <= atr * 1.5 && (isBull ? s.isSupport : !s.isSupport)\n  );\n  const atSRLevel = !!nearSR;\n  if (!nearOB && !atSRLevel) {\n    if (alignedOBs.length === 0) {\n      warnReasons.push(\'NOTE G3: No \' + (isBull?\'bull\':\'bear\') + \' OB or S/R yet\');\n    } else {\n      const nearest = isBull\n        ? alignedOBs.sort((a,b) => b.top - a.top)[0]\n        : alignedOBs.sort((a,b) => a.bottom - b.bottom)[0];\n      const dist = isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2);\n      failReasons.push(\'GATE3: Price too far from OB/S/R (\' + dist + \' pts)\');\n    }\n  } else if (atSRLevel && !insideOB) {\n    warnReasons.push(\'NOTE: At S/R ×\' + nearSR.touches + \' — \' + (nearSR.isSupport?\'support\':\'resist\') + \' confluence\');\n  } else if (!insideOB) {\n    warnReasons.push(\'NOTE: Approaching OB — wait for touch\');\n  }\n\n\n  // ── BREAK & RETEST CHECK ─────────────────────────────────\n  // Verify price has actually touched the zone and started to reverse\n  // (at least 0.5 ATR bounce from zone edge) — prevents entries on\n  // first approach before any confirmation of zone respect.\n  let zoneRetestConfirmed = false;\n  const candlesForRetest = r.candleArr || [];\n  const nRt = candlesForRetest.length;\n  if (nearOB && nRt >= 3) {\n    const zoneTop = nearOB.top;\n    const zoneBot = nearOB.bottom;\n    // Look at last 5 bars for a touch + bounce\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = isBull ? (c.low <= zoneTop && c.low >= zoneBot - atr * 0.5)\n                              : (c.high >= zoneBot && c.high <= zoneTop + atr * 0.5);\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > c.low + atr * 0.5 : nextClose < c.high - atr * 0.5;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (atSRLevel && nRt >= 3) {\n    const srPrice = nearSR ? nearSR.price : 0;\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = Math.abs((isBull ? c.low : c.high) - srPrice) <= atr * 0.6;\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > srPrice + atr * 0.4 : nextClose < srPrice - atr * 0.4;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (!nearOB && !atSRLevel) {\n    zoneRetestConfirmed = true; // no zone — don\'t double-block\n  } else {\n    zoneRetestConfirmed = true; // if first approach, allow but warn\n    warnReasons.push(\'NOTE: Zone not yet retested — wait for bounce confirmation\');\n  }\n\n  // ── GATE 4: Minimum bias strength ────────────────────────\n  // At least 55% of recent MSBs must be in trade direction.\n  const biasTotal    = (r.recentBull + r.recentBear) || 1;\n  const biasStrength = Math.max(r.recentBull, r.recentBear) / biasTotal;\n  if (biasStrength < 0.50) {\n    failReasons.push(\'GATE4: Bias too weak (\' + sf(biasStrength*100,0) + \'%) — need 50%+\');\n  }\n\n  // ── GATE 5: Momentum (WARNING only — not a hard block) ────\n  const momentumOk = isBull ? sn(r.momentumZ) > -2.0 : sn(r.momentumZ) < 2.0;\n  if (!momentumOk) {\n    warnReasons.push(\'WARN G5: Momentum Z-Score weak (\' + sf(r.momentumZ,2) + \') — counter-momentum entry\');\n  }\n\n\n  // ── GATE 6: HTF Bias alignment (HARD block if 1H+4H both oppose) ─\n  // Uses cached HTF candles from _scanCandleCache.\n  // Only blocks if BOTH 1H and 4H are confirmed opposite to trade dir.\n  (function() {\n    const htfTFs = [3600, 14400]; // 1H, 4H\n    let opposingCount = 0;\n    for (const tf of htfTFs) {\n      const key = (r.symId || currentSymbol) + tf;\n      const htfC = _scanCandleCache[key];\n      if (!htfC || htfC.length < 50) continue;\n      const htfCloses = htfC.map(c => c.close);\n      const e20 = calcEMA(htfCloses, 20);\n      const e50 = calcEMA(htfCloses, 50);\n      const nn  = htfCloses.length - 1;\n      const htfBull = e20[nn] > e50[nn] && htfCloses[nn] > e50[nn];\n      const htfBear = e20[nn] < e50[nn] && htfCloses[nn] < e50[nn];\n      if (isBull && htfBear) opposingCount++;\n      if (!isBull && htfBull) opposingCount++;\n    }\n    if (opposingCount >= 2) {\n      failReasons.push(\'GATE6: HTF 1H+4H both oppose trade direction — structure conflict\');\n    } else if (opposingCount === 1) {\n      warnReasons.push(\'WARN G6: One HTF TF opposes — partial HTF conflict\');\n    }\n  })();\n\n  // ── RESULT ────────────────────────────────────────────────\n  if (failReasons.length > 0) {\n    return { blocked: true, failReasons, warnReasons, dir, isBull };\n  }\n\n  // All hard gates passed — proceed to SL/TP calculation\n\n  // Spike-aware distances\n  const spikeAtr = r.spikeAtr || atr * 2;\n  const spikeGuardDist = spikeAtr * profile.spikeGuard;\n  const minSlDist = Math.max(atr * 0.5, price * (profile.minSlPct / 100));\n  const maxSlDist = price * (profile.maxSlPct / 100);\n\n  let sl = null, slSources = [];\n\n  // A1: S/R structural SL — place beyond nearest strong S/R\n  const srLevs = r.srLevels || [];\n  if (isBull) {\n    const supBelow = srLevs.filter(s => s.isSupport && s.strong && s.price < price && (price - s.price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => b.price - a.price);\n    if (supBelow.length > 0) {\n      const cand = supBelow[0].price - atr * 0.3 - spikeGuardDist * 0.5;\n      const dist = price - cand;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  } else {\n    const resAbove = srLevs.filter(s => !s.isSupport && s.strong && s.price > price && (s.price - price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => a.price - b.price);\n    if (resAbove.length > 0) {\n      const cand = resAbove[0].price + atr * 0.3 + spikeGuardDist * 0.5;\n      const dist = cand - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  }\n\n  // A2: OB structural SL — place BEYOND full OB + spike guard\n  // IMPORTANT: only use OBs that are within 2x ATR of current price\n  // (distant OBs produce insane SL distances)\n  if (isBull) {\n    const bullOBs = active\n      .filter(o => o.isBull && o.top < price && (price - o.top) <= atr * 3)\n      .sort((a,b) => b.top - a.top);\n    if (bullOBs.length > 0) {\n      const ob = bullOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.bottom - extra;\n      const dist = price - candidate;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  } else {\n    const bearOBs = active\n      .filter(o => !o.isBull && o.bottom > price && (o.bottom - price) <= atr * 3)\n      .sort((a,b) => a.bottom - b.bottom);\n    if (bearOBs.length > 0) {\n      const ob = bearOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.top + extra;\n      const dist = candidate - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  }\n\n  // B: Swing pivot SL\n  if (sl === null && r.fsFromPrice) {\n    const pivotDist = Math.abs(price - r.fsFromPrice);\n    if (pivotDist <= maxSlDist) {\n      const extra = (profile.type === \'jump\') ? spikeGuardDist : atr * 0.3;\n      const candidate = isBull\n        ? Math.min(r.fsFromPrice, price) - extra\n        : Math.max(r.fsFromPrice, price) + extra;\n      const dist = Math.abs(price - candidate);\n      if (dist >= minSlDist && dist <= maxSlDist && (isBull ? candidate < price : candidate > price)) {\n        sl = candidate; slSources = [\'SWING+SPIKE\'];\n      }\n    }\n  }\n\n  // C: Profile ATR fallback (uses profile multiplier not generic 1.2)\n  if (sl === null) {\n    const atrDist = Math.min(atr * profile.slAtrMult + spikeGuardDist, maxSlDist);\n    sl = isBull ? price - atrDist : price + atrDist;\n    slSources = [\'ATR×\' + sf(profile.slAtrMult,1)];\n  }\n\n  // Enforce minimum\n  if (Math.abs(price - sl) < minSlDist) sl = isBull ? price - minSlDist : price + minSlDist;\n  if (isBull && sl >= price)  sl = price - minSlDist;\n  if (!isBull && sl <= price) sl = price + minSlDist;\n\n  const risk = Math.abs(price - sl);\n  if (risk <= 0) return null;\n\n  // TP calculation — max distance capped tightly by profile\n  const maxTpDist = Math.min(price * 0.08, atr * profile.tpAtrMult * 2.5);\n  let tp = null, tpSources = [];\n\n  // TP-A1: Snap to nearest strong S/R on reward side\n  if (tp === null) {\n    const srLevTP = r.srLevels || [];\n    if (isBull) {\n      const resAbove = srLevTP.filter(s => !s.isSupport && s.strong && s.price > price).sort((a,b) => a.price - b.price);\n      if (resAbove.length > 0) {\n        const dist = resAbove[0].price - price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = resAbove[0].price; tpSources = [\'SR×\' + resAbove[0].touches]; }\n      }\n    } else {\n      const supBelow = srLevTP.filter(s => s.isSupport && s.strong && s.price < price).sort((a,b) => b.price - a.price);\n      if (supBelow.length > 0) {\n        const dist = price - supBelow[0].price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = supBelow[0].price; tpSources = [\'SR×\' + supBelow[0].touches]; }\n      }\n    }\n  }\n\n  if (r.fsTarget && r.fsDir === (isBull ? \'bull\' : \'bear\')) {\n    const onSide = isBull ? r.fsTarget > price : r.fsTarget < price;\n    const dist = Math.abs(r.fsTarget - price);\n    if (onSide && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = r.fsTarget; tpSources = [\'SWING\']; }\n  }\n  if (tp === null && r.avgSwingPct > 0.01) {\n    const proj = isBull ? price * (1 + r.avgSwingPct / 100) : price * (1 - r.avgSwingPct / 100);\n    const dist = Math.abs(proj - price);\n    if ((isBull ? proj > price : proj < price) && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = proj; tpSources = [\'PROJ\']; }\n  }\n  if (tp === null) {\n    if (isBull) {\n      const res = active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom);\n      if (res.length > 0 && (res[0].bottom - price) / risk >= CFG.minRR) { tp = res[0].bottom; tpSources = [\'NEXT-OB\']; }\n    } else {\n      const sup = active.filter(o => o.isBull && o.top < price).sort((a,b) => b.top - a.top);\n      if (sup.length > 0 && (price - sup[0].top) / risk >= CFG.minRR) { tp = sup[0].top; tpSources = [\'NEXT-OB\']; }\n    }\n  }\n  if (tp === null) {\n    tp = isBull ? price + Math.min(atr * profile.tpAtrMult, maxTpDist) : price - Math.min(atr * profile.tpAtrMult, maxTpDist);\n    tpSources = [\'ATR×\' + sf(profile.tpAtrMult,1)];\n  }\n\n  const minTP = isBull ? price + risk * CFG.minRR : price - risk * CFG.minRR;\n  if (isBull  && tp < minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n  if (!isBull && tp > minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n\n  const reward = Math.abs(tp - price);\n  const rr     = reward / risk;\n  if (rr < CFG.minRR) return null;\n\n  // Confluence scoring\n  const bestOB = slSources[0] && slSources[0].startsWith(\'OB\')\n    ? (isBull ? active.filter(o => o.isBull  && o.top    < price).sort((a,b) => b.top    - a.top)[0]\n             : active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom)[0])\n    : null;\n\n  const srUsedSL = slSources[0] === \'SR+SPIKE\';\n  const srUsedTP = tpSources[0] && tpSources[0].startsWith(\'SR\');\n  const srTouches = srUsedTP ? parseInt((tpSources[0]||\'\').replace(\'SR×\',\'\')) || 0\n    : srUsedSL ? ((r.srLevels||[]).find(s => s.isSupport===isBull && s.strong)||{}).touches||0 : 0;\n  const biasTotalConf = (r.recentBull + r.recentBear) || 1;\n  const biasScore   = Math.round((isBull ? r.recentBull : r.recentBear) / biasTotalConf * 20);\n  const obScore2    = bestOB ? Math.round(20 * bestOB.score / 100) : 0;\n  const srScore     = (srUsedSL || srUsedTP) ? Math.min(15, (srTouches||2) * 3) : 0;\n  const slScore     = (risk <= atr * profile.slAtrMult + spikeGuardDist + 0.001) ? 12 : 0;\n  const swingScore  = (tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\') ? 18 : 0;\n  const rrScore     = Math.min(18, Math.round((rr / 3) * 18));\n  const fsBonus     = (r.fsDir === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const emaBonus    = (r.emaTrend === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? \'bull\' : \'bear\'))) ? 5 : 0;\n  const profileBonus = profile.trendBias === (isBull ? \'bull\' : \'bear\') ? 8 : 0;\n  const mtfBonus = (bestOB && bestOB.mtfStack) ? 15 : 0;\n  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus);\n\n  const components = {\n    ob:    { active: !!bestOB,            label: \'OB\',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },\n    sr:    { active: srUsedSL||srUsedTP,  label: \'S/R\',   score: srScore > 0 ? Math.round(srScore/15*100) : 0, touches: srTouches },\n    atr:   { active: true,                label: \'ATR\',   score: slScore > 0 ? 100 : 50 },\n    swing: { active: tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\', label: \'SWING\', score: Math.min(100, rr / 3 * 100) },\n  };\n\n  const basis = \'SL:\' + slSources.join(\'+\') + \' | TP:\' + tpSources.join(\'+\') + \' | \' + profile.type.toUpperCase();\n\n  const balance       = parseFloat(document.getElementById(\'accountBalance\')?.value) || 1000;\n  const riskPctRaw    = parseFloat(document.getElementById(\'riskPct\')?.value) || 1.0;\n  const riskPctCapped = Math.min(riskPctRaw, CFG.maxRiskPct);\n  const dollarRisk    = balance * (riskPctCapped / 100);\n  const slDistance    = Math.abs(price - sl);\n  const units         = slDistance > 0 ? dollarRisk / slDistance : 0;\n  const potentialProfit = units * reward;\n  const maxConsecLosses = dollarRisk > 0 ? Math.floor((balance * 0.1) / dollarRisk) : 0;\n\n  return {\n    dir, entry: price, sl, tp, rr, risk, reward,\n    basis, components, confluence,\n    slSources, tpSources,\n    obScore: bestOB ? bestOB.score : null,\n    isHPZ: bestOB ? bestOB.isHPZ : false,\n    dollarRisk, units, potentialProfit,\n    riskPct: riskPctCapped, balance, maxConsecLosses,\n    profileType: profile.type, spikeAtr,\n    warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,\n  };\n}\n\n// Receive candle data + kick off scan\nself.onmessage = function(e) {\n  const { type, candleCache, minConf, minRR } = e.data;\n  if (type !== \'RUN\') return;\n\n  // Restore candle cache sent from main thread\n  if (candleCache) _scanCandleCache = candleCache;\n\n  const results = [];\n  const total = SCAN_SYMBOLS.length * SCAN_TFS.length;\n  let done = 0;\n\n  for (const s of SCAN_SYMBOLS) {\n    for (const tf of SCAN_TFS) {\n      done++;\n      try {\n        const key = s.id + tf;\n        if (!_scanCandleCache[key]) {\n          _scanCandleCache[key] = generateDemoCandles(s.id, tf, 500);\n        }\n        const cArr = _scanCandleCache[key];\n        if (!cArr || cArr.length < 50) continue;\n        const r = analyseCandles(cArr, s.id);\n        if (!r) continue;\n        const t = calcSLTP(r);\n        if (!t || t.blocked || t.confluence < (minConf||70) || t.rr < (minRR||1.3)) continue;\n        results.push({\n          sym:       s.id,\n          name:      s.name,\n          tf,\n          dir:       t.dir,\n          entry:     t.entry,\n          sl:        t.sl,\n          tp:        t.tp,\n          rr:        t.rr,\n          confluence: t.confluence,\n          insideOB:  t.insideOB,\n          atSRLevel: t.atSRLevel,\n          slSources: t.slSources,\n          tpSources: t.tpSources,\n          isHPZ:     t.isHPZ,\n          mtfStack:  t.components && t.components.ob && t.components.ob.mtfStack,\n          blocked:   false,\n        });\n      } catch (err) { /* skip */ }\n      // Post progress every 10 items\n      if (done % 10 === 0) self.postMessage({ type: \'PROGRESS\', done, total });\n    }\n  }\n\n  self.postMessage({ type: \'DONE\', results });\n};\n';
+  const workerSrc = '\n// ═══════════════════════════════════════════════════════════════\n// MSB ULTRA — CONTINUOUS SCAN WEB WORKER\n// Runs analyseCandles + calcSLTP off the main thread\n// Communicates via postMessage\n// ═══════════════════════════════════════════════════════════════\n\nconst CFG = {\n  pivotLen: 5,\n  msbZScore: 0.5,\n  obLookback: 10,\n  maxOBs: 10,\n  hpzThreshold: 70,\n  atrLen: 14,\n  atrSlMult: 1.2,    // tighter default — 1.5 was too wide for synthetic indices\n  atrTpMult: 2.5,    // reduced from 3.0\n  obSlBuf: 5,        // reduced from 10% — OB edges are structural, less buffer needed\n  swingLen: 10,\n  swingSamples: 8,\n  volPercentile: 90,\n  maxRiskPct: 2.0,   // hard cap: never risk more than this % regardless of input\n  minRR: 1.3,        // minimum RR — lower = more frequent signals\n};\n\nconst SCAN_SYMBOLS = [\n  {id:\'R_10\',name:\'Vol 10\'},{id:\'R_25\',name:\'Vol 25\'},{id:\'R_50\',name:\'Vol 50\'},\n  {id:\'R_75\',name:\'Vol 75\'},{id:\'R_100\',name:\'Vol 100\'},{id:\'1HZ10V\',name:\'Vol 10 1s\'},\n  {id:\'1HZ100V\',name:\'Vol 100 1s\'},\n  {id:\'BOOM1000\',name:\'Boom 1000\'},{id:\'BOOM500\',name:\'Boom 500\'},{id:\'BOOM300\',name:\'Boom 300\'},\n  {id:\'CRASH1000\',name:\'Crash 1000\'},{id:\'CRASH500\',name:\'Crash 500\'},{id:\'CRASH300\',name:\'Crash 300\'},\n  {id:\'STPRNG\',name:\'Step\'},\n  {id:\'JD10\',name:\'Jump 10\'},{id:\'JD25\',name:\'Jump 25\'},{id:\'JD50\',name:\'Jump 50\'},\n  {id:\'JD75\',name:\'Jump 75\'},{id:\'JD100\',name:\'Jump 100\'},\n];\n\nconst SCAN_TFS = [60, 300, 900, 1800, 3600, 14400];\n\nlet _scanCandleCache = {};\n\nfunction getSymbolProfile(sym) {\n  const s = sym || currentSymbol;\n  // type: \'jump\' | \'boom\' | \'crash\' | \'vol\' | \'step\' | \'vol1s\'\n  // slAtrMult: base SL ATR multiplier for this symbol type\n  // tpAtrMult: base TP ATR multiplier\n  // spikeGuard: extra ATR added to SL to clear spike wicks\n  // minSlPct:   minimum SL as % of price (floor — never tighter than this)\n  // maxSlPct:   maximum SL as % of price (cap — never wider than this)\n  // entryFilter: how strict confirmation must be before entry\n  //   \'strict\' = needs OB + MSB + FS all aligned\n  //   \'normal\' = OB + MSB\n  //   \'loose\'  = MSB only\n  const profiles = {\n    // ── Jump Indices ──────────────────────────────────────────\n    // Jump spikes are RANDOM and instant. SL must be wider than spike ATR.\n    // A 1-bar spike on JD100 can be 300+ points. Use 3x ATR minimum.\n    JD10:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD25:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD50:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD75:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD100: { type:\'jump\', slAtrMult:2.8, tpAtrMult:4.0, spikeGuard:1.0, minSlPct:0.2, maxSlPct:3.0, entryFilter:\'strict\', trendBias: null },\n    // ── Boom indices ─────────────────────────────────────────\n    // Boom trends UP with sudden DOWN spikes. Only trade LONG (with trend).\n    // Short positions get destroyed by the uptrend between spikes.\n    BOOM1000: { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM500:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM300:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    // ── Crash indices ────────────────────────────────────────\n    // Crash trends DOWN with sudden UP spikes. Only trade SHORT (with trend).\n    CRASH1000: { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH500:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH300:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    // ── Volatility indices ───────────────────────────────────\n    R_10:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.04,maxSlPct:0.8,  entryFilter:\'normal\', trendBias: null },\n    R_25:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.06,maxSlPct:0.9,  entryFilter:\'normal\', trendBias: null },\n    R_50:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.08,maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_75:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.3, minSlPct:0.1, maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_100: { type:\'vol\', slAtrMult:1.3, tpAtrMult:2.3, spikeGuard:0.3, minSlPct:0.12,maxSlPct:1.2,  entryFilter:\'normal\', trendBias: null },\n    // ── 1-second Volatility ──────────────────────────────────\n    \'1HZ10V\':  { type:\'vol1s\', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.5, minSlPct:0.06,maxSlPct:2.0, entryFilter:\'normal\', trendBias: null },\n    \'1HZ100V\': { type:\'vol1s\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.15,maxSlPct:3.0, entryFilter:\'normal\', trendBias: null },\n    // ── Step Index ───────────────────────────────────────────\n    STPRNG: { type:\'step\', slAtrMult:1.2, tpAtrMult:2.0, spikeGuard:0.1, minSlPct:0.02,maxSlPct:0.8, entryFilter:\'loose\', trendBias: null },\n  };\n  return profiles[s] || { type:\'vol\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.5, minSlPct:0.1, maxSlPct:2.5, entryFilter:\'normal\', trendBias: null };\n}\nfunction getSymbolVolScale(sym) {\n  const p = getSymbolProfile(sym || currentSymbol);\n  return p.slAtrMult / 1.2; // normalise to old scale\n}\nfunction getDP(sym) {\n  const s = sym || currentSymbol;\n  if (s.includes(\'R_10\') || s.includes(\'1HZ10V\')) return 3;\n  if (s.includes(\'STPRNG\')) return 2;\n  return 2;\n}\nfunction tfLabel(tf) {\n  return {60:\'1m\',120:\'2m\',300:\'5m\',600:\'10m\',900:\'15m\',1800:\'30m\',3600:\'1h\',14400:\'4h\',86400:\'1D\'}[tf] || tf+\'s\';\n}\nfunction sma(arr, len) {\n  // O(n) sliding window SMA\n  const result = new Array(arr.length).fill(0);\n  let sum = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sum += arr[i];\n    if (i >= len) sum -= arr[i - len];\n    if (i >= len - 1) result[i] = sum / len;\n  }\n  return result;\n}\nfunction stdev(arr, len) {\n  // O(n) Welford-style rolling stdev\n  const result = new Array(arr.length).fill(0);\n  let sumX = 0, sumX2 = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sumX  += arr[i];  sumX2  += arr[i] * arr[i];\n    if (i >= len) { sumX -= arr[i-len]; sumX2 -= arr[i-len] * arr[i-len]; }\n    if (i >= len - 1) {\n      const mean = sumX / len;\n      const variance = sumX2 / len - mean * mean;\n      result[i] = variance > 0 ? Math.sqrt(variance) : 0;\n    }\n  }\n  return result;\n}\nfunction calcRSI(closes, len) {\n  if (closes.length < len + 1) return 50;\n  let gains = 0, losses = 0;\n  for (let i = closes.length - len; i < closes.length; i++) {\n    const d = closes[i] - closes[i - 1];\n    if (d > 0) gains += d; else losses -= d;\n  }\n  const avgGain = gains / len;\n  const avgLoss = losses / len;\n  if (avgLoss === 0) return 100;\n  const rs = avgGain / avgLoss;\n  return 100 - (100 / (1 + rs));\n}\nfunction calcEMA(arr, len) {\n  const result = new Array(arr.length).fill(0);\n  const k = 2 / (len + 1);\n  let ema = arr[0];\n  result[0] = ema;\n  for (let i = 1; i < arr.length; i++) {\n    ema = arr[i] * k + ema * (1 - k);\n    result[i] = ema;\n  }\n  return result;\n}\nfunction calcATR(candles, len) {\n  if (candles.length < len + 1) return 0;\n  // True ranges\n  const tr = candles.map((c, i) => {\n    if (i === 0) return c.high - c.low;\n    return Math.max(c.high - c.low, Math.abs(c.high - candles[i-1].close), Math.abs(c.low - candles[i-1].close));\n  });\n  // Seed with SMA of first `len` bars\n  let atr = tr.slice(0, len).reduce((a, b) => a + b, 0) / len;\n  for (let i = len; i < tr.length; i++) {\n    atr = (atr * (len - 1) + tr[i]) / len; // Wilder smoothing\n  }\n  return atr;\n}\nfunction calcSpikeATR(candleArr, lookback) {\n  if (!candleArr || candleArr.length < 10) return 0;\n  const recent = candleArr.slice(-Math.min(lookback, candleArr.length));\n  const barMoves = recent.map(c => c.high - c.low);\n  barMoves.sort((a, b) => b - a);\n  // Take average of top 10% worst bars\n  const topN = Math.max(1, Math.floor(barMoves.length * 0.1));\n  const sum = barMoves.slice(0, topN).reduce((a, b) => a + b, 0);\n  return sum / topN;\n}\nfunction percentRank(arr, len, idx) {\n  const start = Math.max(0, idx - len + 1);\n  const window = arr.slice(start, idx + 1);\n  const val = arr[idx];\n  const below = window.filter(v => v < val).length;\n  return (below / window.length) * 100;\n}\nfunction sf(val, dp) {\n  if (val === null || val === undefined || isNaN(Number(val)) || !isFinite(Number(val))) return \'—\';\n  return Number(val).toFixed(dp === undefined ? 2 : dp);\n}\nfunction sn(val, fallback) {\n  const n = Number(val);\n  return (val === null || val === undefined || isNaN(n) || !isFinite(n)) ? (fallback || 0) : n;\n}\nfunction formatVol(v) {\n  const n = Number(v) || 0;\n  if (n >= 1e6) return sf(n/1e6,1)+\'M\';\n  if (n >= 1e3) return sf(n/1e3,0)+\'K\';\n  return Math.floor(n).toString();\n}\nfunction generateDemoCandles(symbol, tf, count) {\n  const now = Math.floor(Date.now() / 1000);\n  const bars = [];\n  const basePrice =\n    symbol === \'BOOM1000\' || symbol === \'CRASH1000\' ? 3000 :\n    symbol === \'BOOM500\'  || symbol === \'CRASH500\'  ? 3500 :\n    symbol === \'BOOM300\'  || symbol === \'CRASH300\'  ? 4000 :\n    symbol.includes(\'R_10\')  ? 5200 :\n    symbol.includes(\'R_25\')  ? 4800 :\n    symbol.includes(\'R_50\')  ? 4500 :\n    symbol.includes(\'R_75\')  ? 4200 :\n    symbol.includes(\'R_100\') ? 3900 :\n    symbol.includes(\'JD\')    ? 2000 : 1000;\n\n  let price = basePrice;\n  const vltMap = {\n    R_10:0.0008, R_25:0.002, R_50:0.005, R_75:0.0085, R_100:0.012,\n    BOOM1000:0.004, BOOM500:0.005, BOOM300:0.006,\n    CRASH1000:0.004, CRASH500:0.005, CRASH300:0.006,\n    STPRNG:0.001,\n    JD10:0.006,JD25:0.009,JD50:0.012,JD75:0.015,JD100:0.018,\n    \'1HZ10V\':0.001,\'1HZ100V\':0.014,\n  };\n  const vlt = vltMap[symbol] || 0.008;\n\n  // Boom: mostly rises, occasional sharp spike DOWN; Crash: opposite\n  const isBoom  = symbol.includes(\'BOOM\');\n  const isCrash = symbol.includes(\'CRASH\');\n  // Spike probability per bar\n  const spikeProb = isBoom ? 0.003 : isCrash ? 0.003 : 0;\n  // Spike magnitude (multiplier of ATR)\n  const spikeMag  = isBoom ? -0.08 : 0.08; // Boom spikes down, Crash spikes up\n\n  const dp = symbol.includes(\'R_10\') || symbol.includes(\'1HZ10V\') ? 3 : 2;\n  let trendBias = 0, trendBarsLeft = 0;\n\n  for (let i = count - 1; i >= 0; i--) {\n    if (trendBarsLeft <= 0) {\n      // Boom/Crash trend strongly in one direction between spikes\n      if (isBoom)  trendBias = 0.0015 + Math.random() * 0.001;  // upward drift\n      else if (isCrash) trendBias = -(0.0015 + Math.random() * 0.001); // downward drift\n      else trendBias = (Math.random() - 0.5) * 0.003;\n      trendBarsLeft = Math.floor(Math.random() * 40) + 10;\n    }\n    trendBarsLeft--;\n\n    let baseMove = (Math.random() - 0.5 + trendBias) * vlt;\n\n    // Inject spike bar\n    const isSpike = spikeProb > 0 && Math.random() < spikeProb;\n    if (isSpike) {\n      baseMove = spikeMag * (0.5 + Math.random() * 0.5);\n      trendBarsLeft = 0; // reset trend after spike\n    }\n\n    const range = Math.abs(baseMove) * price + price * vlt * 0.5;\n    const open  = price;\n    const close = price * (1 + baseMove);\n    const high  = Math.max(open, close) + Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const low   = Math.min(open, close) - Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const movePct  = Math.abs(close - open) / open;\n    const volMult  = isSpike ? 8 + Math.random() * 4 : (Math.random() < 0.05 ? 3 + Math.random() * 4 : 1);\n    const normalVol = Math.round(movePct * 100000 * (0.5 + Math.random()) * volMult);\n    bars.push({\n      time: now - i * tf,\n      open: parseFloat(open.toFixed(dp)), high: parseFloat(high.toFixed(dp)),\n      low: parseFloat(low.toFixed(dp)),   close: parseFloat(close.toFixed(dp)),\n      volume: Math.max(100, Math.min(99999, normalVol)),\n    });\n    price = close;\n  }\n  return bars;\n}\nfunction analyseCandles(candleArr, symId) {\n  if (candleArr.length < 50) return null;\n  const savedSym = currentSymbol;\n  currentSymbol = symId; // for getDP / getSymbolVolScale\n  const n = candleArr.length;  const closes = candleArr.map(c => c.close);\n  const highs  = candleArr.map(c => c.high);\n  const lows   = candleArr.map(c => c.low);\n  const opens  = candleArr.map(c => c.open);\n  const vols   = candleArr.map(c => c.volume);\n\n  // Momentum Z-Score\n  const changes = closes.map((c, i) => i > 0 ? c - closes[i-1] : 0);\n  const avgChange = sma(changes, 50);\n  const stdChange = stdev(changes, 50);\n  const momentumZ = stdChange[n-1] !== 0 ? (changes[n-1] - avgChange[n-1]) / stdChange[n-1] : 0;\n\n  // Volume stats — pre-compute percentile ranks for all bars (O(n log n) once)\n  const volPctRank = percentRank(vols, 100, n-1);\n  const _volRankCache = new Float32Array(n);\n  { const _sorted = vols.slice().sort((a,b) => a-b);\n    for (let _i = 0; _i < n; _i++) {\n      const _v = vols[_i]; let _lo2 = 0, _hi2 = _sorted.length;\n      while (_lo2 < _hi2) { const _m = (_lo2+_hi2)>>1; if (_sorted[_m] < _v) _lo2=_m+1; else _hi2=_m; }\n      _volRankCache[_i] = _lo2 / _sorted.length * 100;\n    }\n  }\n  const volSMA = sma(vols, 100);\n  const volSTD = stdev(vols, 100);\n  const volZScore = volSTD[n-1] !== 0 ? (vols[n-1] - volSMA[n-1]) / volSTD[n-1] : 0;\n\n  // ATR (Wilder, proper period) — must use candleArr NOT global candles\n  const atr = calcATR(candleArr, CFG.atrLen);\n  const atrPct = closes[n-1] > 0 ? (atr / closes[n-1]) * 100 : 0;\n\n\n  // ── Spike Filter (Jump/Boom/Crash protection) ─────────────\n  // A bar is a spike if its range > 3× the 20-bar average range.\n  // Spike bars are excluded from MSB and OB detection.\n  const barRanges = candleArr.map(c => c.high - c.low);\n  const spikeFlags = barRanges.map((r, i) => {\n    if (i < 20) return false;\n    const avgRange = barRanges.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;\n    return r > avgRange * 3.0;\n  });\n\n  // Pivot Detection\n  const pLen = CFG.pivotLen;\n  const pivotHighs = [], pivotLows = [];\n  for (let i = pLen; i < n - pLen; i++) {\n    let isHigh = true, isLow = true;\n    for (let j = i - pLen; j <= i + pLen; j++) {\n      if (j === i) continue;\n      if (highs[j] >= highs[i]) isHigh = false;\n      if (lows[j]  <= lows[i])  isLow  = false;\n    }\n    if (isHigh && !spikeFlags[i]) pivotHighs.push({ idx: i, val: highs[i] });\n    if (isLow  && !spikeFlags[i]) pivotLows.push({ idx: i, val: lows[i] });\n  }\n\n  // MSB Detection\n  const msbBull = [], msbBear = [];\n  let lastPH = null, lastPL = null, prevPH = null, prevPL = null;\n\n  for (let i = 1; i < n; i++) {\n    const newPH = pivotHighs.find(p => p.idx === i - pLen);\n    const newPL = pivotLows.find(p => p.idx === i - pLen);\n    if (newPH) { prevPH = lastPH; lastPH = newPH; }\n    if (newPL) { prevPL = lastPL; lastPL = newPL; }\n    if (!lastPH || !lastPL) continue;\n    const mZ = stdChange[i] !== 0 ? (changes[i] - avgChange[i]) / stdChange[i] : 0;\n    if (closes[i] > lastPH.val && closes[i-1] <= lastPH.val && mZ > CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPH && lastPH.val > prevPH.val;\n      const volConfBull = volPctRank >= 45;\n      msbBull.push({ idx: i, level: lastPH.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bull\', volConfirmed: volConfBull });\n    }\n    if (closes[i] < lastPL.val && closes[i-1] >= lastPL.val && mZ < -CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPL && lastPL.val < prevPL.val;\n      const volConfBear = volPctRank >= 45;\n      msbBear.push({ idx: i, level: lastPL.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bear\', volConfirmed: volConfBear });\n    }\n  }\n\n  // OB Detection\n  const localObArray = [];\n  for (const msb of [...msbBull, ...msbBear]) {\n    const isBull = msb.dir === \'bull\';\n    let obIdx = -1;\n    for (let k = 1; k <= CFG.obLookback; k++) {\n      const ci = msb.idx - k;\n      if (ci < 0) break;\n      if ((isBull && closes[ci] < opens[ci]) || (!isBull && closes[ci] > opens[ci])) { obIdx = ci; break; }\n    }\n    if (obIdx < 0) continue;\n\n    const obTop  = highs[obIdx];\n    const obBot  = lows[obIdx];\n    const obSize = obTop - obBot;\n    const bodyRatio = obSize > 0 ? Math.abs(closes[obIdx] - opens[obIdx]) / obSize : 0.5;\n    const volPct = _volRankCache[obIdx] || 0;\n    const mZi = stdChange[obIdx] !== 0 ? (changes[obIdx] - avgChange[obIdx]) / stdChange[obIdx] : 0;\n    const vZi = volSTD[obIdx] !== 0 ? (vols[obIdx] - volSMA[obIdx]) / volSTD[obIdx] : 0;\n\n    // FIX: normalised score, capped properly\n    const rawScore =\n      Math.min(Math.abs(mZi), 4) * 15 +\n      volPct * 0.4 +\n      bodyRatio * 20 +\n      Math.min(vZi, 3) * 5;\n    const score = Math.min(100, rawScore);\n    const ageBars = n - 1 - obIdx;\n    const ageDecay = Math.max(0, 1 - Math.floor(ageBars / 20) * 0.20); // -20% per 20 bars\n    const isHPZ = (score * ageDecay) >= CFG.hpzThreshold;\n\n    const overlaps = localObArray.some(o =>\n      ((obTop <= o.top && obTop >= o.bottom) || (obBot <= o.top && obBot >= o.bottom)));\n    if (overlaps) continue;\n\n    let touchCount = 0, mitigated = false, mitigatedAt = -1;\n    for (let j = obIdx + 1; j < n; j++) {\n      const entered = isBull ? (lows[j] <= obTop && lows[j] >= obBot) : (highs[j] >= obBot && highs[j] <= obTop);\n      if (entered) touchCount++;\n      const mit = isBull ? lows[j] < obBot : highs[j] > obTop;\n      if (mit) { mitigated = true; mitigatedAt = j; break; }\n    }\n\n    localObArray.push({\n      idx: obIdx, top: obTop, bottom: obBot, poc: (obTop + obBot) / 2,\n      isBull, score: parseFloat((score * ageDecay).toFixed(1)), rawScore: score, ageBars, isHPZ, mitigated, mitigatedAt, touchCount,\n      msbType: msb.type, barTime: candleArr[obIdx].time,\n    });\n  }\n  // Only keep OBs that are at least pLen bars old (confirmed, not forming)\n  const finalObArray = localObArray.filter(o => o.idx < n - pLen).slice(-CFG.maxOBs);\n\n  // ═══════════════════════════════════════════════════════════\n  // FIX: Future Swing — rebuilt from scratch each call\n  // Uses pivot pairs (PH-PL or PL-PH) to compute swing %\n  // ═══════════════════════════════════════════════════════════\n  const swingPcts = [];\n  const allPivots = [\n    ...pivotHighs.map(p => ({ ...p, type: \'H\' })),\n    ...pivotLows.map(p => ({ ...p, type: \'L\' })),\n  ].sort((a, b) => a.idx - b.idx);\n\n  for (let k = 1; k < allPivots.length; k++) {\n    const prev = allPivots[k - 1];\n    const curr = allPivots[k];\n    if (prev.type === curr.type) continue; // skip same-type\n    // Only include "meaningful" swings — filter micro-noise\n    if (curr.idx - prev.idx < 2) continue;\n    let pct;\n    if (prev.type === \'L\' && curr.type === \'H\') {\n      pct = (curr.val - prev.val) / prev.val * 100; // bull swing\n    } else {\n      pct = (prev.val - curr.val) / curr.val * 100; // bear swing (positive %)\n    }\n    // Filter out implausibly large or near-zero swings\n    if (Math.abs(pct) > 0.01 && Math.abs(pct) < 30) {\n      swingPcts.push({ pct, bullish: prev.type === \'L\', fromIdx: prev.idx, toIdx: curr.idx });\n    }\n  }\n\n  // Keep last N samples\n  const recentSwings = swingPcts.slice(-CFG.swingSamples);\n  const absPcts = recentSwings.map(s => Math.abs(s.pct));\n  const avgSwingPct = absPcts.length > 0 ? absPcts.reduce((a, b) => a + b, 0) / absPcts.length : 0;\n  const minSwingPct = absPcts.length > 0 ? Math.min(...absPcts) : 0;\n  const maxSwingPct = absPcts.length > 0 ? Math.max(...absPcts) : 0;\n\n  // Determine next expected direction from last pivot pair\n  let fsDir = null, fsTarget = null, fsFromPrice = null, fsFromIdx = null;\n  const lastPivH = pivotHighs[pivotHighs.length - 1];\n  const lastPivL = pivotLows[pivotLows.length - 1];\n\n  if (lastPivH && lastPivL) {\n    const currentP = closes[n - 1];\n    if (lastPivH.idx > lastPivL.idx) {\n      // Last confirmed swing ended at a HIGH → next expected move: DOWN\n      fsDir = \'bear\';\n      fsFromPrice = lastPivH.val;\n      fsFromIdx = lastPivH.idx;\n      // Target = project DOWN from the recent pivot high\n      fsTarget = lastPivH.val * (1 - avgSwingPct / 100);\n      // Sanity: target must be below current price for a bear setup\n      if (fsTarget >= currentP) fsTarget = currentP * (1 - avgSwingPct / 100);\n    } else {\n      // Last confirmed swing ended at a LOW → next expected move: UP\n      fsDir = \'bull\';\n      fsFromPrice = lastPivL.val;\n      fsFromIdx = lastPivL.idx;\n      fsTarget = lastPivL.val * (1 + avgSwingPct / 100);\n      // Sanity: target must be above current price for a bull setup\n      if (fsTarget <= currentP) fsTarget = currentP * (1 + avgSwingPct / 100);\n    }\n  }\n\n  // Bias + buy/sell vol\n  const lookback50 = 50;\n  const recentBull = msbBull.filter(m => m.idx >= n - lookback50).length;\n  const recentBear = msbBear.filter(m => m.idx >= n - lookback50).length;\n\n  let buyVolSum = 0, sellVolSum = 0;\n  for (const c of candleArr.slice(-50)) {\n    if (c.close > c.open) buyVolSum += c.volume;\n    else sellVolSum += c.volume;\n  }\n\n  // Trend strength: ratio of dominant bias MSBs\n  const totalMSB50 = recentBull + recentBear;\n  const trendStrength = totalMSB50 > 0 ? Math.max(recentBull, recentBear) / totalMSB50 : 0.5;\n\n  const rsi = calcRSI(closes, 14);\n  const spikeAtr = calcSpikeATR(candleArr, 100);\n\n  // ── EMA 20 / 50 / 200 ─────────────────────────────────────\n  const ema20  = calcEMA(closes, 20);\n  const ema50  = calcEMA(closes, 50);\n  const ema200 = calcEMA(closes, 200);\n  const emaTrend = ema20[n-1] > ema50[n-1] && ema50[n-1] > ema200[n-1] ? \'bull\'\n                 : ema20[n-1] < ema50[n-1] && ema50[n-1] < ema200[n-1] ? \'bear\' : \'mixed\';\n\n  // ── Fair Value Gaps (FVG / Imbalance) ─────────────────────\n  // A bull FVG: candle[i-2].high < candle[i].low  (gap up)\n  // A bear FVG: candle[i-2].low  > candle[i].high (gap down)\n  const fvgZones = [];\n  for (let i = 2; i < n; i++) {\n    if (lows[i] > highs[i-2]) {\n      // Bull FVG\n      fvgZones.push({ top: lows[i], bottom: highs[i-2], isBull: true, idx: i, filled: false });\n    } else if (highs[i] < lows[i-2]) {\n      // Bear FVG\n      fvgZones.push({ top: lows[i-2], bottom: highs[i], isBull: false, idx: i, filled: false });\n    }\n  }\n  // Check if each FVG has been filled (price returned into zone)\n  for (const fvg of fvgZones) {\n    for (let j = fvg.idx + 1; j < n; j++) {\n      if (lows[j] <= fvg.top && highs[j] >= fvg.bottom) { fvg.filled = true; break; }\n    }\n  }\n  // Keep only last 20 unfilled FVGs\n  const activeFVGs = fvgZones.filter(f => !f.filled).slice(-20);\n\n  // ── Liquidity Sweeps ──────────────────────────────────────\n  // Sweep: wick breaks a recent pivot level but candle closes back inside\n  const liqSweeps = [];\n  for (let i = pLen + 1; i < n; i++) {\n    // Check if this bar\'s high swept a recent pivot high but closed below it (bear trap)\n    const recentPH = pivotHighs.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const ph of recentPH) {\n      if (highs[i] > ph.val && closes[i] < ph.val) {\n        liqSweeps.push({ idx: i, level: ph.val, dir: \'bear\', type: \'SWEEP HIGH\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n    // Check if this bar\'s low swept a recent pivot low but closed above it (bull trap)\n    const recentPL = pivotLows.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const pl of recentPL) {\n      if (lows[i] < pl.val && closes[i] > pl.val) {\n        liqSweeps.push({ idx: i, level: pl.val, dir: \'bull\', type: \'SWEEP LOW\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n  }\n  const recentSweeps = liqSweeps.slice(-10);\n\n\n  // ── MTF OB Stack detection (4H confluence) ───────────────\n  const _htfKey4H = symId + 14400;\n  const _htfC4H   = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_htfKey4H] : null;\n  let _htfOBs4H   = [];\n  // Use cached 4H OB analysis — recompute only when 4H candle cache changes\n  const _htfCacheKey = symId + \'_htf4H_obs\';\n  if (typeof _scanCandleCache !== \'undefined\') {\n    if (!_scanCandleCache[_htfCacheKey] && _htfC4H && _htfC4H.length >= 50) {\n      try {\n        const _htfR = analyseCandles(_htfC4H, symId);\n        if (_htfR) _scanCandleCache[_htfCacheKey] = _htfR.activeOBs || [];\n      } catch(_e) {}\n    }\n    _htfOBs4H = _scanCandleCache[_htfCacheKey] || [];\n  }\n  const activeOBsFinal = finalObArray.filter(o => !o.mitigated).map(ob => {\n    const stacked = _htfOBs4H.find(h =>\n      (ob.top >= h.bottom && ob.top <= h.top) || (ob.bottom >= h.bottom && ob.bottom <= h.top)\n    );\n    return Object.assign({}, ob, { mtfStack: !!stacked, htfOBScore: stacked ? stacked.score : 0 });\n  });\n\n  // S/R LEVEL ENGINE — cluster + touch-count based (cached per candle count)\n  // ══════════════════════════════════════════════════════════\n  let srLevels = [], srSupport = [], srResistance = [], nearestSup = null, nearestRes = null, srZone = \'OPEN\';\n  {\n    const _srKey    = symId + \'_sr_\' + n;\n    const _srCached = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_srKey] : null;\n    if (_srCached) {\n      // Fast path: reclassify cached clusters against current price only\n      const _cp = closes[n - 1];\n      srLevels = _srCached.map(s => Object.assign({}, s, {\n        isSupport: s.price <= _cp,\n        dist: Math.abs(s.price - _cp),\n      })).sort((a, b) => a.dist - b.dist).slice(0, 16);\n    } else {\n      // Full compute: cluster pivots → count touches → build levels\n      const srCandidates = [\n        ...pivotHighs.map(p => p.val),\n        ...pivotLows.map(p => p.val),\n      ];\n      const srClusterZone = atr * 0.6;\n      const srClusters = [];\n      for (const val of srCandidates) {\n        const existing = srClusters.find(c => Math.abs(c.price - val) <= srClusterZone);\n        if (existing) {\n          existing.price = (existing.price * existing.count + val) / (existing.count + 1);\n          existing.count++;\n        } else {\n          srClusters.push({ price: val, count: 1, touches: 0 });\n        }\n      }\n      const srTouchZone = atr * 0.8;\n      for (const cl of srClusters) {\n        cl.touches = 0;\n        for (let i = 0; i < n; i++) {\n          if (highs[i] >= cl.price - srTouchZone && lows[i] <= cl.price + srTouchZone) cl.touches++;\n        }\n      }\n      const _cp2 = closes[n - 1];\n      srLevels = srClusters\n        .filter(c => c.touches >= 2)\n        .map(c => ({\n          price:     parseFloat(c.price.toFixed(6)),\n          touches:   c.touches,\n          strong:    c.touches >= 3,\n          isSupport: c.price <= _cp2,\n          dist:      Math.abs(c.price - _cp2),\n        }))\n        .sort((a, b) => a.dist - b.dist)\n        .slice(0, 16);\n      // Cache for subsequent ticks within the same bar\n      if (typeof _scanCandleCache !== \'undefined\') {\n        _scanCandleCache[_srKey] = srLevels.map(s => ({ price: s.price, touches: s.touches, strong: s.strong }));\n      }\n    }\n    // Shared post-processing for both paths\n    srSupport    = srLevels.filter(s =>  s.isSupport).sort((a, b) => b.price - a.price);\n    srResistance = srLevels.filter(s => !s.isSupport).sort((a, b) => a.price - b.price);\n    nearestSup   = srSupport[0]    || null;\n    nearestRes   = srResistance[0] || null;\n    if (nearestSup && nearestRes) {\n      const _sd = closes[n-1] - nearestSup.price;\n      const _rd = nearestRes.price - closes[n-1];\n      if      (_sd <= atr * 1.2) srZone = \'AT SUPPORT\';\n      else if (_rd <= atr * 1.2) srZone = \'AT RESIST\';\n      else                        srZone = \'MID RANGE\';\n    }\n  }\n\n  currentSymbol = savedSym; // restore before returning\n  return {\n    symId, rsi, spikeAtr, candleArr,\n    ema20, ema50, ema200, emaTrend,\n    activeFVGs, recentSweeps,\n    momentumZ, volPctRank, volZScore, atr, atrPct,\n    msbBull, msbBear, recentBull, recentBear,\n    totalBullMSBs: msbBull.length, totalBearMSBs: msbBear.length,\n    activeOBs: activeOBsFinal,\n    buyVol: buyVolSum, sellVol: sellVolSum,\n    recentSwings, avgSwingPct, minSwingPct, maxSwingPct,\n    fsDir, fsTarget, fsFromPrice, fsFromIdx,\n    currentPrice: closes[n-1],\n    trendStrength, n,\n    srLevels, srSupport, srResistance, nearestSup, nearestRes, srZone,\n    spikeFlags,\n    spikeCount: spikeFlags.filter(Boolean).length,\n  };\n}\nfunction calcSLTP(r) {\n  const price   = r.currentPrice;\n  const atr     = r.atr;\n  const active  = r.activeOBs || [];\n  const profile = getSymbolProfile(r.symId);\n\n  if (!price || !atr || atr <= 0) return null;\n\n  // ══════════════════════════════════════════════════════════\n  // THE 5-GATE ENTRY SYSTEM\n  // Gates 1-4 are HARD gates — all must pass for a trade.\n  // Gate 5 is a WARNING only — shown but doesn\'t block.\n  // This ensures trades show regularly while keeping quality.\n  // ══════════════════════════════════════════════════════════\n\n  const isBullBias = r.recentBull >= r.recentBear;\n  const isBull     = isBullBias;\n  const dir        = isBull ? \'LONG\' : \'SHORT\';\n  const failReasons = [];\n  const warnReasons = [];\n\n  // ── GATE 1: EMA trend alignment ───────────────────────────\n  // EMA20 vs EMA50 must agree with bias direction.\n  // (Not requiring all 3 EMAs — that\'s too strict for ranging markets)\n  const ema20val = r.ema20 ? r.ema20[r.n - 1] : null;\n  const ema50val = r.ema50 ? r.ema50[r.n - 1] : null;\n  const emaShortAligned = ema20val && ema50val\n    ? (isBull ? ema20val > ema50val : ema20val < ema50val)\n    : true; // if no EMA data, don\'t block\n  if (!emaShortAligned) {\n    failReasons.push(\'GATE1: EMA 20 vs 50 not aligned with bias\');\n  }\n  // Full EMA alignment (20/50/200) shown as warning not hard block\n  if (r.emaTrend === \'mixed\') {\n    warnReasons.push(\'NOTE: EMA 200 mixed — partial trend alignment\');\n  }\n\n  // ── GATE 2: Bias + Future Swing agree ────────────────────\n  if (profile.trendBias === \'bull\' && !isBullBias) {\n    failReasons.push(\'GATE2: Boom requires BULL bias\');\n  } else if (profile.trendBias === \'bear\' && isBullBias) {\n    failReasons.push(\'GATE2: Crash requires BEAR bias\');\n  } else if (r.fsDir && r.fsDir !== (isBull ? \'bull\' : \'bear\')) {\n    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality\n    failReasons.push(\'GATE2: Future Swing is \' + r.fsDir + \' — conflicts with \' + (isBull?\'bull\':\'bear\') + \' bias\');\n  }\n\n  // ── GATE 3: Price near aligned OB OR strong S/R ──────────\n  const alignedOBs = active.filter(o => isBull ? o.isBull : !o.isBull);\n  const nearOB = alignedOBs.find(o => price <= o.top + atr * 2 && price >= o.bottom - atr * 2);\n  const insideOB = alignedOBs.find(o => price <= o.top && price >= o.bottom);\n  const srLevels = r.srLevels || [];\n  const nearSR = srLevels.find(s =>\n    s.strong && Math.abs(s.price - price) <= atr * 1.5 && (isBull ? s.isSupport : !s.isSupport)\n  );\n  const atSRLevel = !!nearSR;\n  if (!nearOB && !atSRLevel) {\n    if (alignedOBs.length === 0) {\n      warnReasons.push(\'NOTE G3: No \' + (isBull?\'bull\':\'bear\') + \' OB or S/R yet\');\n    } else {\n      const nearest = isBull\n        ? alignedOBs.sort((a,b) => b.top - a.top)[0]\n        : alignedOBs.sort((a,b) => a.bottom - b.bottom)[0];\n      const dist = isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2);\n      failReasons.push(\'GATE3: Price too far from OB/S/R (\' + dist + \' pts)\');\n    }\n  } else if (atSRLevel && !insideOB) {\n    warnReasons.push(\'NOTE: At S/R ×\' + nearSR.touches + \' — \' + (nearSR.isSupport?\'support\':\'resist\') + \' confluence\');\n  } else if (!insideOB) {\n    warnReasons.push(\'NOTE: Approaching OB — wait for touch\');\n  }\n\n\n  // ── BREAK & RETEST CHECK ─────────────────────────────────\n  // Verify price has actually touched the zone and started to reverse\n  // (at least 0.5 ATR bounce from zone edge) — prevents entries on\n  // first approach before any confirmation of zone respect.\n  let zoneRetestConfirmed = false;\n  const candlesForRetest = r.candleArr || [];\n  const nRt = candlesForRetest.length;\n  if (nearOB && nRt >= 3) {\n    const zoneTop = nearOB.top;\n    const zoneBot = nearOB.bottom;\n    // Look at last 5 bars for a touch + bounce\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = isBull ? (c.low <= zoneTop && c.low >= zoneBot - atr * 0.5)\n                              : (c.high >= zoneBot && c.high <= zoneTop + atr * 0.5);\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > c.low + atr * 0.5 : nextClose < c.high - atr * 0.5;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (atSRLevel && nRt >= 3) {\n    const srPrice = nearSR ? nearSR.price : 0;\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = Math.abs((isBull ? c.low : c.high) - srPrice) <= atr * 0.6;\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > srPrice + atr * 0.4 : nextClose < srPrice - atr * 0.4;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (!nearOB && !atSRLevel) {\n    zoneRetestConfirmed = true; // no zone — don\'t double-block\n  } else {\n    zoneRetestConfirmed = true; // if first approach, allow but warn\n    warnReasons.push(\'NOTE: Zone not yet retested — wait for bounce confirmation\');\n  }\n\n  // ── GATE 4: Minimum bias strength ────────────────────────\n  // At least 55% of recent MSBs must be in trade direction.\n  const biasTotal    = (r.recentBull + r.recentBear) || 1;\n  const biasStrength = Math.max(r.recentBull, r.recentBear) / biasTotal;\n  if (biasStrength < 0.50) {\n    failReasons.push(\'GATE4: Bias too weak (\' + sf(biasStrength*100,0) + \'%) — need 50%+\');\n  }\n\n  // ── GATE 5: Momentum (WARNING only — not a hard block) ────\n  const momentumOk = isBull ? sn(r.momentumZ) > -2.0 : sn(r.momentumZ) < 2.0;\n  if (!momentumOk) {\n    warnReasons.push(\'WARN G5: Momentum Z-Score weak (\' + sf(r.momentumZ,2) + \') — counter-momentum entry\');\n  }\n\n\n  // ── GATE 6: HTF Bias alignment (HARD block if 1H+4H both oppose) ─\n  // Uses cached HTF candles from _scanCandleCache.\n  // Only blocks if BOTH 1H and 4H are confirmed opposite to trade dir.\n  (function() {\n    const htfTFs = [3600, 14400]; // 1H, 4H\n    let opposingCount = 0;\n    for (const tf of htfTFs) {\n      const key = (r.symId || currentSymbol) + tf;\n      const htfC = _scanCandleCache[key];\n      if (!htfC || htfC.length < 50) continue;\n      const htfCloses = htfC.map(c => c.close);\n      const e20 = calcEMA(htfCloses, 20);\n      const e50 = calcEMA(htfCloses, 50);\n      const nn  = htfCloses.length - 1;\n      const htfBull = e20[nn] > e50[nn] && htfCloses[nn] > e50[nn];\n      const htfBear = e20[nn] < e50[nn] && htfCloses[nn] < e50[nn];\n      if (isBull && htfBear) opposingCount++;\n      if (!isBull && htfBull) opposingCount++;\n    }\n    if (opposingCount >= 2) {\n      failReasons.push(\'GATE6: HTF 1H+4H both oppose trade direction — structure conflict\');\n    } else if (opposingCount === 1) {\n      warnReasons.push(\'WARN G6: One HTF TF opposes — partial HTF conflict\');\n    }\n  })();\n\n  // ── RESULT ────────────────────────────────────────────────\n  if (failReasons.length > 0) {\n    return { blocked: true, failReasons, warnReasons, dir, isBull };\n  }\n\n  // All hard gates passed — proceed to SL/TP calculation\n\n  // Spike-aware distances\n  const spikeAtr = r.spikeAtr || atr * 2;\n  const spikeGuardDist = spikeAtr * profile.spikeGuard;\n  const minSlDist = Math.max(atr * 0.5, price * (profile.minSlPct / 100));\n  const maxSlDist = price * (profile.maxSlPct / 100);\n\n  let sl = null, slSources = [];\n\n  // A1: S/R structural SL — place beyond nearest strong S/R\n  const srLevs = r.srLevels || [];\n  if (isBull) {\n    const supBelow = srLevs.filter(s => s.isSupport && s.strong && s.price < price && (price - s.price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => b.price - a.price);\n    if (supBelow.length > 0) {\n      const cand = supBelow[0].price - atr * 0.3 - spikeGuardDist * 0.5;\n      const dist = price - cand;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  } else {\n    const resAbove = srLevs.filter(s => !s.isSupport && s.strong && s.price > price && (s.price - price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => a.price - b.price);\n    if (resAbove.length > 0) {\n      const cand = resAbove[0].price + atr * 0.3 + spikeGuardDist * 0.5;\n      const dist = cand - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  }\n\n  // A2: OB structural SL — place BEYOND full OB + spike guard\n  // IMPORTANT: only use OBs that are within 2x ATR of current price\n  // (distant OBs produce insane SL distances)\n  if (isBull) {\n    const bullOBs = active\n      .filter(o => o.isBull && o.top < price && (price - o.top) <= atr * 3)\n      .sort((a,b) => b.top - a.top);\n    if (bullOBs.length > 0) {\n      const ob = bullOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.bottom - extra;\n      const dist = price - candidate;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  } else {\n    const bearOBs = active\n      .filter(o => !o.isBull && o.bottom > price && (o.bottom - price) <= atr * 3)\n      .sort((a,b) => a.bottom - b.bottom);\n    if (bearOBs.length > 0) {\n      const ob = bearOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.top + extra;\n      const dist = candidate - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  }\n\n  // B: Swing pivot SL\n  if (sl === null && r.fsFromPrice) {\n    const pivotDist = Math.abs(price - r.fsFromPrice);\n    if (pivotDist <= maxSlDist) {\n      const extra = (profile.type === \'jump\') ? spikeGuardDist : atr * 0.3;\n      const candidate = isBull\n        ? Math.min(r.fsFromPrice, price) - extra\n        : Math.max(r.fsFromPrice, price) + extra;\n      const dist = Math.abs(price - candidate);\n      if (dist >= minSlDist && dist <= maxSlDist && (isBull ? candidate < price : candidate > price)) {\n        sl = candidate; slSources = [\'SWING+SPIKE\'];\n      }\n    }\n  }\n\n  // C: Profile ATR fallback (uses profile multiplier not generic 1.2)\n  if (sl === null) {\n    const atrDist = Math.min(atr * profile.slAtrMult + spikeGuardDist, maxSlDist);\n    sl = isBull ? price - atrDist : price + atrDist;\n    slSources = [\'ATR×\' + sf(profile.slAtrMult,1)];\n  }\n\n  // Enforce minimum\n  if (Math.abs(price - sl) < minSlDist) sl = isBull ? price - minSlDist : price + minSlDist;\n  if (isBull && sl >= price)  sl = price - minSlDist;\n  if (!isBull && sl <= price) sl = price + minSlDist;\n\n  const risk = Math.abs(price - sl);\n  if (risk <= 0) return null;\n\n  // TP calculation — max distance capped tightly by profile\n  const maxTpDist = Math.min(price * 0.08, atr * profile.tpAtrMult * 2.5);\n  let tp = null, tpSources = [];\n\n  // TP-A1: Snap to nearest strong S/R on reward side\n  if (tp === null) {\n    const srLevTP = r.srLevels || [];\n    if (isBull) {\n      const resAbove = srLevTP.filter(s => !s.isSupport && s.strong && s.price > price).sort((a,b) => a.price - b.price);\n      if (resAbove.length > 0) {\n        const dist = resAbove[0].price - price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = resAbove[0].price; tpSources = [\'SR×\' + resAbove[0].touches]; }\n      }\n    } else {\n      const supBelow = srLevTP.filter(s => s.isSupport && s.strong && s.price < price).sort((a,b) => b.price - a.price);\n      if (supBelow.length > 0) {\n        const dist = price - supBelow[0].price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = supBelow[0].price; tpSources = [\'SR×\' + supBelow[0].touches]; }\n      }\n    }\n  }\n\n  if (r.fsTarget && r.fsDir === (isBull ? \'bull\' : \'bear\')) {\n    const onSide = isBull ? r.fsTarget > price : r.fsTarget < price;\n    const dist = Math.abs(r.fsTarget - price);\n    if (onSide && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = r.fsTarget; tpSources = [\'SWING\']; }\n  }\n  if (tp === null && r.avgSwingPct > 0.01) {\n    const proj = isBull ? price * (1 + r.avgSwingPct / 100) : price * (1 - r.avgSwingPct / 100);\n    const dist = Math.abs(proj - price);\n    if ((isBull ? proj > price : proj < price) && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = proj; tpSources = [\'PROJ\']; }\n  }\n  if (tp === null) {\n    if (isBull) {\n      const res = active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom);\n      if (res.length > 0 && (res[0].bottom - price) / risk >= CFG.minRR) { tp = res[0].bottom; tpSources = [\'NEXT-OB\']; }\n    } else {\n      const sup = active.filter(o => o.isBull && o.top < price).sort((a,b) => b.top - a.top);\n      if (sup.length > 0 && (price - sup[0].top) / risk >= CFG.minRR) { tp = sup[0].top; tpSources = [\'NEXT-OB\']; }\n    }\n  }\n  if (tp === null) {\n    tp = isBull ? price + Math.min(atr * profile.tpAtrMult, maxTpDist) : price - Math.min(atr * profile.tpAtrMult, maxTpDist);\n    tpSources = [\'ATR×\' + sf(profile.tpAtrMult,1)];\n  }\n\n  const minTP = isBull ? price + risk * CFG.minRR : price - risk * CFG.minRR;\n  if (isBull  && tp < minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n  if (!isBull && tp > minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n\n  const reward = Math.abs(tp - price);\n  const rr     = reward / risk;\n  if (rr < CFG.minRR) return null;\n\n  // Confluence scoring\n  const bestOB = slSources[0] && slSources[0].startsWith(\'OB\')\n    ? (isBull ? active.filter(o => o.isBull  && o.top    < price).sort((a,b) => b.top    - a.top)[0]\n             : active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom)[0])\n    : null;\n\n  const srUsedSL = slSources[0] === \'SR+SPIKE\';\n  const srUsedTP = tpSources[0] && tpSources[0].startsWith(\'SR\');\n  const srTouches = srUsedTP ? parseInt((tpSources[0]||\'\').replace(\'SR×\',\'\')) || 0\n    : srUsedSL ? ((r.srLevels||[]).find(s => s.isSupport===isBull && s.strong)||{}).touches||0 : 0;\n  const biasTotalConf = (r.recentBull + r.recentBear) || 1;\n  const biasScore   = Math.round((isBull ? r.recentBull : r.recentBear) / biasTotalConf * 20);\n  const obScore2    = bestOB ? Math.round(20 * bestOB.score / 100) : 0;\n  const srScore     = (srUsedSL || srUsedTP) ? Math.min(15, (srTouches||2) * 3) : 0;\n  const slScore     = (risk <= atr * profile.slAtrMult + spikeGuardDist + 0.001) ? 12 : 0;\n  const swingScore  = (tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\') ? 18 : 0;\n  const rrScore     = Math.min(18, Math.round((rr / 3) * 18));\n  const fsBonus     = (r.fsDir === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const emaBonus    = (r.emaTrend === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? \'bull\' : \'bear\'))) ? 5 : 0;\n  const profileBonus = profile.trendBias === (isBull ? \'bull\' : \'bear\') ? 8 : 0;\n  const mtfBonus = (bestOB && bestOB.mtfStack) ? 15 : 0;\n  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus);\n\n  const components = {\n    ob:    { active: !!bestOB,            label: \'OB\',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },\n    sr:    { active: srUsedSL||srUsedTP,  label: \'S/R\',   score: srScore > 0 ? Math.round(srScore/15*100) : 0, touches: srTouches },\n    atr:   { active: true,                label: \'ATR\',   score: slScore > 0 ? 100 : 50 },\n    swing: { active: tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\', label: \'SWING\', score: Math.min(100, rr / 3 * 100) },\n  };\n\n  const basis = \'SL:\' + slSources.join(\'+\') + \' | TP:\' + tpSources.join(\'+\') + \' | \' + profile.type.toUpperCase();\n\n  const balance       = parseFloat(document.getElementById(\'accountBalance\')?.value) || 1000;\n  const riskPctRaw    = parseFloat(document.getElementById(\'riskPct\')?.value) || 1.0;\n  const riskPctCapped = Math.min(riskPctRaw, CFG.maxRiskPct);\n  const dollarRisk    = balance * (riskPctCapped / 100);\n  const slDistance    = Math.abs(price - sl);\n  const units         = slDistance > 0 ? dollarRisk / slDistance : 0;\n  const potentialProfit = units * reward;\n  const maxConsecLosses = dollarRisk > 0 ? Math.floor((balance * 0.1) / dollarRisk) : 0;\n\n  return {\n    dir, entry: price, sl, tp, rr, risk, reward,\n    basis, components, confluence,\n    slSources, tpSources,\n    obScore: bestOB ? bestOB.score : null,\n    isHPZ: bestOB ? bestOB.isHPZ : false,\n    dollarRisk, units, potentialProfit,\n    riskPct: riskPctCapped, balance, maxConsecLosses,\n    profileType: profile.type, spikeAtr,\n    warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,\n  };\n}\n\n// Receive candle data + kick off scan\nself.onmessage = function(e) {\n  const { type, candleCache, minConf, minRR } = e.data;\n  if (type !== \'RUN\') return;\n\n  // Restore candle cache sent from main thread\n  if (candleCache) _scanCandleCache = candleCache;\n\n  const results = [];\n  const total = SCAN_SYMBOLS.length * SCAN_TFS.length;\n  let done = 0;\n\n  for (const s of SCAN_SYMBOLS) {\n    for (const tf of SCAN_TFS) {\n      done++;\n      try {\n        const key = s.id + tf;\n        if (!_scanCandleCache[key]) {\n          _scanCandleCache[key] = generateDemoCandles(s.id, tf, 500);\n        }\n        const cArr = _scanCandleCache[key];\n        if (!cArr || cArr.length < 50) continue;\n        const r = analyseCandles(cArr, s.id);\n        if (!r) continue;\n        const t = calcSLTP(r);\n        if (!t || t.blocked || t.confluence < (minConf||70) || t.rr < (minRR||1.3)) continue;\n        results.push({\n          sym:       s.id,\n          name:      s.name,\n          tf,\n          dir:       t.dir,\n          entry:     t.entry,\n          sl:        t.sl,\n          tp:        t.tp,\n          rr:        t.rr,\n          confluence: t.confluence,\n          insideOB:  t.insideOB,\n          atSRLevel: t.atSRLevel,\n          slSources: t.slSources,\n          tpSources: t.tpSources,\n          isHPZ:     t.isHPZ,\n          mtfStack:  t.components && t.components.ob && t.components.ob.mtfStack,\n          blocked:   false,\n        });\n      } catch (err) { /* skip */ }\n      // Post progress every 10 items\n      if (done % 10 === 0) self.postMessage({ type: \'PROGRESS\', done, total });\n    }\n  }\n\n  self.postMessage({ type: \'DONE\', results });\n};\n';
   const blob = new Blob([workerSrc], { type: 'application/javascript' });
   return new Worker(URL.createObjectURL(blob));
 }
