@@ -1560,8 +1560,8 @@ window.LightweightCharts = (function() {
 const TG_TOKEN  = '8775780390:AAH4PEqvN6hOHyaCsogQ8fLx6UrKH5_CNGE';
 const TG_CHATID = '6369265351';
 let _tgEnabled  = true;
-const _tgLastSent = {}; // debounce: key=sym+tf+dir+entry -> timestamp
-const TG_COOLDOWN = 2 * 60 * 60 * 1000; // 2 hours per unique setup
+const _tgLastSent = {}; // debounce: key=sym+tf+dir -> timestamp
+const TG_COOLDOWN = 5 * 60 * 1000; // 5 min per setup
 
 // ── HEIKIN-ASHI ───────────────────────────────────────────
 let _haEnabled = false;
@@ -1742,21 +1742,6 @@ let _wsSubscriptionId = null;
 let _wsReconnectTimer = null;
 let _wsConnectTimeout = null;
 
-// ── Confirmation TF (lower TF candle close check) ─────────────
-// Chart TF → Confirmation TF mapping:
-//   M1/M2        → M1 (same, no lower)
-//   M5/M15/M30   → M1
-//   1H/4H/1D     → M5
-let _confSubId   = null;   // WS subscription ID for conf TF
-let _confCandles = [];     // rolling buffer of last 10 conf TF bars
-let _confTF      = 60;     // actual confirmation TF granularity in seconds
-
-function getConfTF(chartTF) {
-  if (chartTF <= 60)   return 60;   // M1 chart → still M1
-  if (chartTF <= 1800) return 60;   // M5/M15/M30 → M1
-  return 300;                        // 1H/4H/1D → M5
-}
-
 function connectDeriv() {
   // Clean up any existing connection first
   if (ws) { try { ws.close(); } catch(e){} ws = null; }
@@ -1846,7 +1831,6 @@ function disconnect() {
   if (ws) { try { ws.close(); } catch(e){} ws = null; }
   if (_liveScanWS) { try { _liveScanWS.close(); } catch(e){} _liveScanWS = null; }
   clearTimeout(_liveScanInterval); _liveScanInterval = null;
-  _confSubId = null; _confCandles = [];
   setStatus('demo', '◉ DEMO MODE');
   document.getElementById('connectBtn').textContent = 'CONNECT';
 }
@@ -1870,25 +1854,6 @@ function requestCandles() {
     style: 'candles',
     subscribe: 1,
   }));
-
-  // ── Subscribe to lower TF for candle close confirmation ───
-  _confTF = getConfTF(currentTF);
-  if (_confTF !== currentTF) {
-    if (_confSubId) {
-      try { ws.send(JSON.stringify({ forget: _confSubId })); } catch(e) {}
-      _confSubId = null;
-    }
-    _confCandles = [];
-    ws.send(JSON.stringify({
-      ticks_history: currentSymbol,
-      adjust_start_time: 1,
-      count: 20,
-      end: 'latest',
-      granularity: _confTF,
-      style: 'candles',
-      subscribe: 1,
-    }));
-  }
 }
 
 function handleWSMessage(data) {
@@ -1898,18 +1863,6 @@ function handleWSMessage(data) {
     return;
   }
   if (data.msg_type === 'candles') {
-    const reqGran = data.echo_req ? parseInt(data.echo_req.granularity) : currentTF;
-    // ── Confirmation TF feed ────────────────────────────────
-    if (reqGran === _confTF && _confTF !== currentTF) {
-      if (data.subscription) _confSubId = data.subscription.id;
-      _confCandles = data.candles.map(c => ({
-        time: c.epoch,
-        open: parseFloat(c.open), high: parseFloat(c.high),
-        low: parseFloat(c.low),   close: parseFloat(c.close),
-      }));
-      return; // don't process as main chart candles
-    }
-    // ── Main chart TF feed ──────────────────────────────────
     // Save subscription ID so we can forget it cleanly when switching symbol/tf
     if (data.subscription) _wsSubscriptionId = data.subscription.id;
     candles = data.candles.map(c => ({
@@ -1924,22 +1877,6 @@ function handleWSMessage(data) {
   }
   if (data.msg_type === 'ohlc') {
     const o = data.ohlc;
-    // ── Route to conf TF buffer if this is the lower TF feed ─
-    if (_confTF !== currentTF && parseInt(o.granularity) === _confTF) {
-      const barTime = parseInt(o.open_time);
-      const bar = {
-        time: barTime,
-        open: parseFloat(o.open), high: parseFloat(o.high),
-        low: parseFloat(o.low),   close: parseFloat(o.close),
-      };
-      if (_confCandles.length && _confCandles[_confCandles.length - 1].time === barTime) {
-        _confCandles[_confCandles.length - 1] = bar; // update forming bar
-      } else {
-        _confCandles.push(bar); // new bar
-        if (_confCandles.length > 20) _confCandles.shift(); // keep buffer small
-      }
-      return;
-    }
     const barTime = parseInt(o.open_time);
     const bar = {
       time:   barTime,
@@ -3346,14 +3283,13 @@ function calcSLTP(r) {
   }
 
   // ── GATE 2: Bias + Future Swing agree ────────────────────
-  // Boom/Crash directional bias remains a hard block (structural).
-  // FS conflict is a WARN only — reduces confluence but never blocks.
   if (profile.trendBias === 'bull' && !isBullBias) {
     failReasons.push('GATE2: Boom requires BULL bias');
   } else if (profile.trendBias === 'bear' && isBullBias) {
     failReasons.push('GATE2: Crash requires BEAR bias');
   } else if (r.fsDir && r.fsDir !== (isBull ? 'bull' : 'bear')) {
-    warnReasons.push('WARN G2: Future Swing projects ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias, confluence reduced');
+    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality
+    failReasons.push('GATE2: Future Swing is ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias');
   }
 
   // ── GATE 3: Price near aligned OB OR strong S/R ──────────
@@ -3480,42 +3416,6 @@ function calcSLTP(r) {
     }
   }
 
-  // ── CHART PATTERN ADJUSTMENT (never hard block — adjust SL/confluence) ──
-  // Opposing patterns: warn + tag for SL widening + confluence penalty.
-  // Confirming patterns: positive note + confluence bonus (in scoring).
-  r._opposingPats = [];
-  if (r.chartPatterns && r.chartPatterns.length > 0) {
-    const tradeDir   = isBull ? 'bull' : 'bear';
-    const contDir    = isBull ? 'cont_bull' : 'cont_bear';
-    const oppContDir = isBull ? 'cont_bear' : 'cont_bull';
-
-    // Collect all opposing patterns (any type: H&S, continuation, reversal, wedge, etc.)
-    const opposingPats = r.chartPatterns.filter(p =>
-      p.confidence >= 65 &&
-      (p.dir === oppContDir ||
-       (p.type === 'reversal' && p.dir !== tradeDir && p.dir !== contDir))
-    ).sort((a, b) => b.confidence - a.confidence);
-
-    for (const op of opposingPats) {
-      r._opposingPats.push(op);
-      const breaking = op.desc && op.desc.includes('BREAKING');
-      if (op.confidence >= 80 || breaking) {
-        warnReasons.push('WARN G8: ' + op.name + (breaking ? ' BREAKING' : '') + ' opposes trade — SL widened, reduce size');
-      } else {
-        warnReasons.push('NOTE G8: ' + op.name + ' forming against trade — monitoring');
-      }
-    }
-
-    // Confirming chart patterns — positive notes
-    const confirmPats = r.chartPatterns.filter(p =>
-      p.confidence >= 65 && (p.dir === tradeDir || p.dir === contDir)
-    ).sort((a, b) => b.confidence - a.confidence);
-    for (const cp of confirmPats.slice(0, 2)) {
-      const breaking = cp.desc && cp.desc.includes('BREAKING');
-      warnReasons.push('NOTE G8: ' + cp.name + (breaking ? ' BREAKING' : '') + ' confirms direction — ' + (cp.desc || ''));
-    }
-  }
-
   // ── GATE 7: Spike-and-Continue ─────────────────────────
   if (profile && profile.waitSpike) {
     const _g7spk = (r.recentSpikeEvents || []);
@@ -3543,37 +3443,6 @@ function calcSLTP(r) {
   const maxSlDist = price * (profile.maxSlPct / 100);
 
   let sl = null, slSources = [];
-
-  // ── A0_SWEEP: Liquidity Sweep SL — HIGHEST PRIORITY ─────────
-  // If a sweep happened in the trade direction within last 8 bars,
-  // place SL just beyond the sweep extreme (the wick that grabbed stops).
-  // This is the ideal SL location — BELOW the stop-hunt candle wick.
-  const CFG_SWEEP_ATR_MULT = 1.5; // extra ATR buffer beyond sweep wick
-  if (r.recentSweeps && r.recentSweeps.length > 0) {
-    const candleArr2 = r.candleArr || [];
-    const n2 = candleArr2.length;
-    // Find most recent sweep aligned with our trade direction (within last 8 bars)
-    const alignedSweep = r.recentSweeps
-      .filter(sw => sw.dir === (isBull ? 'bull' : 'bear') && (n2 - 1 - sw.idx) <= 8)
-      .sort((a, b) => b.idx - a.idx)[0];
-    if (alignedSweep && candleArr2[alignedSweep.idx]) {
-      const swCandle = candleArr2[alignedSweep.idx];
-      // For bull sweep: SL goes below the wick low of the sweep candle
-      // For bear sweep: SL goes above the wick high of the sweep candle
-      const sweepExtreme = isBull ? swCandle.low : swCandle.high;
-      const sweepBuffer = atr * CFG_SWEEP_ATR_MULT + spikeGuardDist * 0.5;
-      const sweepSLCand = isBull
-        ? sweepExtreme - sweepBuffer
-        : sweepExtreme + sweepBuffer;
-      const sweepDist = Math.abs(price - sweepSLCand);
-      if (sweepDist >= minSlDist && sweepDist <= maxSlDist
-          && (isBull ? sweepSLCand < price : sweepSLCand > price)) {
-        sl = sweepSLCand;
-        slSources = ['SWEEP-LOW'];
-        warnReasons.push('✓ SL placed below liquidity sweep wick (' + (n2 - 1 - alignedSweep.idx) + 'b ago)');
-      }
-    }
-  }
 
   // A0: Spike-extreme SL
   if (sl === null && profile && profile.waitSpike && r.recentSpikeEvents) {
@@ -3672,26 +3541,6 @@ function calcSLTP(r) {
   const risk = Math.abs(price - sl);
   if (risk <= 0) return null;
 
-  // ── PATTERN SL ADJUSTMENT ─────────────────────────────────
-  // Any opposing chart pattern widens SL — severity scales with
-  // pattern confidence and whether it is actively breaking.
-  // Multiple patterns stack, capped at 1.5× ATR total extra.
-  if (r._opposingPats && r._opposingPats.length > 0) {
-    let totalExtra = 0;
-    for (const op of r._opposingPats) {
-      const conf     = op.confidence || 65;
-      const breaking = op.desc && op.desc.includes('BREAKING');
-      const baseMult = op.type === 'continuation'
-        ? (breaking ? 1.0 : 0.6)   // cont breaking=1.0×, forming=0.6×
-        : (breaking ? 0.8 : 0.4);  // reversal breaking=0.8×, forming=0.4×
-      totalExtra += atr * baseMult * (conf / 100);
-    }
-    totalExtra = Math.min(totalExtra, atr * 1.5);
-    sl = isBull ? sl - totalExtra : sl + totalExtra;
-    if (Math.abs(price - sl) > maxSlDist) sl = isBull ? price - maxSlDist : price + maxSlDist;
-    slSources = [...slSources, 'PAT-ADJ'];
-  }
-
   // TP calculation — max distance capped tightly by profile
   const maxTpDist = Math.min(price * 0.08, atr * profile.tpAtrMult * 2.5);
   let tp = null, tpSources = [];
@@ -3764,7 +3613,6 @@ function calcSLTP(r) {
   const swingScore  = (tpSources[0] === 'SWING' || tpSources[0] === 'PROJ') ? 18 : 0;
   const rrScore     = Math.min(18, Math.round((rr / 3) * 18));
   const fsBonus     = (r.fsDir === (isBull ? 'bull' : 'bear')) ? 8 : 0;
-  const fsPenalty   = (r.fsDir && r.fsDir !== (isBull ? 'bull' : 'bear')) ? -10 : 0;
   const emaBonus    = (r.emaTrend === (isBull ? 'bull' : 'bear')) ? 8 : 0;
   const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? 'bull' : 'bear'))) ? 5 : 0;
   const profileBonus = profile.trendBias === (isBull ? 'bull' : 'bear') ? 8 : 0;
@@ -3772,26 +3620,12 @@ function calcSLTP(r) {
   const spikeBonus  = (profile && profile.waitSpike && r.recentSpikeEvents &&
     r.recentSpikeEvents.find(s => s.dir===(isBull?'bull':'bear') && s.ageBars<=10)) ? 12 : 0;
   const tlBonus     = (atTrendLine && _nearTL) ? Math.min(12, _nearTL.touches * 4) : 0;
-  // Candle pattern bonus
+  // Pattern bonus: strength-weighted, max 15pts
   const _pats = r.candlePatterns || [];
   const _alignedPats = _pats.filter(p => p.dir === (isBull ? 'bull' : 'bear'));
   const _topPat = _alignedPats.sort((a,b) => b.strength - a.strength)[0];
   const patBonus = _topPat ? Math.min(15, _topPat.strength * 5) : 0;
-  // Chart pattern bonus (confirming)
-  const _confChartPat = (r.chartPatterns || []).find(p =>
-    p.confidence >= 65 && (p.dir === (isBull ? 'bull' : 'bear') || p.dir === (isBull ? 'cont_bull' : 'cont_bear'))
-  );
-  const chartPatBonus = _confChartPat ? Math.min(18, Math.round(_confChartPat.confidence / 100 * 18)) : 0;
-  // Opposing chart pattern penalty
-  const _oppPats = r._opposingPats || [];
-  const patPenalty = _oppPats.reduce((acc, op) => {
-    const breaking = op.desc && op.desc.includes('BREAKING');
-    const base = op.type === 'continuation'
-      ? (breaking ? -18 : -10)
-      : (breaking ? -12 : -6);
-    return acc + Math.round(base * ((op.confidence || 65) / 100));
-  }, 0);
-  const confluence  = Math.max(0, Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + fsPenalty + emaBonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus + chartPatBonus + patPenalty));
+  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus);
 
   const components = {
     ob:    { active: !!bestOB,            label: 'OB',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },
@@ -3800,58 +3634,7 @@ function calcSLTP(r) {
     swing: { active: tpSources[0] === 'SWING' || tpSources[0] === 'PROJ', label: 'SWING', score: Math.min(100, rr / 3 * 100) },
   };
 
-  // ── CANDLE CLOSE CONFIRMATION ────────────────────────────
-  // Use a LOWER timeframe for faster confirmation:
-  //   Chart M5/M15/M30 → check M1 bars
-  //   Chart 1H/4H/1D   → check M5 bars
-  // LOOKBACK: scanner fires every few mins so the confirming bar may have
-  // already passed. We look back through the last (chartTF / confTF) bars
-  // to catch any confirmation candle that closed since the last scan.
-  const confArr = (isConnected && _confCandles.length >= 3 && _confTF !== currentTF)
-    ? _confCandles
-    : (r.candleArr || []);
-  const confTFLabel = (isConnected && _confCandles.length >= 3 && _confTF !== currentTF)
-    ? tfLabel(_confTF)
-    : tfLabel(currentTF);
-  const nCC = confArr.length;
-  // How many conf-TF bars fit in one chart-TF bar — that's our lookback window
-  const confLookback = Math.max(2, Math.ceil(currentTF / (_confTF || currentTF)));
-  let candleCloseConfirmed = false;
-  let candleCloseWarning = '';
-  let confirmedBarsAgo = null;
-  if (nCC >= 2) {
-    // Check last N completed bars (skip the very last which may still be forming)
-    const checkFrom = Math.max(0, nCC - 1 - confLookback);
-    for (let ci = nCC - 2; ci >= checkFrom; ci--) {
-      const bar  = confArr[ci];
-      const prev = confArr[ci - 1] || bar;
-      const bullClose = bar.close > bar.open && bar.close > prev.close;
-      const bearClose = bar.close < bar.open && bar.close < prev.close;
-      if (isBull && bullClose) {
-        candleCloseConfirmed = true;
-        confirmedBarsAgo = (nCC - 2) - ci; // how many bars ago it happened
-        break;
-      }
-      if (!isBull && bearClose) {
-        candleCloseConfirmed = true;
-        confirmedBarsAgo = (nCC - 2) - ci;
-        break;
-      }
-    }
-    if (!candleCloseConfirmed) {
-      candleCloseWarning = 'WARN: No ' + (isBull ? 'bullish' : 'bearish') + ' ' + confTFLabel
-        + ' close in last ' + confLookback + ' bars — wait for confirmation';
-    }
-  } else {
-    candleCloseConfirmed = true; // not enough bars — don't block
-  }
-  if (!candleCloseConfirmed && candleCloseWarning) {
-    warnReasons.push(candleCloseWarning);
-  }
-
-  const basis = 'SL:' + slSources.join('+') + ' | TP:' + tpSources.join('+') + ' | ' + profile.type.toUpperCase()
-    + (slSources[0] === 'SWEEP-LOW' ? ' | ⚡SWEEP-SL' : '')
-    + (candleCloseConfirmed ? ' | ✓CLOSE(' + confTFLabel + ')' : ' | ⚠NO-CLOSE(' + confTFLabel + ')');
+  const basis = 'SL:' + slSources.join('+') + ' | TP:' + tpSources.join('+') + ' | ' + profile.type.toUpperCase();
 
   const balance       = parseFloat(document.getElementById('accountBalance')?.value) || 1000;
   const riskPctRaw    = parseFloat(document.getElementById('riskPct')?.value) || 1.0;
@@ -3874,12 +3657,6 @@ function calcSLTP(r) {
     warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,
     atTrendLine: !!atTrendLine, nearTL: _nearTL || null,
     bestPattern: _topPat || null, patBonus,
-    chartPatBonus, patPenalty, fsPenalty,
-    opposingPats: r._opposingPats || [],
-    sweepSL: slSources[0] === 'SWEEP-LOW',
-    candleCloseConfirmed,
-    confTFLabel,
-    confirmedBarsAgo,
   };
 }
 
@@ -4032,8 +3809,6 @@ function updateSLTP(forceRecalc = true) {
       (t.components.sr && t.components.sr.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">S/R ✓×' + (t.components.sr.touches||0) + '</span>' : '') +
       '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">ATR ✓</span>' +
       (t.components.swing.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:var(--warn)">SWING ✓</span>' : '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(96,125,139,0.1);border:1px solid var(--border);color:var(--text-dim)">SWING ✗</span>') +
-      (t.sweepSL ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(255,165,0,0.15);border:1px solid rgba(255,165,0,0.5);color:var(--warn)">⚡ SWEEP SL</span>' : '') +
-      (t.candleCloseConfirmed ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,229,160,0.1);border:1px solid rgba(0,229,160,0.4);color:var(--bull)">✓ ' + (t.confTFLabel||'') + ' CLOSE' + (t.confirmedBarsAgo > 0 ? ' -' + t.confirmedBarsAgo + 'b' : '') + '</span>' : '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(255,165,0,0.1);border:1px solid rgba(255,165,0,0.4);color:var(--warn)">⚠ WAIT ' + (t.confTFLabel||'') + ' CLOSE</span>') +
     '</div>' +
     '<div class="stat-row"><span class="stat-label">ENTRY</span><span class="stat-val bright">' + sf(t.entry,dp) + '</span></div>' +
     '<div class="stat-row"><span class="stat-label">TAKE PROFIT</span><span class="stat-val bull">' + sf(t.tp,dp) + '</span></div>' +
@@ -4065,7 +3840,7 @@ function updateSLTP(forceRecalc = true) {
   // Draw price lines on chart
   const entryLine = candleSeries.createPriceLine({ price: t.entry, color: '#00b4d888', lineWidth: 1, lineStyle: 1, axisLabelVisible: true, title: 'ENTRY' });
   const tpLine    = candleSeries.createPriceLine({ price: t.tp, color: '#00e5a0cc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: 'TP ' + sf(t.tp,dp) });
-  const slLine    = candleSeries.createPriceLine({ price: t.sl, color: '#ff3d5acc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: (t.sweepSL ? '⚡SWEEP-SL ' : 'SL ') + sf(t.sl,dp) });
+  const slLine    = candleSeries.createPriceLine({ price: t.sl, color: '#ff3d5acc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: 'SL ' + sf(t.sl,dp) });
   sltpLines.push(entryLine, tpLine, slLine);
 }
 
@@ -4192,7 +3967,7 @@ function updateSettings() {
   CFG.atrSlMult     = parseFloat(document.getElementById('set_atrSlMult').value) || 1.2;
   CFG.atrTpMult     = parseFloat(document.getElementById('set_atrTpMult').value) || 2.5;
   CFG.obSlBuf       = parseFloat(document.getElementById('set_obSlBuf').value)   || 5;
-  CFG.minRR         = parseFloat(document.getElementById('set_minRR')?.value)    || 1.3;
+  CFG.minRR         = parseFloat(document.getElementById('set_minRR')?.value)    || 1.5;
   CFG.maxRiskPct    = parseFloat(document.getElementById('set_maxRiskPct')?.value) || 2.0;
   CFG.swingLen      = parseInt(document.getElementById('set_swingLen').value)    || 10;
   CFG.swingSamples  = parseInt(document.getElementById('set_swingSamples').value)|| 8;
@@ -4460,7 +4235,7 @@ function _updateLiveScanProgress() {
 function _finishLiveScan() {
   const prog = document.getElementById('scanProgress');
   // Telegram alerts for all valid scan setups
-  setTimeout(() => { for (const item of (_scanResults||[])) { if (item.t && !item.t.blocked && item.t.confluence >= 55) maybeSendTG(item.t, item.sym, item.tf); } }, 500);
+  setTimeout(() => { for (const item of (_scanResults||[])) { if (item.t && !item.t.blocked && item.t.confluence >= 70) maybeSendTG(item.t, item.sym, item.tf); } }, 500);
   if (prog) prog.textContent = 'Analysing ' + _liveScanTotal + ' datasets…';
   // Schedule next auto-refresh in 5 minutes
   clearTimeout(_liveScanInterval);
@@ -4532,23 +4307,19 @@ function renderScanResults() {
     if (!t || t.blocked) return false;
     // Must have actual SL/TP numbers
     if (!t.sl || !t.tp || !t.rr) return false;
-    // Confluence floor: 55%+ (70 was too strict — filtered most valid setups)
-    if (t.confluence < 55) return false;
-    // RR must meet minimum
+    // Gate 4 check: confluence 70%+
+    if (t.confluence < 70) return false;
+    // Gate 2 check: RR must be at least minRR
     if (t.rr < CFG.minRR) return false;
-    // READY check: price near aligned OB (2.5×ATR) OR near strong S/R (2×ATR)
+    // READY check: price must be near or inside an aligned OB (actionable now)
     const isBull = t.dir === 'LONG';
-    const atr    = res.atr || 1;
-    const price  = item.price;
     const alignedOBs = (res.activeOBs || []).filter(o => isBull ? o.isBull : !o.isBull);
+    const atr = res.atr || 1;
+    const price = item.price;
     const readyOB = alignedOBs.find(o =>
-      price <= o.top + atr * 2.5 && price >= o.bottom - atr * 2.5
+      price <= o.top + atr * 2 && price >= o.bottom - atr * 2
     );
-    const readySR = (res.srLevels || []).find(s =>
-      s.strong && Math.abs(s.price - price) <= atr * 2 &&
-      (isBull ? s.isSupport : !s.isSupport)
-    );
-    if (!readyOB && !readySR) return false;
+    if (!readyOB) return false;
     return true;
   }
 
@@ -4566,7 +4337,7 @@ function renderScanResults() {
   if (prog) prog.textContent = tfFiltered.length + ' setups | ' + skipped + ' filtered | ' + _scanResults.length + ' scanned';
 
   if (sorted.length === 0) {
-    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 55%+ | RR ' + CFG.minRR + ':1+ | Price near OB or strong S/R</span></div>';
+    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 70%+ | RR ' + CFG.minRR + ':1+ | Price within 2x ATR of OB</span></div>';
     return;
   }
 
@@ -4663,7 +4434,6 @@ function switchToSymbol(sym, tf) {
 let _notifEnabled = false;
 let _soundEnabled = false;
 let _lastSetupDir = null;
-let _lastSetupEntry = null;
 
 function toggleNotifications() {
   if (!_notifEnabled) {
@@ -4713,10 +4483,8 @@ function playAlertTone(freq, vol) {
 function fireSetupAlert(t, sym) {
   if (!t || t.blocked || !t.rr) return;
   const dir = t.dir;
-  const entryR = Math.round((t.entry || 0) * 100) / 100;
-  if (dir === _lastSetupDir && entryR === _lastSetupEntry) return; // same setup, don't repeat
+  if (dir === _lastSetupDir) return; // don't repeat same direction
   _lastSetupDir = dir;
-  _lastSetupEntry = entryR;
   const msg = '🎯 ' + sym + ' ' + dir + ' setup — RR ' + sf(t.rr,2) + ':1 | Conf ' + t.confluence + '%';
   addAlert(msg, t.dir === 'LONG' ? 'bull' : 'bear');
   if (_soundEnabled) playAlertTone(t.dir === 'LONG' ? 660 : 440, 0.15);
@@ -4983,15 +4751,14 @@ function buildTGMsg(t, sym, tf) {
   const dp   = (sym.includes('R_10') || sym.includes('1HZ10V')) ? 3 : 2;
   const dir  = t.dir === 'LONG' ? '\uD83D\uDFE2 LONG' : '\uD83D\uDD34 SHORT';
   const conf = t.confluence || 0;
-  // Grade — quality tier based on confluence + zone + HPZ
-  const hasPremiumZone = t.isHPZ || (t.components && t.components.ob && t.components.ob.mtfStack);
-  const gr = (conf >= 82 && hasPremiumZone) ? '\u2B50\u2B50\u2B50\u2B50 S-TIER'
-           : conf >= 78 ? '\u2B50\u2B50\u2B50 A+'
-           : conf >= 70 ? '\u2B50\u2B50 A'
-           : '\u2B50 B';
+  // Grade — thresholds reflect the TF tier that was cleared
+  const gradeThresh = (tf === 900) ? [95, 92, 88] : (tf === 1800) ? [93, 90, 85] : [90, 85, 80];
+  const gr = conf >= gradeThresh[0] ? '\u2B50\u2B50\u2B50\u2B50 S-TIER'
+           : conf >= gradeThresh[1] ? '\u2B50\u2B50\u2B50 A+'
+           : '\u2B50\u2B50 A';
   // TF tier badge
-  const tfTier = (tf === 900)  ? '\uD83D\uDD36 15M'
-               : (tf === 1800) ? '\uD83D\uDD37 30M'
+  const tfTier = (tf === 900)  ? '\uD83D\uDD36 15M ELITE'
+               : (tf === 1800) ? '\uD83D\uDD37 30M PRIME'
                : (tf === 3600) ? '\uD83D\uDFE1 1H'
                : '\uD83D\uDFE0 4H';
   const zone = t.insideOB ? '\uD83D\uDCE6 Inside OB' : '\uD83D\uDCCA At S/R';
@@ -5006,30 +4773,15 @@ function buildTGMsg(t, sym, tf) {
   const tln = (t.atTrendLine && t.nearTL)
     ? ('\n\ud83d\udcd0 <b>Trend line ' + (t.nearTL.isSupport?'support':'resist') + ' x' + t.nearTL.touches + ' touches</b>')
     : '';
-  // ── Sweep SL badge ─────────────────────────────────────────
-  const sweepSlLine = t.sweepSL
-    ? '\n\u26a1 <b>SL below liquidity sweep wick</b> — stop-hunt protected'
-    : '';
-  // ── Candle close confirmation ───────────────────────────────
-  const closeConfLine = t.candleCloseConfirmed
-    ? '\n\u2705 <b>' + (t.confTFLabel||'') + ' close confirmed</b>'
-      + (t.confirmedBarsAgo != null && t.confirmedBarsAgo > 0 ? ' (' + t.confirmedBarsAgo + ' bars ago)' : ' — enter now')
-    : '\n\u26a0\ufe0f <b>No ' + (t.confTFLabel||'') + ' close yet</b> — wait for bar to close in trade direction before entering';
   const isBull = t.dir === 'LONG';
   const risk = Math.abs(t.entry - t.sl);
   const tp1  = isBull ? t.entry + risk * 1.0 : t.entry - risk * 1.0;
   const tp2  = t.tp;
   const tp3  = isBull ? t.entry + risk * (t.rr * 1.5) : t.entry - risk * (t.rr * 1.5);
-  // Positive notes only
+  // Only show confirmed positive notes — filter out any caution language
   const noteLines = (t.warnReasons || [])
     .filter(w => w.startsWith('NOTE') && !w.includes('wait') && !w.includes('No ') && !w.includes('Approaching'))
     .map(w => '\u2139 ' + w.replace(/^NOTE ?G?\d*: ?/, ''))
-    .join('\n');
-  // All active warnings (exclude the candle close one — already handled above)
-  const warnLines = (t.warnReasons || [])
-    .filter(w => (w.startsWith('WARN') || w.includes('opposes') || w.includes('conflict') || w.includes('counter-momentum'))
-      && !w.includes('candle close') && !w.includes('No candle close'))
-    .map(w => '\u26a0\ufe0f ' + w.replace(/^WARN ?G?\d*: ?/, ''))
     .join('\n');
   return '<b>\uD83C\uDFAF ' + sym + ' ' + tfLabel(tf) + '</b>  ' + dir + '  ' + tfTier + '\n' +
     gr + '  Conf: <b>' + conf + '%</b>  RR: <b>' + sf(t.rr,2) + ':1</b>\n' +
@@ -5039,8 +4791,7 @@ function buildTGMsg(t, sym, tf) {
     '\u2705 TP1:   <b>' + sf(tp1,dp) + '</b>  <i>(1:1 — close 33%)</i>\n' +
     '\u2705 TP2:   <b>' + sf(tp2,dp) + '</b>  <i>(' + sf(t.rr,1) + ':1 — close 50%)</i>\n' +
     '\u2705 TP3:   <b>' + sf(tp3,dp) + '</b>  <i>(EXT — trail rest)</i>\n' +
-    zone + hpz + mtf + pat + spk + tln + sweepSlLine + closeConfLine +
-    (warnLines ? '\n\u2500\u2500\u2500\u2500\u2500\u2500\n' + warnLines : '') +
+    zone + hpz + mtf + pat + spk + tln +
     (noteLines ? '\n' + noteLines : '') + '\n' +
     '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
 }
@@ -5050,45 +4801,60 @@ function maybeSendTG(t, sym, tf) {
   if (!isConnected) return; // never send on demo data
 
   // ── QUALITY GATE: Tiered rules by timeframe ──────────────
-  // M1 and M5 excluded — too noisy for TG alerts
-  if (tf === 60 || tf === 300) return;
+  // 1m and 5m are excluded entirely — too noisy for alerts
+  if (tf !== 900 && tf !== 1800 && tf !== 3600 && tf !== 14400) return;
+
+  // Block if ANY WARN-level reason exists (caution = skip on ALL TFs)
+  const hasWarn = (t.warnReasons || []).some(w =>
+    w.startsWith('WARN') ||
+    w.includes('opposes') ||
+    w.includes('conflict') ||
+    w.includes('counter-momentum') ||
+    w.includes('wait for bounce') ||
+    w.includes('wait for touch') ||
+    w.includes('No spike yet') ||
+    w.includes('Spike does not align')
+  );
+  if (hasWarn) return;
 
   const conf = t.confluence || 0;
   const rr   = t.rr || 0;
-  const hasZone = t.insideOB || t.atSRLevel || t.atTrendLine
-    || (t.warnReasons && t.warnReasons.some(w => w.includes('Approaching OB') || w.includes('At S/R')));
+  const hasPremiumZone = t.isHPZ || (t.components && t.components.ob && t.components.ob.mtfStack);
 
-  if (tf === 14400) {
-    // ── 4H: strong setup — higher TF means longer hold, needs conviction
-    if (conf < 70) return;
-    if (rr < 1.8) return;
-    if (!hasZone) return;
-
-  } else if (tf === 3600) {
-    // ── 1H: solid confluence + near a zone
-    if (conf < 68) return;
-    if (rr < 1.6) return;
-    if (!hasZone) return;
+  if (tf === 3600 || tf === 14400) {
+    // ── 1H / 4H: standard premium rules ──────────────────
+    if (conf < 80) return;
+    if (rr < 2.0) return;
+    if (!t.insideOB && !t.atSRLevel) return;
+    if (!hasPremiumZone && conf < 85) return;
 
   } else if (tf === 1800) {
-    // ── 30M: decent confluence, must be at or near a zone
-    if (conf < 65) return;
-    if (rr < 1.4) return;
-    if (!hasZone) return;
+    // ── 30M: tighter than 1H — needs HTF stack + inside OB ─
+    // 30m has good structure but is still below the 1H HTF layer.
+    // Require: 85%+ confluence, 2.5:1 RR, MUST be inside OB (S/R alone not enough),
+    // and MUST have MTF 4H stack OR HPZ to confirm 4H zone alignment.
+    if (conf < 85) return;
+    if (rr < 2.5) return;
+    if (!t.insideOB) return;          // S/R alone not sufficient on 30m
+    if (!hasPremiumZone) return;       // must have HPZ or 4H OB stack
 
   } else if (tf === 900) {
-    // ── 15M: lowest TF allowed — needs zone + minimum confluence
-    if (conf < 65) return;
-    if (rr < 1.3) return;
-    if (!hasZone) return;
+    // ── 15M: strictest — needs everything aligned ──────────
+    // 15m is fast-moving. Only fire when confluence is exceptional,
+    // RR is strong, price is inside OB, AND there is 4H MTF stack
+    // confirming the zone is valid on higher structure.
+    if (conf < 88) return;
+    if (rr < 3.0) return;
+    if (!t.insideOB) return;           // must be inside OB, not just near
+    // MTF 4H stack is MANDATORY on 15m — no standalone 15m setups
+    const hasMtfStack = t.components && t.components.ob && t.components.ob.mtfStack;
+    if (!hasMtfStack) return;
+    // HPZ is also required — high probability zone on the 15m OB
+    if (!t.isHPZ) return;
   }
 
   // ── Cooldown check ───────────────────────────────────────
-  // Key includes entry price (rounded to 2dp) so the SAME setup at the
-  // SAME level is blocked for 2h, but a new entry at a different price
-  // fires immediately even on the same symbol/tf/dir.
-  const entryRounded = Math.round((t.entry || 0) * 100) / 100;
-  const key = sym + tf + t.dir + entryRounded;
+  const key = sym + tf + t.dir;
   const now = Date.now();
   if (_tgLastSent[key] && now - _tgLastSent[key] < TG_COOLDOWN) return;
   _tgLastSent[key] = now;
