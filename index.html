@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MSB · OB · FUTURE SWING — ULTRA v36.5</title>
+<title>MSB · OB · FUTURE SWING — ULTRA v36.6</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -45,6 +45,41 @@ body {
   position: relative;
 }
 
+/* ── MOBILE MENU BUTTON ── */
+#mobile-menu-btn {
+  display: none;
+  background: none;
+  border: 1px solid var(--border-bright);
+  color: var(--accent);
+  font-size: 16px;
+  padding: 4px 8px;
+  cursor: pointer;
+  line-height: 1;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+#mobile-panels-overlay {
+  display: none;
+  position: fixed;
+  inset: 50px 0 0 0;
+  background: rgba(5,10,14,0.85);
+  z-index: 300;
+  backdrop-filter: blur(2px);
+}
+#mobile-panels-overlay.open { display: block; }
+#mobile-panel-drawer {
+  position: absolute;
+  top: 0; left: 0;
+  width: 300px;
+  height: 100%;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border-bright);
+  overflow-y: auto;
+  transform: translateX(-100%);
+  transition: transform 0.25s ease;
+}
+#mobile-panels-overlay.open #mobile-panel-drawer { transform: translateX(0); }
+
 body::before {
   content: '';
   position: fixed;
@@ -66,11 +101,30 @@ body::after {
 
 #app {
   display: grid;
-  grid-template-rows: 48px 1fr;
-  grid-template-columns: 220px 1fr 280px;
+  grid-template-rows: 50px 1fr;
+  grid-template-columns: 230px 1fr 290px;
   height: 100vh;
   position: relative;
   z-index: 1;
+}
+
+@media (max-width: 1100px) {
+  .tb-group-label { display: none; }
+}
+@media (max-width: 900px) {
+  #app {
+    grid-template-columns: 1fr;
+    grid-template-rows: 50px 1fr;
+  }
+  #left-panel, #right-panel {
+    display: none !important;
+  }
+  #mobile-menu-btn { display: flex !important; align-items: center; }
+  .tb-group { padding: 0 4px; gap: 2px; }
+}
+@media (max-width: 600px) {
+  .overlay-bar { gap: 2px; padding: 3px 6px; }
+  .ov-btn { font-size: 7px; padding: 2px 4px; }
 }
 
 /* TOPBAR */
@@ -80,9 +134,10 @@ body::after {
   border-bottom: 1px solid var(--border-bright);
   display: flex;
   align-items: center;
-  padding: 0 16px;
-  gap: 12px;
+  padding: 0 14px;
+  gap: 8px;
   position: relative;
+  overflow: hidden;
 }
 
 #topbar::after {
@@ -94,9 +149,28 @@ body::after {
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
 }
 
+/* Grouped button clusters in topbar */
+.tb-group {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 0 6px;
+  border-left: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+}
+.tb-group-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-right: 3px;
+  white-space: nowrap;
+  text-transform: uppercase;
+}
+
 .logo {
   font-family: var(--font-display);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 900;
   letter-spacing: 3px;
   color: var(--cyan);
@@ -113,7 +187,7 @@ body::after {
   color: var(--text);
   font-family: var(--font-mono);
   font-size: 11px;
-  padding: 4px 8px;
+  padding: 5px 9px;
   cursor: pointer;
   outline: none;
   transition: border-color 0.2s;
@@ -125,8 +199,8 @@ body::after {
   border: 1px solid var(--border-bright);
   color: var(--accent);
   font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 4px 10px;
+  font-size: 11px;
+  padding: 5px 11px;
   cursor: pointer;
   letter-spacing: 1px;
   transition: all 0.2s;
@@ -138,7 +212,7 @@ body::after {
 /* Live price ticker in topbar */
 .price-ticker {
   font-family: var(--font-mono);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: bold;
   color: var(--text-bright);
   padding: 0 12px;
@@ -146,7 +220,7 @@ body::after {
   border-right: 1px solid var(--border-bright);
   letter-spacing: 1px;
 }
-.price-ticker .chg { font-size: 10px; }
+.price-ticker .chg { font-size: 11px; }
 
 .tb-status {
   font-family: var(--font-mono);
@@ -177,12 +251,12 @@ body::after {
 #chart { position: absolute; inset: 0; }
 
 /* PANEL SECTIONS */
-.panel-section { padding: 8px 12px; border-bottom: 1px solid var(--border); }
+.panel-section { padding: 9px 13px; border-bottom: 1px solid var(--border); }
 
 .panel-title {
   font-family: var(--font-display);
-  font-size: 8px;
-  letter-spacing: 3px;
+  font-size: 9px;
+  letter-spacing: 2px;
   color: var(--text-dim);
   text-transform: uppercase;
   margin-bottom: 8px;
@@ -193,8 +267,8 @@ body::after {
 .panel-title::before { content: ''; width: 2px; height: 10px; background: var(--accent); box-shadow: var(--glow-cyan); }
 
 .stat-row { display: flex; justify-content: space-between; align-items: center; padding: 3px 0; font-size: 11px; }
-.stat-label { color: var(--text-dim); font-family: var(--font-mono); font-size: 10px; }
-.stat-val { font-family: var(--font-mono); font-size: 11px; font-weight: 600; }
+.stat-label { color: var(--text-dim); font-family: var(--font-mono); font-size: 11px; }
+.stat-val { font-family: var(--font-mono); font-size: 12px; font-weight: 600; }
 
 .bull { color: var(--bull); } .bear { color: var(--bear); } .neutral { color: var(--neutral); }
 .cyan { color: var(--cyan); } .warn { color: var(--warn); } .bright { color: var(--text-bright); }
@@ -203,9 +277,9 @@ body::after {
   width: 100%;
   text-align: center;
   font-family: var(--font-display);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 2px;
-  padding: 6px;
+  padding: 7px 6px;
   border-radius: 2px;
   margin: 6px 0;
   transition: all 0.4s;
@@ -224,7 +298,7 @@ body::after {
   padding: 5px 8px;
   margin: 3px 0;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -263,8 +337,8 @@ body::after {
 }
 .alert-pill {
   font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 5px 12px;
+  font-size: 11px;
+  padding: 6px 14px;
   text-align: center;
   border-radius: 2px;
   letter-spacing: 1px;
@@ -289,23 +363,24 @@ body::after {
 .toggle-knob { width: 10px; height: 10px; background: var(--text-dim); border-radius: 50%; position: absolute; top: 1px; left: 1px; transition: all 0.2s; }
 .toggle-switch.on .toggle-knob { left: 15px; background: var(--cyan); }
 
-::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar { width: 5px; height: 5px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 2px; }
+::-webkit-scrollbar-thumb { background: var(--border-bright); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--accent2); }
 
 /* LOADING */
 #chart-loading {
   position: absolute; inset: 0; background: var(--bg-deep);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; z-index: 10;
 }
-.loading-logo { font-family: var(--font-display); font-size: 18px; font-weight: 900; color: var(--cyan); letter-spacing: 4px; text-shadow: var(--glow-cyan); }
+.loading-logo { font-family: var(--font-display); font-size: 22px; font-weight: 900; color: var(--cyan); letter-spacing: 4px; text-shadow: var(--glow-cyan); }
 .loading-spinner { width: 32px; height: 32px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite; }
 @keyframes spin { to{transform:rotate(360deg)} }
 .loading-msg { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); letter-spacing: 2px; }
 
 /* SETTINGS DRAWER */
 #settings-drawer {
-  position: fixed; top: 48px; right: 0; width: 260px; height: calc(100vh - 48px);
+  position: fixed; top: 50px; right: 0; width: 280px; height: calc(100vh - 50px);
   background: var(--bg-panel); border-left: 1px solid var(--border-bright);
   z-index: 500; transform: translateX(100%); transition: transform 0.3s ease; overflow-y: auto; padding: 12px;
 }
@@ -315,7 +390,7 @@ body::after {
 .setting-input:focus { border-color: var(--accent); }
 
 /* SPARKLINE */
-.sparkline-canvas { width: 100%; height: 36px; display: block; }
+.sparkline-canvas { width: 100%; height: 48px; display: block; }
 
 .section-divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-bright), transparent); margin: 6px 12px; }
 
@@ -327,13 +402,13 @@ body::after {
 .sltp-card.bull-card { border-left: 2px solid var(--bull); }
 .sltp-card.bear-card { border-left: 2px solid var(--bear); }
 .sltp-row { display: flex; justify-content: space-between; align-items: center; padding: 2px 0; }
-.sltp-label { color: var(--text-dim); font-size: 9px; letter-spacing: 1px; }
-.sltp-val { font-size: 11px; font-weight: 700; }
+.sltp-label { color: var(--text-dim); font-size: 10px; letter-spacing: 1px; }
+.sltp-val { font-size: 12px; font-weight: 700; }
 .sltp-rr { display: inline-block; font-size: 9px; padding: 1px 5px; border-radius: 1px; margin-top: 3px; letter-spacing: 1px; }
 .rr-good { background: rgba(0,229,160,0.15); color: var(--bull); border:1px solid rgba(0,229,160,0.3); }
 .rr-ok   { background: rgba(255,165,0,0.15);  color: var(--warn); border:1px solid rgba(255,165,0,0.3); }
 .rr-bad  { background: rgba(255,61,90,0.15);   color: var(--bear); border:1px solid rgba(255,61,90,0.3); }
-.sltp-method { font-family: var(--font-mono); font-size: 8px; color: var(--text-dim); text-align: center; padding: 2px 0 4px; letter-spacing: 1px; }
+.sltp-method { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-align: center; padding: 3px 0 5px; letter-spacing: 1px; }
 .sltp-selector { display: flex; gap: 4px; margin-bottom: 6px; }
 .sltp-mode-btn { flex: 1; background: var(--bg-card); border: 1px solid var(--border-bright); color: var(--text-dim); font-family: var(--font-mono); font-size: 9px; padding: 3px 4px; cursor: pointer; letter-spacing: 1px; text-align: center; transition: all 0.2s; }
 .sltp-mode-btn.active { background: var(--accent2); border-color: var(--accent); color: var(--cyan); }
@@ -352,7 +427,7 @@ body::after {
 .connect-form { padding: 12px; display: flex; flex-direction: column; gap: 8px; }
 .connect-input { background: var(--bg-card); border: 1px solid var(--border-bright); color: var(--text); font-family: var(--font-mono); font-size: 11px; padding: 6px 10px; outline: none; width: 100%; }
 .connect-input:focus { border-color: var(--accent); }
-.connect-btn { background: linear-gradient(90deg, var(--accent2), #005f7a); border: 1px solid var(--accent); color: var(--cyan); font-family: var(--font-display); font-size: 10px; letter-spacing: 2px; padding: 8px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; width: 100%; }
+.connect-btn { background: linear-gradient(90deg, var(--accent2), #005f7a); border: 1px solid var(--accent); color: var(--cyan); font-family: var(--font-display); font-size: 11px; letter-spacing: 2px; padding: 9px; cursor: pointer; text-transform: uppercase; transition: all 0.2s; width: 100%; }
 .connect-btn:hover { background: var(--accent); color: #000; box-shadow: var(--glow-cyan); }
 .demo-note { font-family: var(--font-mono); font-size: 9px; color: var(--text-dim); text-align: center; padding: 4px; border: 1px solid var(--border); background: var(--bg-card2); }
 
@@ -382,8 +457,8 @@ body::after {
 }
 .scanner-title {
   font-family: var(--font-display);
-  font-size: 10px;
-  letter-spacing: 3px;
+  font-size: 11px;
+  letter-spacing: 2px;
   color: var(--cyan);
 }
 .scanner-body {
@@ -410,13 +485,13 @@ body::after {
 .scan-card.bear-card { border-left: 3px solid var(--bear); }
 .scan-card.no-setup  { border-left: 3px solid var(--neutral); opacity: 0.5; }
 .scan-card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
-.scan-symbol { font-family: var(--font-display); font-size: 9px; letter-spacing: 2px; color: var(--text-bright); }
-.scan-dir { font-family: var(--font-mono); font-size: 9px; font-weight: 700; }
+.scan-symbol { font-family: var(--font-display); font-size: 10px; letter-spacing: 2px; color: var(--text-bright); }
+.scan-dir { font-family: var(--font-mono); font-size: 10px; font-weight: 700; }
 .scan-conf-bar { width: 100%; height: 3px; background: var(--bg-card); border-radius: 1px; overflow: hidden; margin: 4px 0; }
 .scan-conf-fill { height: 100%; border-radius: 1px; transition: width 0.3s; }
-.scan-price-row { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 9px; margin: 2px 0; }
+.scan-price-row { display: flex; justify-content: space-between; font-family: var(--font-mono); font-size: 10px; margin: 2px 0; }
 .scan-label { color: var(--text-dim); }
-.scan-status { font-family: var(--font-mono); font-size: 8px; color: var(--text-dim); text-align: center; padding: 20px; }
+.scan-status { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); text-align: center; padding: 20px; }
 .scan-rr-badge {
   font-family: var(--font-mono);
   font-size: 8px;
@@ -434,8 +509,8 @@ body::after {
   border: 1px solid var(--border-bright);
   color: var(--text-dim);
   font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 3px 8px;
+  font-size: 10px;
+  padding: 4px 9px;
   cursor: pointer;
   transition: all 0.2s;
   letter-spacing: 1px;
@@ -445,7 +520,7 @@ body::after {
 
 /* ── OVERLAY TOGGLES ── */
 .overlay-bar { display: flex; gap: 4px; padding: 4px 12px; border-bottom: 1px solid var(--border); flex-wrap: wrap; }
-.ov-btn { background: var(--bg-card); border: 1px solid var(--border-bright); color: var(--text-dim); font-family: var(--font-mono); font-size: 8px; padding: 2px 7px; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; border-radius: 1px; }
+.ov-btn { background: var(--bg-card); border: 1px solid var(--border-bright); color: var(--text-dim); font-family: var(--font-mono); font-size: 9px; padding: 3px 9px; cursor: pointer; letter-spacing: 1px; transition: all 0.15s; border-radius: 2px; }
 .ov-btn.on { background: var(--accent2); border-color: var(--accent); color: var(--cyan); }
 .ov-btn.on-bull { background: rgba(0,229,160,0.15); border-color: rgba(0,229,160,0.5); color: var(--bull); }
 .ov-btn.on-bear { background: rgba(255,61,90,0.15); border-color: rgba(255,61,90,0.5); color: var(--bear); }
@@ -552,7 +627,7 @@ body::after {
   transition: all 0.15s;
 }
 .checklist-item.checked .checklist-box { background: var(--bull); border-color: var(--bull); color: #000; }
-.checklist-text { font-family: var(--font-mono); font-size: 10px; color: var(--text); }
+.checklist-text { font-family: var(--font-mono); font-size: 11px; color: var(--text); }
 .checklist-confirm {
   padding: 8px 12px;
   background: rgba(0,229,160,0.05);
@@ -571,8 +646,8 @@ body::after {
 
 /* ── TRADE JOURNAL ── */
 #journal-drawer {
-  position: fixed; top: 48px; left: 0;
-  width: 520px; height: calc(100vh - 48px);
+  position: fixed; top: 50px; left: 0;
+  width: 560px; height: calc(100vh - 50px);
   background: var(--bg-panel);
   border-right: 1px solid var(--border-bright);
   z-index: 500;
@@ -582,9 +657,9 @@ body::after {
   padding: 12px;
 }
 #journal-drawer.open { transform: translateX(0); }
-.journal-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 9px; }
-.journal-table th { color: var(--text-dim); text-align: left; padding: 3px 6px; border-bottom: 1px solid var(--border-bright); font-size: 8px; letter-spacing: 1px; }
-.journal-table td { padding: 3px 6px; border-bottom: 1px solid var(--border); }
+.journal-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 10px; }
+.journal-table th { color: var(--text-dim); text-align: left; padding: 4px 7px; border-bottom: 1px solid var(--border-bright); font-size: 9px; letter-spacing: 1px; }
+.journal-table td { padding: 4px 7px; border-bottom: 1px solid var(--border); }
 .journal-table tr:hover td { background: var(--bg-card); }
 .outcome-win  { color: var(--bull); font-weight: 700; }
 .outcome-loss { color: var(--bear); font-weight: 700; }
@@ -594,7 +669,7 @@ body::after {
 #loss-lockout-banner {
   display: none;
   position: absolute;
-  top: 8px; left: 50%; transform: translateX(-50%);
+  top: 8px; left: 50%; transform: translateX(-50%) translateY(-20px);
   background: rgba(255,61,90,0.15);
   border: 1px solid rgba(255,61,90,0.5);
   color: var(--bear);
@@ -605,17 +680,23 @@ body::after {
   letter-spacing: 1px;
   border-radius: 2px;
   text-align: center;
+  opacity: 0;
+  transition: opacity 0.3s ease, transform 0.3s ease;
 }
-#loss-lockout-banner.active { display: block; }
+#loss-lockout-banner.active {
+  display: block;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 
 /* ── SPIKE MARKER ── */
 .spike-warn { color: var(--warn); font-family: var(--font-mono); font-size: 9px; }
 
 /* ── HEATMAP ── */
 .heatmap-grid { display:grid; grid-template-columns:80px repeat(5,1fr); gap:2px; font-family:var(--font-mono); font-size:8px; padding:8px; }
-.heatmap-hdr  { color:var(--text-dim); padding:3px 4px; text-align:center; letter-spacing:1px; }
-.heatmap-sym  { color:var(--text-bright); padding:3px 4px; font-size:9px; align-self:center; }
-.heatmap-cell { padding:4px 3px; text-align:center; border-radius:1px; cursor:pointer; transition:all 0.2s; font-size:8px; border:1px solid transparent; }
+.heatmap-hdr  { color:var(--text-dim); padding:4px 5px; text-align:center; letter-spacing:1px; font-size:9px; }
+.heatmap-sym  { color:var(--text-bright); padding:3px 4px; font-size:10px; align-self:center; }
+.heatmap-cell { padding:5px 4px; text-align:center; border-radius:2px; cursor:pointer; transition:all 0.2s; font-size:9px; border:1px solid transparent; }
 .heatmap-cell:hover { border-color:var(--accent); transform:scale(1.05); }
 .hm-none     { background:rgba(96,125,139,0.08); color:var(--text-dim); }
 .hm-low      { background:rgba(255,165,0,0.10);  color:var(--warn); }
@@ -635,22 +716,509 @@ body::after {
 .pnl-card   { background:var(--bg-card2); border-radius:2px; padding:5px 8px; margin:3px 0; font-family:var(--font-mono); font-size:10px; border-left:3px solid var(--border-bright); }
 .pnl-profit { border-left-color:var(--bull); }
 .pnl-loss   { border-left-color:var(--bear); }
-</style>
+
+/* ── TRADE DIRECTION BADGE ── */
+.trade-dir {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-align: center;
+  padding: 8px 6px;
+  border-radius: 2px;
+  margin: 6px 0;
+}
+.trade-long  { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.4); color: var(--bull); text-shadow: 0 0 8px rgba(0,229,160,0.4); }
+.trade-short { background: rgba(255,61,90,0.12);  border: 1px solid rgba(255,61,90,0.4);  color: var(--bear); text-shadow: 0 0 8px rgba(255,61,90,0.4); }
+
+/* ═══════════════════════════════════════════
+   MOBILE UI — shows on screens ≤ 768px
+   Desktop #app is hidden; mobile shell takes over
+═══════════════════════════════════════════ */
+#mobile-shell {
+  display: none;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  background: var(--bg-deep);
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  font-family: var(--font-body);
+}
+
+/* ── Mobile topbar ── */
+#mob-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 48px;
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border-bright);
+  flex-shrink: 0;
+  gap: 8px;
+}
+#mob-logo {
+  font-family: var(--font-display);
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 2px;
+  color: var(--cyan);
+  text-shadow: var(--glow-cyan);
+  white-space: nowrap;
+}
+#mob-logo span { color: var(--bull); }
+#mob-symbol-select {
+  flex: 1;
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 6px;
+  outline: none;
+  max-width: 130px;
+}
+#mob-tf-select {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 6px;
+  outline: none;
+  width: 56px;
+}
+#mob-connect-btn {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  color: var(--accent);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 8px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+#mob-status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--neutral);
+  flex-shrink: 0;
+}
+#mob-status-dot.live  { background: var(--bull); box-shadow: 0 0 6px var(--bull); }
+#mob-status-dot.error { background: var(--bear); }
+
+/* ── Mobile price bar ── */
+#mob-price-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 14px;
+  background: var(--bg-card2);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+#mob-price {
+  font-family: var(--font-mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-bright);
+  letter-spacing: 1px;
+}
+#mob-chg {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+#mob-bias-badge {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  padding: 3px 8px;
+  border-radius: 2px;
+  background: rgba(96,125,139,0.2);
+  border: 1px solid rgba(96,125,139,0.4);
+  color: var(--neutral);
+}
+#mob-bias-badge.bull { background: rgba(0,229,160,0.15); border-color: var(--bull); color: var(--bull); }
+#mob-bias-badge.bear { background: rgba(255,61,90,0.15);  border-color: var(--bear); color: var(--bear); }
+
+/* ── Tab content area ── */
+#mob-content {
+  flex: 1;
+  overflow: hidden;
+  position: relative;
+}
+.mob-tab-pane {
+  display: none;
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+.mob-tab-pane.active { display: block; }
+
+/* ── Chart tab ── */
+#mob-chart-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+#mob-chart-canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ── Signal tab ── */
+#mob-signal-pane {
+  padding: 12px;
+}
+.mob-signal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.mob-signal-card.bull { border-left: 3px solid var(--bull); }
+.mob-signal-card.bear { border-left: 3px solid var(--bear); }
+.mob-signal-card.blocked { border-left: 3px solid var(--neutral); opacity: 0.7; }
+.mob-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.mob-dir-label {
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: 2px;
+}
+.mob-dir-label.bull { color: var(--bull); text-shadow: var(--glow-bull); }
+.mob-dir-label.bear { color: var(--bear); text-shadow: var(--glow-bear); }
+.mob-dir-label.blocked { color: var(--neutral); }
+.mob-conf-ring {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.mob-sltp-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.mob-sltp-cell {
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 8px 6px;
+  text-align: center;
+}
+.mob-sltp-cell-label {
+  font-family: var(--font-mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+  margin-bottom: 4px;
+}
+.mob-sltp-cell-val {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.mob-sltp-cell-val.sl { color: var(--bear); }
+.mob-sltp-cell-val.tp { color: var(--bull); }
+.mob-rr-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text-dim);
+}
+.mob-rr-val {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.mob-gates-list {
+  margin-top: 8px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
+}
+.mob-gate-item {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  padding: 2px 0;
+  color: var(--text-dim);
+  line-height: 1.4;
+}
+.mob-gate-item.fail { color: var(--bear); }
+.mob-gate-item.warn { color: var(--warn); }
+.mob-gate-item.pass { color: var(--bull); }
+.mob-no-signal {
+  text-align: center;
+  padding: 40px 20px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text-dim);
+  letter-spacing: 1px;
+}
+.mob-section-title {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  padding: 4px 0 8px;
+}
+
+/* ── Scanner tab ── */
+#mob-scanner-pane {
+  padding: 10px;
+}
+.mob-scan-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+.mob-scan-btn {
+  background: var(--accent2);
+  border: 1px solid var(--accent);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 6px 14px;
+  cursor: pointer;
+  letter-spacing: 1px;
+}
+#mob-scan-progress {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.mob-scan-item {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  active: background var(--bg-card2);
+}
+.mob-scan-item.bull { border-left: 2px solid var(--bull); }
+.mob-scan-item.bear { border-left: 2px solid var(--bear); }
+.mob-scan-left { display: flex; flex-direction: column; gap: 2px; }
+.mob-scan-sym {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-bright);
+}
+.mob-scan-sub {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  color: var(--text-dim);
+}
+.mob-scan-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.mob-scan-conf {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--cyan);
+}
+.mob-scan-dir {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 1px;
+}
+.mob-scan-dir.bull { color: var(--bull); }
+.mob-scan-dir.bear { color: var(--bear); }
+
+/* ── Settings tab ── */
+#mob-settings-pane {
+  padding: 14px;
+}
+.mob-set-group {
+  background: var(--bg-card);
+  border: 1px solid var(--border-bright);
+  border-radius: 4px;
+  padding: 14px;
+  margin-bottom: 12px;
+}
+.mob-set-label {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.mob-set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+.mob-set-row:last-child { border-bottom: none; }
+.mob-set-row label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text);
+  flex: 1;
+}
+.mob-set-row input[type="text"],
+.mob-set-row input[type="number"] {
+  background: var(--bg-deep);
+  border: 1px solid var(--border-bright);
+  color: var(--text-bright);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 5px 8px;
+  outline: none;
+  width: 120px;
+  text-align: right;
+}
+.mob-tg-btn {
+  background: var(--bg-card2);
+  border: 1px solid var(--accent);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 8px 16px;
+  cursor: pointer;
+  letter-spacing: 1px;
+  width: 100%;
+  margin-top: 8px;
+}
+.mob-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.mob-toggle-row:last-child { border-bottom: none; }
+.mob-toggle-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--text);
+}
+.mob-toggle {
+  width: 36px; height: 20px;
+  background: var(--border-bright);
+  border-radius: 10px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+.mob-toggle.on { background: var(--bull); }
+.mob-toggle::after {
+  content: '';
+  position: absolute;
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: #fff;
+  top: 3px; left: 3px;
+  transition: left 0.2s;
+}
+.mob-toggle.on::after { left: 19px; }
+
+/* ── Bottom tab bar ── */
+#mob-tabbar {
+  display: flex;
+  border-top: 1px solid var(--border-bright);
+  background: var(--bg-panel);
+  flex-shrink: 0;
+  height: 56px;
+}
+.mob-tab {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  border: none;
+  background: none;
+  color: var(--text-dim);
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: 1px;
+  padding: 0;
+  transition: color 0.15s;
+  position: relative;
+}
+.mob-tab.active { color: var(--cyan); }
+.mob-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--cyan);
+  box-shadow: var(--glow-cyan);
+}
+.mob-tab-icon { font-size: 18px; line-height: 1; }
+.mob-badge {
+  position: absolute;
+  top: 4px; right: 18%;
+  background: var(--bear);
+  color: #fff;
+  font-size: 7px;
+  font-family: var(--font-mono);
+  border-radius: 8px;
+  padding: 0 4px;
+  min-width: 14px;
+  text-align: center;
+  line-height: 14px;
+  display: none;
+}
+.mob-badge.show { display: block; }
+
+@media (max-width: 768px) {
+  #app { display: none !important; }
+  #mobile-panels-overlay { display: none !important; }
+  #mobile-shell { display: flex !important; }
+}
+
 </head>
 <body>
 <div id="app">
 
   <!-- TOPBAR -->
   <div id="topbar">
-    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36.3</span></div>
-    <div class="tb-controls">
+    <button id="mobile-menu-btn" onclick="toggleMobilePanels()" title="Show panels">☰</button>
+    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36.6</span></div>
+
+    <!-- GROUP 1: Market selectors -->
+    <div class="tb-group">
       <select class="tb-select" id="symbolSelect" onchange="onSymbolChange(this.value)">
-        <option value="R_10">Volatility 10</option>
-        <option value="R_25">Volatility 25</option>
-        <option value="R_50">Volatility 50</option>
-        <option value="R_75" selected>Volatility 75</option>
-        <option value="R_100">Volatility 100</option>
+        <option value="R_10">Vol 10</option>
+        <option value="R_25">Vol 25</option>
+        <option value="R_50">Vol 50</option>
+        <option value="R_75" selected>Vol 75</option>
+        <option value="R_100">Vol 100</option>
         <option value="1HZ10V">Vol 10 (1s)</option>
+        <option value="1HZ25V">Vol 25 (1s)</option>
+        <option value="1HZ50V">Vol 50 (1s)</option>
+        <option value="1HZ75V">Vol 75 (1s)</option>
         <option value="1HZ100V">Vol 100 (1s)</option>
         <option value="BOOM1000">Boom 1000</option>
         <option value="BOOM500">Boom 500</option>
@@ -659,6 +1227,9 @@ body::after {
         <option value="CRASH500">Crash 500</option>
         <option value="CRASH300">Crash 300</option>
         <option value="STPRNG">Step Index</option>
+        <option value="RNGBR100">Range Break 100</option>
+        <option value="RNGBR200">Range Break 200</option>
+        <option value="DSW10">Drift Switch 10</option>
         <option value="JD10">Jump 10</option>
         <option value="JD25">Jump 25</option>
         <option value="JD50">Jump 50</option>
@@ -676,25 +1247,45 @@ body::after {
         <option value="14400">4h</option>
         <option value="86400">1D</option>
       </select>
-      <button class="tb-btn" id="connectBtn" onclick="toggleConnect()">CONNECT</button>
-      <button class="tb-btn active" id="demoBtn" onclick="loadFreshData()">↺ NEW DATA</button>
-      <button class="tb-btn" id="scannerBtn" onclick="toggleScanner()">⊞ SCANNER</button>
-      <button class="tb-btn" onclick="toggleSettings()">⚙ SETTINGS</button>
-      <span style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);letter-spacing:1px;padding-left:8px" title="R=New Data  S=Scanner  C=Connect  T=Re-analyse  L=Live scan  Space=Settings  Esc=Close">⌨ R·S·C·T·L</span>
-      <button class="tb-btn" id="notifBtn" onclick="toggleNotifications()" title="Browser push notifications for new setups">🔔 ALERTS</button>
-      <button class="tb-btn" id="soundBtn" onclick="toggleSound()" title="Sound alert on new setup">🔇 SOUND</button>
-      <button class="tb-btn" onclick="toggleJournal()" title="Trade Journal">📋 JOURNAL</button>
-      <button class="tb-btn" id="haBtn" onclick="toggleHA()">HA</button>
-      <button class="cs-badge cs-off" id="csBtn" onclick="toggleCScan()">⟳ AUTO</button>
-      <button class="tg-badge tg-on" id="tgBtn" onclick="toggleTG()">✈ TG ON</button>
-      <button class="tb-btn" onclick="testTG()" title="Send test message to Telegram">TG TEST</button>
-      <button class="tb-btn" id="hmBtn" onclick="toggleHeatmap()">⊞ MAP</button>
     </div>
-    <div class="price-ticker" id="priceTicker">
+
+    <!-- GROUP 2: Data / Connection -->
+    <div class="tb-group">
+      <span class="tb-group-label">DATA</span>
+      <button class="tb-btn" id="connectBtn" onclick="toggleConnect()">CONNECT</button>
+      <button class="tb-btn active" id="demoBtn" onclick="loadFreshData()">↺ NEW</button>
+    </div>
+
+    <!-- GROUP 3: View tools -->
+    <div class="tb-group">
+      <span class="tb-group-label">VIEW</span>
+      <button class="tb-btn" id="scannerBtn" onclick="toggleScanner()">⊞ SCAN</button>
+      <button class="tb-btn" id="hmBtn" onclick="toggleHeatmap()">⊞ MAP</button>
+      <button class="tb-btn" id="haBtn" onclick="toggleHA()" title="Heikin Ashi toggle">HA</button>
+      <button class="tb-btn" onclick="toggleJournal()" title="Trade Journal">📋</button>
+    </div>
+
+    <!-- GROUP 4: Alerts / Automation -->
+    <div class="tb-group">
+      <span class="tb-group-label">ALERTS</span>
+      <button class="tb-btn" id="notifBtn" onclick="toggleNotifications()" title="Browser push notifications">🔔</button>
+      <button class="tb-btn" id="soundBtn" onclick="toggleSound()" title="Sound on new setup">🔇</button>
+      <button class="cs-badge cs-off" id="csBtn" onclick="toggleCScan()" title="Auto continuous scan">⟳ AUTO</button>
+      <button class="tg-badge tg-on" id="tgBtn" onclick="toggleTG()" title="Telegram alerts toggle">✈ TG</button>
+      <button class="tb-btn" onclick="testTG()" title="Send test message to Telegram">TEST</button>
+    </div>
+
+    <!-- GROUP 5: Settings + hotkey hint -->
+    <div class="tb-group">
+      <button class="tb-btn" onclick="toggleSettings()" title="Settings">⚙</button>
+      <span style="font-family:var(--font-mono);font-size:7px;color:var(--text-dim);letter-spacing:1px;white-space:nowrap" title="R=New Data  S=Scanner  C=Connect  T=Re-analyse  L=Live scan  Space=Settings  Esc=Close">⌨ R·S·C·T·L</span>
+    </div>
+
+    <div class="price-ticker" id="priceTicker" style="margin-left:auto;flex-shrink:0">
       <span id="tickerPrice">—</span>
       <span class="chg" id="tickerChg" style="color:var(--text-dim)"> +0.00%</span>
     </div>
-    <div class="tb-status status-demo" id="statusBadge">◉ DEMO MODE</div>
+    <div class="tb-status status-demo" id="statusBadge" style="flex-shrink:0">◉ DEMO</div>
   </div>
 
   <!-- LEFT PANEL -->
@@ -834,6 +1425,7 @@ body::after {
         <button class="scan-sort-btn"        id="filter15m"    onclick="setScanTFFilter(900)">15m</button>
         <button class="scan-sort-btn"        id="filter30m"    onclick="setScanTFFilter(1800)">30m</button>
         <button class="scan-sort-btn"        id="filter1h"     onclick="setScanTFFilter(3600)">1h</button>
+        <button class="scan-sort-btn"        id="filter4h"     onclick="setScanTFFilter(14400)">4h</button>
       </div>
       <div class="scanner-body" id="scannerBody">
         <div class="scan-status">Press RESCAN to analyse all symbols</div>
@@ -842,6 +1434,7 @@ body::after {
 
     <div id="chart-loading">
       <div class="loading-logo">MSB · OB · FS</div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);letter-spacing:2px;margin-top:-8px">ULTRA v36.6</div>
       <div class="loading-spinner"></div>
       <div class="loading-msg" id="loadingMsg">INITIALIZING ENGINE...</div>
     </div>
@@ -956,17 +1549,17 @@ body::after {
 <div id="settings-drawer">
   <div class="panel-title" style="margin-bottom:12px">⚙ SETTINGS</div>
   <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-bottom:8px">MARKET STRUCTURE</div>
-  <div class="setting-row"><span>Pivot Lookback</span><input class="setting-input" id="set_pivotLen" type="number" value="5" min="1" max="30" onchange="updateSettings()"></div>
-  <div class="setting-row"><span>MSB Z-Score</span><input class="setting-input" id="set_msbZ" type="number" value="0.5" min="0.1" max="3" step="0.1" onchange="updateSettings()"></div>
-  <div class="setting-row"><span>OB Lookback</span><input class="setting-input" id="set_obLookback" type="number" value="10" min="1" max="30" onchange="updateSettings()"></div>
-  <div class="setting-row"><span>Max Active OBs</span><input class="setting-input" id="set_maxOBs" type="number" value="10" min="1" max="50" onchange="updateSettings()"></div>
+  <div class="setting-row"><span>Pivot Lookback</span><input class="setting-input" id="set_pivotLen" type="number" value="3" min="1" max="30" onchange="updateSettings()"></div>
+  <div class="setting-row"><span>MSB Z-Score</span><input class="setting-input" id="set_msbZ" type="number" value="0.3" min="0.1" max="3" step="0.1" onchange="updateSettings()"></div>
+  <div class="setting-row"><span>OB Lookback</span><input class="setting-input" id="set_obLookback" type="number" value="15" min="1" max="30" onchange="updateSettings()"></div>
+  <div class="setting-row"><span>Max Active OBs</span><input class="setting-input" id="set_maxOBs" type="number" value="16" min="1" max="50" onchange="updateSettings()"></div>
   <div class="setting-row"><span>HPZ Threshold %</span><input class="setting-input" id="set_hpzThreshold" type="number" value="70" min="50" max="100" onchange="updateSettings()"></div>
   <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin:12px 0 8px">SL / TP (ATR)</div>
   <div class="setting-row"><span>ATR Period</span><input class="setting-input" id="set_atrLen" type="number" value="14" min="5" max="50" onchange="updateSettings()"></div>
   <div class="setting-row"><span>ATR SL Mult</span><input class="setting-input" id="set_atrSlMult" type="number" value="1.2" min="0.3" max="5" step="0.1" onchange="updateSettings()"></div>
   <div class="setting-row"><span>ATR TP Mult</span><input class="setting-input" id="set_atrTpMult" type="number" value="2.5" min="1" max="10" step="0.1" onchange="updateSettings()"></div>
   <div class="setting-row"><span>OB SL Buffer%</span><input class="setting-input" id="set_obSlBuf" type="number" value="5" min="0" max="50" onchange="updateSettings()"></div>
-  <div class="setting-row"><span>Min RR Ratio</span><input class="setting-input" id="set_minRR" type="number" value="1.3" min="1" max="5" step="0.1" onchange="updateSettings()"></div>
+  <div class="setting-row"><span>Min RR Ratio</span><input class="setting-input" id="set_minRR" type="number" value="1.5" min="1" max="5" step="0.1" onchange="updateSettings()"></div>
   <div class="setting-row"><span>Max Risk % Cap</span><input class="setting-input" id="set_maxRiskPct" type="number" value="2.0" min="0.1" max="10" step="0.1" onchange="updateSettings()"></div>
   <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin:12px 0 8px">FUTURE SWING</div>
   <div class="setting-row"><span>Pivot Window</span><input class="setting-input" id="set_swingLen" type="number" value="10" min="3" max="30" onchange="updateSettings()"></div>
@@ -974,6 +1567,18 @@ body::after {
   <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin:12px 0 8px">VOLUME</div>
   <div class="setting-row"><span>High Vol Percentile</span><input class="setting-input" id="set_volPercentile" type="number" value="90" min="50" max="100" onchange="updateSettings()"></div>
   <div style="margin-top:12px"><button class="connect-btn" onclick="rerunAnalysis()">↺ RERUN ANALYSIS</button></div>
+  <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin:16px 0 8px">TELEGRAM CREDENTIALS</div>
+  <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+    <span style="font-size:9px;color:var(--text-dim)">Bot Token</span>
+    <input class="setting-input" id="set_tgToken" type="password" placeholder="Bot token..." style="width:100%;text-align:left"
+      oninput="try{sessionStorage.setItem('msb_tg_token',this.value)}catch(e){}">
+  </div>
+  <div class="setting-row" style="flex-direction:column;align-items:flex-start;gap:4px">
+    <span style="font-size:9px;color:var(--text-dim)">Chat ID</span>
+    <input class="setting-input" id="set_tgChatId" type="text" placeholder="Chat ID..." style="width:100%;text-align:left"
+      oninput="try{sessionStorage.setItem('msb_tg_chatid',this.value)}catch(e){}">
+  </div>
+  <div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);padding:4px 0;border:1px solid var(--border);background:var(--bg-card2);padding:5px 6px;margin-top:4px">Stored in session only — cleared on tab close</div>
 </div>
 
 <script>
@@ -1276,7 +1881,7 @@ window.LightweightCharts = (function() {
         ctx.setLineDash([]);
         ctx.fillStyle = col + 'cc'; ctx.font = (sr.strong ? 'bold ' : '') + '8px monospace'; ctx.textAlign = 'left';
         ctx.fillText((sr.isSupport ? 'S' : 'R') + (sr.strong ? '★' : '') + '×' + sr.touches, 3, yMid - 2);
-        const srDp = currentSymbol.includes('R_10') || currentSymbol.includes('1HZ10V') ? 3 : 2;
+        const srDp = getDP(currentSymbol);
         ctx.fillStyle = col + 'dd';
         ctx.fillRect(chartW + 1, yMid - 8, PAXIS - 2, 13);
         ctx.fillStyle = '#000'; ctx.font = 'bold 8px monospace'; ctx.textAlign = 'left';
@@ -1516,7 +2121,7 @@ window.LightweightCharts = (function() {
       ctx.beginPath(); ctx.moveTo(Math.round(state.crossX) + 0.5, 0); ctx.lineTo(Math.round(state.crossX) + 0.5, H); ctx.stroke();
       ctx.beginPath(); ctx.moveTo(0, Math.round(state.crossY) + 0.5); ctx.lineTo(chartW, Math.round(state.crossY) + 0.5); ctx.stroke();
       ctx.setLineDash([]);
-      const cdp = currentSymbol.includes('R_10') || currentSymbol.includes('1HZ10V') ? 3 : 2;
+      const cdp = getDP(currentSymbol);
       const cp  = hi - ((state.crossY - PT) / (H - PT - PB) * (hi - lo));
       ctx.fillStyle = '#0d2030'; ctx.fillRect(chartW + 1, state.crossY - 9, PAXIS - 2, 14);
       ctx.fillStyle = '#00b4d8'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'right';
@@ -1527,7 +2132,7 @@ window.LightweightCharts = (function() {
         const bull = bc.close >= bc.open;
         ctx.fillStyle = 'rgba(5,10,14,0.85)'; ctx.fillRect(0, 0, 400, 22);
         ctx.fillStyle = bull ? '#00e5a0' : '#ff3d5a'; ctx.font = '10px monospace'; ctx.textAlign = 'left';
-        const bdp = currentSymbol.includes('R_10') || currentSymbol.includes('1HZ10V') ? 3 : 2;
+        const bdp = getDP(currentSymbol);
         ctx.fillText('O:' + bc.open.toFixed(bdp) + '  H:' + bc.high.toFixed(bdp) + '  L:' + bc.low.toFixed(bdp) + '  C:' + bc.close.toFixed(bdp), 6, 14);
       }
     }
@@ -1544,7 +2149,7 @@ window.LightweightCharts = (function() {
         ctx.fillStyle = bull ? '#00e5a0' : '#ff3d5a';
         ctx.fillRect(chartW + 1, y - 9, PAXIS - 2, 14);
         ctx.fillStyle = '#000'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'left';
-        ctx.fillText(last.close.toFixed(currentSymbol.includes('R_10') || currentSymbol.includes('1HZ10V') ? 3 : 2), chartW + 4, y + 3);
+        ctx.fillText(last.close.toFixed(getDP(currentSymbol)), chartW + 4, y + 3);
       }
     }
   }
@@ -1557,8 +2162,11 @@ window.LightweightCharts = (function() {
 // ═══════════════════════════════════════════════════════════════
 
 // ── TELEGRAM ─────────────────────────────────────────────
-const TG_TOKEN  = '8775780390:AAH4PEqvN6hOHyaCsogQ8fLx6UrKH5_CNGE';
-const TG_CHATID = '6369265351';
+// Credentials are read from sessionStorage so they aren't permanently
+// exposed in the DOM. Set them once per session via the settings drawer.
+// ⚠ Credentials stored in sessionStorage only — set via Settings drawer
+function _getTGToken()  { try { return sessionStorage.getItem('msb_tg_token')  || ''; } catch(e) { return ''; } }
+function _getTGChatId() { try { return sessionStorage.getItem('msb_tg_chatid') || ''; } catch(e) { return ''; } }
 let _tgEnabled  = true;
 const _tgLastSent = {}; // debounce: key=sym+tf+dir -> timestamp
 const TG_COOLDOWN = 5 * 60 * 1000; // 5 min per setup
@@ -1569,7 +2177,7 @@ let _haEnabled = false;
 // ── CONTINUOUS SCAN ───────────────────────────────────────
 let _cscanTimer   = null;
 let _cscanRunning = false;
-const CSCAN_MS    = 3 * 60 * 1000; // every 3 min
+const CSCAN_MS    = 90 * 1000; // every 90 seconds
 
 // ── OPEN TRADES (P&L tracker) ────────────────────────────
 let _openTrades = [];
@@ -1581,10 +2189,10 @@ try { _consecLosses = parseInt(localStorage.getItem('msb_consec_losses')||'0'); 
 try { _tradeLocked = localStorage.getItem('msb_trade_locked') === '1'; } catch(e){}
 
 const CFG = {
-  pivotLen: 5,
-  msbZScore: 0.5,
-  obLookback: 10,
-  maxOBs: 10,
+  pivotLen: 3,  // reduced 5→3: faster pivot detection = more current OBs/MSBs
+  msbZScore: 0.3,  // lowered: catch more structure breaks (was 0.5)
+  obLookback: 15,  // increased: finds more OBs before each MSB (was 10)
+  maxOBs: 16,  // increased: more OB zones available for gate 3 (was 10)
   hpzThreshold: 70,
   atrLen: 14,
   atrSlMult: 1.2,    // tighter default — 1.5 was too wide for synthetic indices
@@ -1594,7 +2202,7 @@ const CFG = {
   swingSamples: 8,
   volPercentile: 90,
   maxRiskPct: 2.0,   // hard cap: never risk more than this % regardless of input
-  minRR: 1.3,        // minimum RR — lower = more frequent signals
+  minRR: 1.5,        // minimum RR — 1.5 needs 40% WR to break even (was 1.3)
 };
 
 // ═══════════════════════════════════════════════════════════════
@@ -1645,7 +2253,7 @@ function getSymbolProfile(sym) {
     // ── Crash indices ────────────────────────────────────────
     // Crash trends DOWN with sudden UP spikes. Only trade SHORT (with trend).
     CRASH1000: { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
-    CRASH500:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPick:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
+    CRASH500:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
     CRASH300:  { type:'crash', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:'strict', trendBias:'bear', waitSpike: true },
     // ── Volatility indices ───────────────────────────────────
     R_10:  { type:'vol', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.04,maxSlPct:0.8,  entryFilter:'normal', trendBias: null },
@@ -1655,9 +2263,17 @@ function getSymbolProfile(sym) {
     R_100: { type:'vol', slAtrMult:2.0, tpAtrMult:3.0, spikeGuard:0.8, minSlPct:0.15,maxSlPct:1.5,  entryFilter:'normal', trendBias: null, waitSpike: true },
     // ── 1-second Volatility ──────────────────────────────────
     '1HZ10V':  { type:'vol1s', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.5, minSlPct:0.06,maxSlPct:2.0, entryFilter:'normal', trendBias: null },
+    '1HZ25V':  { type:'vol1s', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.4, minSlPct:0.08,maxSlPct:2.0, entryFilter:'normal', trendBias: null },
+    '1HZ50V':  { type:'vol1s', slAtrMult:1.8, tpAtrMult:3.2, spikeGuard:0.5, minSlPct:0.10,maxSlPct:2.5, entryFilter:'normal', trendBias: null },
+    '1HZ75V':  { type:'vol1s', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.12,maxSlPct:2.5, entryFilter:'normal', trendBias: null },
     '1HZ100V': { type:'vol1s', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.15,maxSlPct:3.0, entryFilter:'normal', trendBias: null },
     // ── Step Index ───────────────────────────────────────────
-    STPRNG: { type:'step', slAtrMult:1.2, tpAtrMult:2.0, spikeGuard:0.1, minSlPct:0.02,maxSlPct:0.8, entryFilter:'loose', trendBias: null },
+    STPRNG:    { type:'step', slAtrMult:3.0, tpAtrMult:5.0, spikeGuard:0.0, minSlPct:0.03,maxSlPct:0.5, entryFilter:'loose', trendBias: null },
+    // ── Range Break ──────────────────────────────────────────
+    RNGBR100:  { type:'range', slAtrMult:2.0, tpAtrMult:4.0, spikeGuard:0.3, minSlPct:0.1, maxSlPct:2.0, entryFilter:'normal', trendBias: null },
+    RNGBR200:  { type:'range', slAtrMult:2.0, tpAtrMult:4.0, spikeGuard:0.3, minSlPct:0.1, maxSlPct:2.0, entryFilter:'normal', trendBias: null },
+    // ── Drift Switch ─────────────────────────────────────────
+    DSW10:     { type:'drift', slAtrMult:2.2, tpAtrMult:3.5, spikeGuard:0.4, minSlPct:0.1, maxSlPct:2.0, entryFilter:'normal', trendBias: null },
   };
   return profiles[s] || { type:'vol', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.5, minSlPct:0.1, maxSlPct:2.5, entryFilter:'normal', trendBias: null };
 }
@@ -1720,6 +2336,8 @@ let _lockedTrade = null;           // confirmed trade setup — frozen until str
 let _lockedOBFingerprint = '';     // fingerprint of active OBs when trade was locked
 let _lockedBias = null;            // 'bull' | 'bear' when trade was locked
 let _analysisThrottle = null;      // requestAnimationFrame handle
+let _lastBarClose = false;         // true when runAnalysis was triggered by a bar close
+let _tickThrottle = 0;             // timestamp of last tick-level analysis
 
 // ═══════════════════════════════════════════════════════════════
 // CHART INIT
@@ -1748,7 +2366,15 @@ function connectDeriv() {
   clearTimeout(_wsReconnectTimer);
   clearTimeout(_wsConnectTimeout);
 
-  const appId = (document.getElementById('appIdInput').value || '').trim() || '1089';
+  const rawId = (document.getElementById('appIdInput').value || '').trim();
+  const appId = rawId || '1089';
+
+  // Validate App ID — must be numeric only
+  if (rawId && !/^\d{1,10}$/.test(rawId)) {
+    addAlert('Invalid App ID: must be a numeric value (e.g. 1089)', 'bear');
+    setStatus('error', '✕ BAD APP ID');
+    return;
+  }
   setStatus('connecting', '◌ CONNECTING...');
   document.getElementById('loadingMsg').textContent = 'CONNECTING TO DERIV...';
   document.getElementById('chart-loading').style.display = 'flex';
@@ -1817,7 +2443,14 @@ function connectDeriv() {
     document.getElementById('connectBtn').textContent = 'CONNECT';
     if (wasConnected) {
       setStatus('error', '✕ DISCONNECTED');
-      addAlert('Disconnected (code ' + e.code + ') — click CONNECT to reconnect', 'bear');
+      addAlert('Disconnected (code ' + e.code + ') — reconnecting…', 'bear');
+      // Auto-reconnect after 3s — scanner drops can cause main WS to close
+      _wsReconnectTimer = setTimeout(() => {
+        if (!isConnected) {
+          addAlert('Auto-reconnecting…', 'neutral');
+          connectDeriv();
+        }
+      }, 3000);
     } else {
       setStatus('demo', '◉ DEMO MODE');
     }
@@ -1837,14 +2470,20 @@ function disconnect() {
 
 function requestCandles() {
   if (!ws || ws.readyState !== WebSocket.OPEN) return;
-  // Forget any previous subscription before requesting new one
+  // Forget previous subscription first, then request new candles after a brief gap
+  // to avoid Deriv rejecting overlapping subscription requests
   if (_wsSubscriptionId) {
     ws.send(JSON.stringify({ forget: _wsSubscriptionId }));
     _wsSubscriptionId = null;
+    setTimeout(_doRequestCandles, 300);
   } else {
     ws.send(JSON.stringify({ forget_all: 'candles' }));
+    setTimeout(_doRequestCandles, 300);
   }
-  // Request candle history + subscribe for live ohlc updates
+}
+
+function _doRequestCandles() {
+  if (!ws || ws.readyState !== WebSocket.OPEN) return;
   ws.send(JSON.stringify({
     ticks_history: currentSymbol,
     adjust_start_time: 1,
@@ -1858,8 +2497,14 @@ function requestCandles() {
 
 function handleWSMessage(data) {
   if (data.error) {
-    addAlert('API error: ' + data.error.message, 'bear');
+    const code = data.error.code || '';
+    // Ignore forget/subscription cleanup errors silently
+    if (code === 'InvalidToken' || code === 'AlreadySubscribed') return;
+    if (code === 'MarketIsClosed') { addAlert('Market closed: ' + currentSymbol, 'warn'); return; }
+    // Generic server error — retry candle request once after a short delay
+    addAlert('API error: ' + data.error.message + ' — retrying…', 'bear');
     document.getElementById('chart-loading').style.display = 'none';
+    setTimeout(() => { if (isConnected) _doRequestCandles(); }, 1500);
     return;
   }
   if (data.msg_type === 'candles') {
@@ -1898,7 +2543,7 @@ function handleWSMessage(data) {
       candles[candles.length - 1] = bar;
       if (candleSeries) candleSeries.update({ time: bar.time, open: bar.open, high: bar.high, low: bar.low, close: bar.close });
       updateTickerPrice();
-      refreshPnL();
+      if (_openTrades.length > 0) refreshPnL(); // skip DOM work when nothing is open
       // Throttled analysis on tick — max once per 4 seconds
       const _now = Date.now();
       if (!_tickThrottle || _now - _tickThrottle > 6000) {
@@ -1930,7 +2575,15 @@ function loadDemoData() {
     setTimeout(() => {
       if (chart && chart._resize) chart._resize();
       renderChart();
-      runAnalysis(true);
+      // Demo chart display only — do NOT generate trade signals from fake candles
+      if (isConnected) {
+        runAnalysis(true);
+      } else {
+        _lockedTrade = null;
+        document.getElementById('chart-loading').style.display = 'none';
+        addAlert('DEMO CHART — connect Deriv WS for live signals', 'mit');
+        return;
+      }
       document.getElementById('chart-loading').style.display = 'none';
       addAlert('Data loaded — ' + currentSymbol + ' ' + tfLabel(currentTF), 'bull');
     }, 60);
@@ -1957,6 +2610,10 @@ function generateDemoCandles(symbol, tf, count) {
     symbol === 'BOOM1000' || symbol === 'CRASH1000' ? 3000 :
     symbol === 'BOOM500'  || symbol === 'CRASH500'  ? 3500 :
     symbol === 'BOOM300'  || symbol === 'CRASH300'  ? 4000 :
+    symbol === 'STPRNG'   ? 8300 :
+    symbol === 'RNGBR100' ? 1200 :
+    symbol === 'RNGBR200' ? 1200 :
+    symbol === 'DSW10'    ? 1000 :
     symbol.includes('R_10')  ? 5200 :
     symbol.includes('R_25')  ? 4800 :
     symbol.includes('R_50')  ? 4500 :
@@ -1969,9 +2626,11 @@ function generateDemoCandles(symbol, tf, count) {
     R_10:0.0008, R_25:0.002, R_50:0.005, R_75:0.0085, R_100:0.012,
     BOOM1000:0.004, BOOM500:0.005, BOOM300:0.006,
     CRASH1000:0.004, CRASH500:0.005, CRASH300:0.006,
-    STPRNG:0.001,
+    STPRNG:0.00005,
+    RNGBR100:0.003, RNGBR200:0.003,
+    DSW10:0.002,
     JD10:0.006,JD25:0.009,JD50:0.012,JD75:0.015,JD100:0.018,
-    '1HZ10V':0.001,'1HZ100V':0.014,
+    '1HZ10V':0.001,'1HZ25V':0.002,'1HZ50V':0.005,'1HZ75V':0.009,'1HZ100V':0.014,
   };
   const vlt = vltMap[symbol] || 0.008;
 
@@ -1983,7 +2642,7 @@ function generateDemoCandles(symbol, tf, count) {
   // Spike magnitude (multiplier of ATR)
   const spikeMag  = isBoom ? -0.08 : 0.08; // Boom spikes down, Crash spikes up
 
-  const dp = symbol.includes('R_10') || symbol.includes('1HZ10V') ? 3 : 2;
+  const dp = symbol.includes('R_10') || symbol.includes('1HZ10V') || symbol.includes('1HZ25V') || symbol.includes('1HZ50V') || symbol.includes('1HZ75V') ? 3 : symbol === 'STPRNG' ? 1 : 2;
   let trendBias = 0, trendBarsLeft = 0;
 
   for (let i = count - 1; i >= 0; i--) {
@@ -2184,15 +2843,172 @@ function sn(val, fallback) {
 // FIX: determine correct decimal places for symbol (accepts optional param for scanner)
 function getDP(sym) {
   const s = sym || currentSymbol;
-  if (s.includes('R_10') || s.includes('1HZ10V')) return 3;
-  if (s.includes('STPRNG')) return 2;
+  if (s.includes('R_10') || s.includes('1HZ10V') || s.includes('1HZ25V') || s.includes('1HZ50V') || s.includes('1HZ75V')) return 3;
+  if (s.includes('STPRNG')) return 1;
   return 2;
+}
+
+// ── MT5 Symbol Specifications ─────────────────────────────────
+// Digits = decimal places on MT5
+// tickSize = minimum price increment (prices must be multiples of this)
+// minStopPts = minimum distance in POINTS between entry and SL/TP
+//   (MT5 "freeze level" + spread buffer — conservative values)
+// Points on MT5 Deriv = 1 unit of the last decimal place
+// e.g. Vol 75 has 2 digits → 1 point = 0.01
+function getSymbolMT5Spec(sym) {
+  const s = sym || currentSymbol;
+  const specs = {
+    // Volatility Indices
+    'R_10':      { digits: 3, tickSize: 0.001, minStopPts: 1   },
+    'R_25':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'R_50':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'R_75':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'R_100':     { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    // 1-second Volatility
+    '1HZ10V':    { digits: 3, tickSize: 0.001, minStopPts: 1   },
+    '1HZ25V':    { digits: 3, tickSize: 0.001, minStopPts: 1   },
+    '1HZ50V':    { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    '1HZ75V':    { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    '1HZ100V':   { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    // Boom & Crash
+    'BOOM1000':  { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'BOOM500':   { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'BOOM300':   { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'CRASH1000': { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'CRASH500':  { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'CRASH300':  { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    // Step Index
+    'STPRNG':    { digits: 1, tickSize: 0.10,  minStopPts: 10  },
+    // Range Break
+    'RNGBR100':  { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'RNGBR200':  { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    // Drift Switch
+    'DSW10':     { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    // Jump Indices
+    'JD10':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'JD25':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'JD50':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'JD75':      { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+    'JD100':     { digits: 2, tickSize: 0.01,  minStopPts: 1   },
+  };
+  return specs[s] || { digits: 2, tickSize: 0.01, minStopPts: 1 };
+}
+
+// Round a price to the symbol's tick size (MT5-safe value)
+function roundToTick(price, sym) {
+  const spec = getSymbolMT5Spec(sym);
+  const tick = spec.tickSize;
+  // Round to nearest tick then fix floating point drift
+  return parseFloat((Math.round(price / tick) * tick).toFixed(spec.digits));
+}
+
+// Ensure SL is at least minStopPts away from entry on correct side
+// Returns adjusted SL that MT5 will accept
+function enforceMT5StopDistance(entry, sl, tp, dir, sym) {
+  const spec  = getSymbolMT5Spec(sym);
+  const tick  = spec.tickSize;
+  const minD  = spec.minStopPts * tick;  // minimum distance in price units
+  const isBull = dir === 'LONG';
+
+  // Round entry, sl, tp to tick size
+  let e = roundToTick(entry, sym);
+  let s = roundToTick(sl, sym);
+  let t = roundToTick(tp, sym);
+
+  // Enforce SL is on correct side with minimum distance
+  if (isBull) {
+    const maxSL = e - minD;
+    if (s >= e)           s = roundToTick(e - minD * 2, sym);  // SL above entry — push below
+    else if (e - s < minD) s = roundToTick(e - minD * 2, sym); // too close — push further
+    if (s > maxSL)        s = roundToTick(maxSL - tick, sym);
+  } else {
+    const minSL = e + minD;
+    if (s <= e)            s = roundToTick(e + minD * 2, sym);
+    else if (s - e < minD) s = roundToTick(e + minD * 2, sym);
+    if (s < minSL)         s = roundToTick(minSL + tick, sym);
+  }
+
+  // Enforce TP is on correct side with minimum distance
+  if (isBull) {
+    if (t <= e)            t = roundToTick(e + minD * 2, sym);
+    else if (t - e < minD) t = roundToTick(e + minD * 2, sym);
+  } else {
+    if (t >= e)            t = roundToTick(e - minD * 2, sym);
+    else if (e - t < minD) t = roundToTick(e - minD * 2, sym);
+  }
+
+  return { entry: e, sl: s, tp: t };
 }
 
 // ═══════════════════════════════════════════════════════════════
 // ANALYSIS ENGINE
 // ═══════════════════════════════════════════════════════════════
 // ── PURE analysis core — no side effects, usable by scanner ──
+// ── OB-only extraction (no recursion — used for HTF confluence) ──────────
+function _extractOBsOnly(candleArr, symId) {
+  if (!candleArr || candleArr.length < 50) return [];
+  const n = candleArr.length;
+  const closes = candleArr.map(c => c.close);
+  const highs  = candleArr.map(c => c.high);
+  const lows   = candleArr.map(c => c.low);
+  const opens  = candleArr.map(c => c.open);
+  const vols   = candleArr.map(c => c.volume);
+  const changes = closes.map((c, i) => i > 0 ? c - closes[i-1] : 0);
+  const avgChange = sma(changes, 50);
+  const stdChange = stdev(changes, 50);
+  const barRanges = candleArr.map(c => c.high - c.low);
+  const spikeFlags = barRanges.map((r, i) => {
+    if (i < 20) return false;
+    const avg = barRanges.slice(i-20, i).reduce((a,b) => a+b, 0) / 20;
+    return r > avg * 3.0;
+  });
+  const pLen = 3;
+  const pivotHighs = [], pivotLows = [];
+  for (let i = pLen; i < n - pLen; i++) {
+    let isH = true, isL = true;
+    for (let j = i-pLen; j <= i+pLen; j++) {
+      if (j === i) continue;
+      if (highs[j] >= highs[i]) isH = false;
+      if (lows[j]  <= lows[i])  isL = false;
+    }
+    if (isH && !spikeFlags[i]) pivotHighs.push({ idx: i, val: highs[i] });
+    if (isL && !spikeFlags[i]) pivotLows.push({ idx: i, val: lows[i] });
+  }
+  const msbEvents = [];
+  let lastPH = null, lastPL = null;
+  for (let i = 1; i < n; i++) {
+    const newPH = pivotHighs.find(p => p.idx === i - pLen);
+    const newPL = pivotLows.find(p => p.idx === i - pLen);
+    if (newPH) lastPH = newPH;
+    if (newPL) lastPL = newPL;
+    if (!lastPH || !lastPL) continue;
+    const mZ = stdChange[i] !== 0 ? (changes[i] - avgChange[i]) / stdChange[i] : 0;
+    if (closes[i] > lastPH.val && closes[i-1] <= lastPH.val && mZ > 0.3 && !spikeFlags[i])
+      msbEvents.push({ idx: i, dir: 'bull' });
+    if (closes[i] < lastPL.val && closes[i-1] >= lastPL.val && mZ < -0.3 && !spikeFlags[i])
+      msbEvents.push({ idx: i, dir: 'bear' });
+  }
+  const obs = [];
+  for (const msb of msbEvents) {
+    const isBull = msb.dir === 'bull';
+    let obIdx = -1;
+    for (let k = 1; k <= 15; k++) {
+      const ci = msb.idx - k;
+      if (ci < 0) break;
+      if ((isBull && closes[ci] < opens[ci]) || (!isBull && closes[ci] > opens[ci])) { obIdx = ci; break; }
+    }
+    if (obIdx < 0) continue;
+    const obTop = highs[obIdx], obBot = lows[obIdx];
+    if (obs.some(o => obTop <= o.top && obTop >= o.bottom)) continue;
+    let mitigated = false;
+    for (let j = obIdx+1; j < n; j++) {
+      if (isBull ? lows[j] < obBot : highs[j] > obTop) { mitigated = true; break; }
+    }
+    if (!mitigated) obs.push({ top: obTop, bottom: obBot, isBull, score: 50 });
+  }
+  return obs.slice(-16);
+}
+
 function analyseCandles(candleArr, symId) {
   if (candleArr.length < 50) return null;
   const savedSym = currentSymbol;
@@ -2326,7 +3142,10 @@ function analyseCandles(candleArr, symId) {
     for (let j = obIdx + 1; j < n; j++) {
       const entered = isBull ? (lows[j] <= obTop && lows[j] >= obBot) : (highs[j] >= obBot && highs[j] <= obTop);
       if (entered) touchCount++;
-      const mit = isBull ? lows[j] < obBot : highs[j] > obTop;
+      // Mitigation requires a candle CLOSE beyond the OB, not just a wick
+      const mit = isBull
+        ? (candleArr[j].close < obBot)        // close below OB bottom
+        : (candleArr[j].close > obTop);       // close above OB top
       if (mit) { mitigated = true; mitigatedAt = j; break; }
     }
 
@@ -2402,7 +3221,7 @@ function analyseCandles(candleArr, symId) {
   }
 
   // Bias + buy/sell vol
-  const lookback50 = 50;
+  const lookback50 = 20; // tightened further: 20 bars = current-bar trend only
   const recentBull = msbBull.filter(m => m.idx >= n - lookback50).length;
   const recentBear = msbBear.filter(m => m.idx >= n - lookback50).length;
 
@@ -2473,17 +3292,22 @@ function analyseCandles(candleArr, symId) {
 
 
   // ── MTF OB Stack detection (4H confluence) ───────────────
-  const _htfKey4H = symId + 14400;
-  const _htfC4H   = (typeof _scanCandleCache !== 'undefined') ? _scanCandleCache[_htfKey4H] : null;
-  let _htfOBs4H   = [];
-  // Use cached 4H OB analysis — recompute only when 4H candle cache changes
+  // IMPORTANT: never call analyseCandles recursively — use OB-only extraction
+  const _htfKey4H    = symId + 14400;
   const _htfCacheKey = symId + '_htf4H_obs';
+  let _htfOBs4H = [];
   if (typeof _scanCandleCache !== 'undefined') {
-    if (!_scanCandleCache[_htfCacheKey] && _htfC4H && _htfC4H.length >= 50) {
-      try {
-        const _htfR = analyseCandles(_htfC4H, symId);
-        if (_htfR) _scanCandleCache[_htfCacheKey] = _htfR.activeOBs || [];
-      } catch(_e) {}
+    if (!_scanCandleCache[_htfCacheKey]) {
+      const _htfC4H = _scanCandleCache[_htfKey4H];
+      // Only compute if 4H candles exist AND they are different from current candles
+      // (guard against infinite recursion when symId+14400 === current key)
+      if (_htfC4H && _htfC4H.length >= 50 && _htfC4H !== candleArr) {
+        try {
+          _scanCandleCache[_htfCacheKey] = _extractOBsOnly(_htfC4H, symId);
+        } catch(_e) { _scanCandleCache[_htfCacheKey] = []; }
+      } else {
+        _scanCandleCache[_htfCacheKey] = [];
+      }
     }
     _htfOBs4H = _scanCandleCache[_htfCacheKey] || [];
   }
@@ -2595,7 +3419,7 @@ function runAnalysis(barClose = false) {
 
   // ── CONFIRMATION LOCK ──────────────────────────────────────
   const r2 = analysisResult;
-  const currentBias = r2.recentBull >= r2.recentBear ? 'bull' : 'bear';
+  const currentBias = r2.recentBull > r2.recentBear ? 'bull' : 'bear'; // FIX: strict majority, ties = bear (no trade bias)
   const activeOBsSorted = r2.activeOBs.slice().sort((a,b) => a.idx - b.idx);
   const obFingerprint = currentBias + '|' + activeOBsSorted.map(o =>
     o.idx + ':' + sf(o.top,2) + ':' + sf(o.bottom,2)
@@ -3033,10 +3857,7 @@ function updateHTFBias() {
     if (_liveScanResults[key] && _liveScanResults[key].length >= 50) {
       _scanCandleCache[key] = _liveScanResults[key];
     }
-    // Fall back to demo-generated
-    if (!_scanCandleCache[key]) {
-      _scanCandleCache[key] = generateDemoCandles(currentSymbol, tf, 200);
-    }
+    // No live HTF data yet — skip this TF
     const htfCandles = _scanCandleCache[key];
     if (!htfCandles || htfCandles.length < 50) continue;
     const closes = htfCandles.map(c => c.close);
@@ -3235,6 +4056,20 @@ function drawChartOverlays() {
     obBoxes.push(candleSeries.createPriceLine({ price: t.sl, color: '#ff3d5acc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: '⚡SL ' + sf(t.sl,dp) }));
     obBoxes.push(candleSeries.createPriceLine({ price: t.tp, color: '#00e5a0cc', lineWidth: 2, lineStyle: 0, axisLabelVisible: true, title: '✓TP ' + sf(t.tp,dp) }));
   }
+  // ── H&S necklines on chart ──────────────────────────────
+  if (r && r.hsPatterns && OV.sltp) {
+    for (const p of r.hsPatterns) {
+      const col = p.dir === 'bull' ? '#00e5a066' : '#ff3d5a66';
+      const lbl = (p.type === 'IHS' ? 'IHS' : 'H&S') + ' neck' + (p.broken ? ' ✓BRK' : '');
+      try {
+        obBoxes.push(candleSeries.createPriceLine({
+          price: p.neckline, color: col, lineWidth: 1, lineStyle: 2,
+          axisLabelVisible: true, title: lbl,
+        }));
+      } catch(e) {}
+    }
+  }
+
   markers.sort((a, b) => a.time - b.time);
   candleSeries.setMarkers(markers);
 }
@@ -3260,24 +4095,37 @@ function calcSLTP(r) {
   // This ensures trades show regularly while keeping quality.
   // ══════════════════════════════════════════════════════════
 
-  const isBullBias = r.recentBull >= r.recentBear;
+  // FIX: strict majority required — ties (0 vs 0 or equal) are NO TRADE
+  const isBullBias = r.recentBull > r.recentBear;
   const isBull     = isBullBias;
   const dir        = isBull ? 'LONG' : 'SHORT';
   const failReasons = [];
   const warnReasons = [];
 
-  // ── GATE 1: EMA trend alignment ───────────────────────────
-  // EMA20 vs EMA50 must agree with bias direction.
-  // (Not requiring all 3 EMAs — that's too strict for ranging markets)
-  const ema20val = r.ema20 ? r.ema20[r.n - 1] : null;
-  const ema50val = r.ema50 ? r.ema50[r.n - 1] : null;
+  // ── GATE 1: EMA trend alignment + EMA200 price-side hard block ──
+  // G1a: EMA20 vs EMA50 must agree with bias (short-term trend)
+  const ema20val  = r.ema20  ? r.ema20[r.n - 1]  : null;
+  const ema50val  = r.ema50  ? r.ema50[r.n - 1]  : null;
+  const ema200val = r.ema200 ? r.ema200[r.n - 1] : null;
   const emaShortAligned = ema20val && ema50val
     ? (isBull ? ema20val > ema50val : ema20val < ema50val)
-    : true; // if no EMA data, don't block
+    : true;
   if (!emaShortAligned) {
     failReasons.push('GATE1: EMA 20 vs 50 not aligned with bias');
   }
-  // Full EMA alignment (20/50/200) shown as warning not hard block
+  // G1b: Price must be on the correct side of EMA200 — HARD block
+  // This is the main fix for wrong-way signals in downtrends:
+  // if price < EMA200 we are in macro downtrend → no longs
+  // if price > EMA200 we are in macro uptrend → no shorts
+  if (ema200val) {
+    const priceAbove200 = price > ema200val;
+    if (isBull && !priceAbove200) {
+      failReasons.push('GATE1: Price below EMA200 — macro downtrend, no longs');
+    } else if (!isBull && priceAbove200) {
+      failReasons.push('GATE1: Price above EMA200 — macro uptrend, no shorts');
+    }
+  }
+  // G1c: Full EMA stack alignment is a strong bonus note
   if (r.emaTrend === 'mixed') {
     warnReasons.push('NOTE: EMA 200 mixed — partial trend alignment');
   }
@@ -3294,12 +4142,12 @@ function calcSLTP(r) {
 
   // ── GATE 3: Price near aligned OB OR strong S/R ──────────
   const alignedOBs = active.filter(o => isBull ? o.isBull : !o.isBull);
-  const nearOB = alignedOBs.find(o => price <= o.top + atr * 2 && price >= o.bottom - atr * 2);
+  const nearOB = alignedOBs.find(o => price <= o.top + atr * 3 && price >= o.bottom - atr * 3); // widened 2→3 ATR for earlier proximity detection
   const insideOB = alignedOBs.find(o => price <= o.top && price >= o.bottom);
   const srLevels = r.srLevels || [];
   const nearSR = srLevels.find(s =>
-    s.strong && Math.abs(s.price - price) <= atr * 1.5 && (isBull ? s.isSupport : !s.isSupport)
-  );
+    s.strong && Math.abs(s.price - price) <= atr * 2.0 && (isBull ? s.isSupport : !s.isSupport)
+  ); // widened 1.5→2.0 ATR for earlier S/R proximity
   const atSRLevel = !!nearSR;
   const _tls   = r.trendLines || [];
   const _nearTL = _tls.find(tl => Math.abs(tl.currentY - price) <= atr * 1.2 && (isBull ? tl.isSupport : !tl.isSupport));
@@ -3362,12 +4210,19 @@ function calcSLTP(r) {
     warnReasons.push('NOTE: Zone not yet retested — wait for bounce confirmation');
   }
 
+  // ── Zone retest gate: enforce the bounce confirmation ────
+  // zoneRetestConfirmed was computed above but never enforced — fix that.
+  // Only block if we are specifically near an OB/SR (otherwise zoneRetestConfirmed=true)
+  if (!zoneRetestConfirmed && (nearOB || atSRLevel)) {
+    failReasons.push('GATE3b: Zone not confirmed — price must touch & bounce from OB/S/R first');
+  }
+
   // ── GATE 4: Minimum bias strength ────────────────────────
-  // At least 55% of recent MSBs must be in trade direction.
+  // Raised from 50% to 55% — requires clear directional majority
   const biasTotal    = (r.recentBull + r.recentBear) || 1;
   const biasStrength = Math.max(r.recentBull, r.recentBear) / biasTotal;
-  if (biasStrength < 0.50) {
-    failReasons.push('GATE4: Bias too weak (' + sf(biasStrength*100,0) + '%) — need 50%+');
+  if (biasStrength < 0.55) {
+    failReasons.push('GATE4: Bias too weak (' + sf(biasStrength*100,0) + '%) — need 55%+');
   }
 
   // ── GATE 5: Momentum (WARNING only — not a hard block) ────
@@ -3377,40 +4232,51 @@ function calcSLTP(r) {
   }
 
 
-  // ── GATE 6: HTF Bias alignment (HARD block if 1H+4H both oppose) ─
-  // Uses cached HTF candles from _scanCandleCache.
-  // Only blocks if BOTH 1H and 4H are confirmed opposite to trade dir.
+  // ── GATE 6: HTF Bias alignment — HARD block if ANY confirmed HTF opposes ──
+  // FIX: was "both 1H+4H" — too lenient. One clear HTF opposing = block.
+  // Reason: a downtrend on 1H while buying 5m is the main cause of bad longs.
+  // Logic: check 1H, 4H, 1D. If any one is clearly opposite → hard block.
+  // "Clearly" = EMA20 < EMA50 AND price < EMA50 (not just mixed).
   (function() {
-    const htfTFs = [3600, 14400]; // 1H, 4H
-    let opposingCount = 0;
+    const htfTFs = [3600, 14400, 86400]; // 1H, 4H, 1D
+    let opposingCount = 0, checkedCount = 0;
     for (const tf of htfTFs) {
       const key = (r.symId || currentSymbol) + tf;
       const htfC = _scanCandleCache[key];
       if (!htfC || htfC.length < 50) continue;
+      checkedCount++;
       const htfCloses = htfC.map(c => c.close);
       const e20 = calcEMA(htfCloses, 20);
       const e50 = calcEMA(htfCloses, 50);
       const nn  = htfCloses.length - 1;
+      // Require BOTH EMA stack AND price-side confirmation for "clear" trend
       const htfBull = e20[nn] > e50[nn] && htfCloses[nn] > e50[nn];
       const htfBear = e20[nn] < e50[nn] && htfCloses[nn] < e50[nn];
       if (isBull && htfBear) opposingCount++;
       if (!isBull && htfBull) opposingCount++;
     }
-    if (opposingCount >= 2) {
-      failReasons.push('GATE6: HTF 1H+4H both oppose trade direction — structure conflict');
-    } else if (opposingCount === 1) {
-      warnReasons.push('WARN G6: One HTF TF opposes — partial HTF conflict');
+    // Block if ANY single confirmed HTF opposes (was: require both)
+    if (opposingCount >= 1) {
+      const tfNames = ['1H','4H','1D'];
+      failReasons.push('GATE6: HTF structure opposes — no ' + (isBull?'long':'short') + ' against higher-TF trend');
     }
   })();
 
-  // ── CANDLE PATTERN CONFIRMATION (warning, not hard block) ──
+  // ── CANDLE PATTERN CONFIRMATION ──────────────────────────────
+  // Strength-3 opposing pattern = HARD BLOCK (reversal confirmed against trade)
+  // Strength-2 opposing = WARNING only
+  // Confirming pattern = NOTE (bonus confluence, no block)
   if (r.candlePatterns && r.candlePatterns.length > 0) {
-    const _cp = r.candlePatterns.filter(p => p.dir === (isBull ? 'bull' : 'bear')).sort((a,b)=>b.strength-a.strength)[0];
+    const _cp    = r.candlePatterns.filter(p => p.dir === (isBull ? 'bull' : 'bear')).sort((a,b)=>b.strength-a.strength)[0];
     const _cpOpp = r.candlePatterns.filter(p => p.dir !== 'neutral' && p.dir !== (isBull ? 'bull' : 'bear')).sort((a,b)=>b.strength-a.strength)[0];
-    if (_cp && _cp.strength >= 2) {
-      warnReasons.push('NOTE: ' + _cp.name + ' confirmed (' + (isBull?'bull':'bear') + ') ★'.repeat(_cp.strength));
+    if (_cpOpp && _cpOpp.strength >= 3) {
+      // FIX: strength-3 reversal against direction is a hard block
+      failReasons.push('GATE-PAT: ' + _cpOpp.name + ' (str ' + _cpOpp.strength + ') opposes direction — reversal signal');
     } else if (_cpOpp && _cpOpp.strength >= 2) {
       warnReasons.push('WARN: ' + _cpOpp.name + ' opposes trade direction — caution');
+    }
+    if (_cp && _cp.strength >= 2) {
+      warnReasons.push('NOTE: ' + _cp.name + ' confirmed (' + (isBull?'bull':'bear') + ') ' + '★'.repeat(_cp.strength));
     } else if (!_cp) {
       warnReasons.push('NOTE: No confirming pattern on current bar');
     }
@@ -3613,6 +4479,7 @@ function calcSLTP(r) {
   const swingScore  = (tpSources[0] === 'SWING' || tpSources[0] === 'PROJ') ? 18 : 0;
   const rrScore     = Math.min(18, Math.round((rr / 3) * 18));
   const fsBonus     = (r.fsDir === (isBull ? 'bull' : 'bear')) ? 8 : 0;
+  const ema200Bonus = (ema200val && (isBull ? price > ema200val : price < ema200val)) ? 6 : 0;
   const emaBonus    = (r.emaTrend === (isBull ? 'bull' : 'bear')) ? 8 : 0;
   const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? 'bull' : 'bear'))) ? 5 : 0;
   const profileBonus = profile.trendBias === (isBull ? 'bull' : 'bear') ? 8 : 0;
@@ -3625,7 +4492,7 @@ function calcSLTP(r) {
   const _alignedPats = _pats.filter(p => p.dir === (isBull ? 'bull' : 'bear'));
   const _topPat = _alignedPats.sort((a,b) => b.strength - a.strength)[0];
   const patBonus = _topPat ? Math.min(15, _topPat.strength * 5) : 0;
-  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus);
+  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + ema200Bonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus);
 
   const components = {
     ob:    { active: !!bestOB,            label: 'OB',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },
@@ -3645,8 +4512,29 @@ function calcSLTP(r) {
   const potentialProfit = units * reward;
   const maxConsecLosses = dollarRisk > 0 ? Math.floor((balance * 0.1) / dollarRisk) : 0;
 
+  // ── Sanity check before MT5 rounding ────────────────────────
+  // Catch obviously wrong SL/TP (NaN, Infinity, wrong side)
+  if (!isFinite(sl) || !isFinite(tp) || isNaN(sl) || isNaN(tp)) return null;
+  if (isBull && sl >= price) return null;  // SL above entry on LONG
+  if (!isBull && sl <= price) return null; // SL below entry on SHORT
+  if (isBull && tp <= price) return null;  // TP below entry on LONG
+  if (!isBull && tp >= price) return null; // TP above entry on SHORT
+
+  // ── MT5-safe rounding: enforce tick size + minimum stop distance ──
+  const _symId = r.symId || currentSymbol;
+  const _mt5   = enforceMT5StopDistance(price, sl, tp, dir, _symId);
+  const _entry = _mt5.entry;
+  const _sl    = _mt5.sl;
+  const _tp    = _mt5.tp;
+  // Recompute risk/reward/rr from rounded values (may differ slightly)
+  const _risk   = Math.abs(_entry - _sl);
+  const _reward = Math.abs(_tp - _entry);
+  const _rr     = _risk > 0 ? _reward / _risk : 0;
+  // Warn if rounding pushed RR below minimum
+  if (_rr < CFG.minRR) warnReasons.push('NOTE: MT5 rounding reduced RR to ' + sf(_rr,2) + ':1');
+
   return {
-    dir, entry: price, sl, tp, rr, risk, reward,
+    dir, entry: _entry, sl: _sl, tp: _tp, rr: _rr, risk: _risk, reward: _reward,
     basis, components, confluence,
     slSources, tpSources,
     obScore: bestOB ? bestOB.score : null,
@@ -3657,10 +4545,13 @@ function calcSLTP(r) {
     warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,
     atTrendLine: !!atTrendLine, nearTL: _nearTL || null,
     bestPattern: _topPat || null, patBonus,
+    mt5: { entry: _entry, sl: _sl, tp: _tp, digits: getSymbolMT5Spec(_symId).digits },
   };
 }
 
 function updateSLTP(forceRecalc = true) {
+  // Never generate trade signals from demo/fake candles — live connection required
+  if (!isConnected) { _lockedTrade = null; return; }
   const r = analysisResult;
   if (!r || !r.n || !r.currentPrice) return;
   const dp = getDP();
@@ -3730,17 +4621,21 @@ function updateSLTP(forceRecalc = true) {
 
     // Gate checklist — show all 5 gates with pass/fail
     const gateNames = [
-      'GATE 1 — EMA 20/50 aligned with bias',
-      'GATE 2 — Bias + Future Swing agree (hard)',
-      'GATE 3 — Price near OB zone or strong S/R',
-      'GATE 4 — Minimum bias strength 50%+',
-      'GATE 5 — Momentum (warning only)',
-      'GATE 6 — HTF 1H+4H bias alignment',
+      'GATE 1 — EMA 20/50 + price vs EMA200',
+      'GATE 2 — Bias + Future Swing agree',
+      'GATE 3 — Price near OB/S/R',
+      'GATE 3b— Zone touch & bounce confirmed',
+      'GATE 4 — Bias strength 55%+',
+      'GATE 5 — Momentum Z-Score',
+      'GATE 6 — HTF 1H/4H/1D alignment',
+      'GATE PAT— No str-3 reversal pattern',
     ];
+    const gateKeys = ['GATE1','GATE2','GATE3','GATE3b','GATE4','GATE5','GATE6','GATE-PAT'];
     const gateRows = gateNames.map((g, i) => {
-      const failed  = reasons.some(r => r.startsWith('GATE' + (i+1)));
+      const key = gateKeys[i] || ('GATE' + (i+1));
+      const failed  = reasons.some(r => r.startsWith(key + ':') || r.startsWith(key + ' '));
       const warned  = (t && t.warnReasons || []).some(w => w.includes('G' + (i+1)));
-      const reason  = reasons.find(r => r.startsWith('GATE' + (i+1)));
+      const reason  = reasons.find(r => r.startsWith(key + ':') || r.startsWith(key + ' '));
       const shortReason = reason ? reason.replace(/^GATE\d+: /, '') : '';
       const color   = failed ? 'var(--bear)' : warned ? 'var(--warn)' : 'var(--bull)';
       const label   = failed ? 'FAIL' : warned ? 'WARN' : 'PASS';
@@ -3754,17 +4649,20 @@ function updateSLTP(forceRecalc = true) {
       '</div>';
     }).join('');
 
-    const passCount = gateNames.filter((g, i) => !reasons.some(r => r.startsWith('GATE' + (i+1)))).length;
+    const passCount = gateNames.filter((g, i) => {
+      const key = gateKeys[i] || ('GATE' + (i+1));
+      return !reasons.some(r => r.startsWith(key + ':') || r.startsWith(key + ' '));
+    }).length;
 
     container.innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;padding:4px 6px;background:rgba(255,61,90,0.06);border:1px solid rgba(255,61,90,0.2);border-radius:1px">' +
         '<span style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">DIRECTION</span>' +
         '<span style="font-family:var(--font-mono);font-size:9px;color:' + dirCol + '">' + dirLabel + '</span>' +
-        '<span style="font-family:var(--font-mono);font-size:9px;color:var(--warn)">' + passCount + '/6 GATES</span>' +
+        '<span style="font-family:var(--font-mono);font-size:9px;color:var(--warn)">' + passCount + '/8 GATES</span>' +
       '</div>' +
       '<div style="margin-bottom:6px">' + gateRows + '</div>' +
       '<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);text-align:center;padding:6px;background:var(--bg-card);border-radius:1px">' +
-        '⏳ Waiting for all 5 gates to pass before showing trade' +
+        '⏳ Waiting for all 8 gates to pass' +
       '</div>';
 
     updatePartialTPs(null);
@@ -3785,13 +4683,15 @@ function updateSLTP(forceRecalc = true) {
   const basis2 = t.basis;
   container.innerHTML =
     warnBadges +
-    '<div style="display:flex;gap:3px;margin-bottom:6px">' +
-      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G1 EMA✓</span>' +
+    '<div style="display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap">' +
+      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G1 EMA+200✓</span>' +
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G2 FS✓</span>' +
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G3 OB/SR✓</span>' +
-      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G4 CONF✓</span>' +
+      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G3b RETEST✓</span>' +
+      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G4 BIAS 55%✓</span>' +
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G5 MOM✓</span>' +
       '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">G6 HTF✓</span>' +
+      '<span style="font-family:var(--font-mono);font-size:7px;padding:2px 5px;background:rgba(0,229,160,0.15);border:1px solid rgba(0,229,160,0.4);color:var(--bull);border-radius:1px">PAT✓</span>' +
     '</div>' +
     (t.bestPattern ? '<div style="font-family:var(--font-mono);font-size:8px;padding:3px 7px;margin-bottom:5px;border-radius:1px;background:rgba(0,229,160,0.06);border:1px solid rgba(0,229,160,0.25);color:' + (t.bestPattern.dir==="bull"?'var(--bull)':'var(--bear)') + '">'
       + '★'.repeat(t.bestPattern.strength) + ' ' + t.bestPattern.name + ' — pattern confirmation</div>' : '') +
@@ -3835,6 +4735,19 @@ function updateSLTP(forceRecalc = true) {
     '<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);padding:3px 0">' + (t.basis||'') + '</div>' +
     '<div class="stat-row"><span class="stat-label" id="rrLabel">RR</span>' +
       '<span class="stat-val ' + rrClass + '" style="font-size:14px">' + sf(t.rr,2) + ':1</span>' +
+    '</div>' +
+    // ── MT5 Copy Box ─────────────────────────────────────────
+    '<div style="margin-top:8px;background:rgba(0,180,216,0.06);border:1px solid rgba(0,180,216,0.25);border-radius:2px;padding:6px 8px">' +
+      '<div style="font-family:var(--font-display);font-size:8px;color:var(--cyan);letter-spacing:2px;margin-bottom:5px">MT5 ORDER VALUES</div>' +
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">' +
+        '<div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)">Entry (market)</div>' +
+        '<div style="font-family:var(--font-mono);font-size:10px;color:var(--text-bright);text-align:right">' + sf(t.entry,dp) + '</div>' +
+        '<div style="font-family:var(--font-mono);font-size:9px;color:var(--bear)">Stop Loss</div>' +
+        '<div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--bear);text-align:right;cursor:pointer" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + sf(t.sl,dp) + '\').then(()=>addAlert(\'SL copied\',\'mit\'))" title="Click to copy">' + sf(t.sl,dp) + ' 📋</div>' +
+        '<div style="font-family:var(--font-mono);font-size:9px;color:var(--bull)">Take Profit</div>' +
+        '<div style="font-family:var(--font-mono);font-size:12px;font-weight:700;color:var(--bull);text-align:right;cursor:pointer" onclick="navigator.clipboard&&navigator.clipboard.writeText(\'' + sf(t.tp,dp) + '\').then(()=>addAlert(\'TP copied\',\'mit\'))" title="Click to copy">' + sf(t.tp,dp) + ' 📋</div>' +
+      '</div>' +
+      '<div style="font-family:var(--font-mono);font-size:8px;color:var(--text-dim);margin-top:4px;border-top:1px solid var(--border);padding-top:3px">Rounded to tick size · MT5-valid stops</div>' +
     '</div>';
 
   // Draw price lines on chart
@@ -3955,13 +4868,22 @@ function toggleSettings() {
   settingsOpen = !settingsOpen;
   const el = document.getElementById('settings-drawer');
   if (el) el.classList.toggle('open', settingsOpen);
+  if (settingsOpen) {
+    // Pre-populate TG fields from sessionStorage (masked)
+    try {
+      const tEl = document.getElementById('set_tgToken');
+      const cEl = document.getElementById('set_tgChatId');
+      if (tEl) tEl.placeholder = sessionStorage.getItem('msb_tg_token') ? '••••••••• (set)' : 'Bot token...';
+      if (cEl) { const id = sessionStorage.getItem('msb_tg_chatid'); if (cEl && id) cEl.value = id; }
+    } catch(e) {}
+  }
 }
 
 function updateSettings() {
-  CFG.pivotLen      = parseInt(document.getElementById('set_pivotLen').value)    || 7;
-  CFG.msbZScore     = parseFloat(document.getElementById('set_msbZ').value)      || 0.5;
-  CFG.obLookback    = parseInt(document.getElementById('set_obLookback').value)  || 10;
-  CFG.maxOBs        = parseInt(document.getElementById('set_maxOBs').value)      || 10;
+  CFG.pivotLen      = parseInt(document.getElementById('set_pivotLen').value)    || 3;
+  CFG.msbZScore     = parseFloat(document.getElementById('set_msbZ').value)      || 0.3;
+  CFG.obLookback    = parseInt(document.getElementById('set_obLookback').value)  || 15;
+  CFG.maxOBs        = parseInt(document.getElementById('set_maxOBs').value)      || 16;
   CFG.hpzThreshold  = parseFloat(document.getElementById('set_hpzThreshold').value) || 70;
   CFG.atrLen        = parseInt(document.getElementById('set_atrLen').value)      || 14;
   CFG.atrSlMult     = parseFloat(document.getElementById('set_atrSlMult').value) || 1.2;
@@ -3986,6 +4908,9 @@ function rerunAnalysis() {
 function onSymbolChange(val) {
   currentSymbol = val;
   obArray = []; _lockedTrade = null; _lockedOBFingerprint = ''; _lockedBias = null;
+  _lastSetupDir = null; // reset so first signal on new symbol always fires
+  // Clear TG cooldown for this symbol so new symbol alerts fire immediately
+  Object.keys(_tgLastSent).filter(k => k.startsWith(val)).forEach(k => delete _tgLastSent[k]);
   // Clear 4H OB cache for old symbol
   if (typeof _scanCandleCache !== 'undefined') delete _scanCandleCache[val + '_htf4H_obs'];
   if (isConnected && ws && ws.readyState === WebSocket.OPEN) {
@@ -3998,6 +4923,10 @@ function onSymbolChange(val) {
 function onTFChange(val) {
   currentTF = parseInt(val);
   obArray = []; _lockedTrade = null; _lockedOBFingerprint = ''; _lockedBias = null;
+  _lastSetupDir = null; // reset so first signal on new TF always fires
+  // Clear TG cooldown for current symbol+newTF so alerts fire immediately
+  const _newTF = parseInt(val);
+  Object.keys(_tgLastSent).filter(k => k.includes(currentSymbol + _newTF)).forEach(k => delete _tgLastSent[k]);
   // Clear all caches so next load fetches fresh data for new TF
   Object.keys(_scanCandleCache).forEach(k => delete _scanCandleCache[k]);
   Object.keys(_liveScanResults).forEach(k => delete _liveScanResults[k]);
@@ -4014,11 +4943,14 @@ function onTFChange(val) {
 // ═══════════════════════════════════════════════════════════════
 const SCAN_SYMBOLS = [
   {id:'R_10',name:'Vol 10'},{id:'R_25',name:'Vol 25'},{id:'R_50',name:'Vol 50'},
-  {id:'R_75',name:'Vol 75'},{id:'R_100',name:'Vol 100'},{id:'1HZ10V',name:'Vol 10 1s'},
-  {id:'1HZ100V',name:'Vol 100 1s'},
+  {id:'R_75',name:'Vol 75'},{id:'R_100',name:'Vol 100'},
+  {id:'1HZ10V',name:'Vol 10 1s'},{id:'1HZ25V',name:'Vol 25 1s'},
+  {id:'1HZ50V',name:'Vol 50 1s'},{id:'1HZ75V',name:'Vol 75 1s'},{id:'1HZ100V',name:'Vol 100 1s'},
   {id:'BOOM1000',name:'Boom 1000'},{id:'BOOM500',name:'Boom 500'},{id:'BOOM300',name:'Boom 300'},
   {id:'CRASH1000',name:'Crash 1000'},{id:'CRASH500',name:'Crash 500'},{id:'CRASH300',name:'Crash 300'},
   {id:'STPRNG',name:'Step'},
+  {id:'RNGBR100',name:'Range Brk 100'},{id:'RNGBR200',name:'Range Brk 200'},
+  {id:'DSW10',name:'Drift Sw 10'},
   {id:'JD10',name:'Jump 10'},{id:'JD25',name:'Jump 25'},{id:'JD50',name:'Jump 50'},
   {id:'JD75',name:'Jump 75'},{id:'JD100',name:'Jump 100'},
 ];
@@ -4035,7 +4967,7 @@ function setScanTFFilter(tf) {
     const el = document.getElementById(id);
     if (el) el.classList.remove('active');
   });
-  const map = {0:'filterAllTF', 60:'filter1m', 300:'filter5m', 900:'filter15m', 1800:'filter30m', 3600:'filter1h'};
+  const map = {0:'filterAllTF', 60:'filter1m', 300:'filter5m', 900:'filter15m', 1800:'filter30m', 3600:'filter1h', 14400:'filter4h'};
   const el = document.getElementById(map[tf]);
   if (el) el.classList.add('active');
   renderScanResults();
@@ -4050,10 +4982,11 @@ function toggleScanner() {
   if (_scannerOpen) {
     // Align scanner TF filter to match the current chart TF
     const chartTF = currentTF;
-    if (SCAN_TFS.includes(chartTF)) {
+    // Only pre-filter to chart TF if it's 15m or higher — lower TFs are too noisy
+    if (SCAN_TFS.includes(chartTF) && chartTF >= 900) {
       setScanTFFilter(chartTF);
     } else {
-      setScanTFFilter(0); // fallback: show all if chart TF not in scan list
+      setScanTFFilter(0); // show all TFs for low-TF charts
     }
     if (_scanResults.length === 0) runScanner();
   }
@@ -4097,6 +5030,7 @@ let _scanTF          = 300;   // TF being scanned (set when scanner opens)
 
 function analyseSymbol(sym, tf) {
   const key = sym + tf;
+  const _savedSym = currentSymbol; // save so we can restore if analyseCandles throws
   // Use live candles if available (fetched by live scanner)
   if (_liveScanResults[key] && _liveScanResults[key].length >= 50) {
     _scanCandleCache[key] = _liveScanResults[key];
@@ -4105,16 +5039,15 @@ function analyseSymbol(sym, tf) {
   if (isConnected && sym === currentSymbol && tf === currentTF && candles.length >= 50) {
     _scanCandleCache[key] = candles;
   }
-  // Fall back to demo data
-  if (!_scanCandleCache[key]) {
-    _scanCandleCache[key] = generateDemoCandles(sym, tf, 500);
-  }
+  // No live data for this sym+tf — skip (never use demo candles for signals)
   const symCandles = _scanCandleCache[key];
   if (!symCandles || symCandles.length < 50) return null;
-  const r = analyseCandles(symCandles, sym);
+  let r;
+  try { r = analyseCandles(symCandles, sym); } catch(e) { currentSymbol = _savedSym; return null; }
+  currentSymbol = _savedSym; // always restore after analyseCandles
   if (!r) return null;
   const t = calcSLTP(r);
-  const isBull = r.recentBull >= r.recentBear;
+  const isBull = r.recentBull > r.recentBear; // FIX: strict majority only
   const lastMSB = isBull
     ? (r.msbBull.length ? r.msbBull[r.msbBull.length - 1] : null)
     : (r.msbBear.length ? r.msbBear[r.msbBear.length - 1] : null);
@@ -4167,7 +5100,7 @@ function startLiveScan() {
         // Symbol not available — skip and continue
         _liveScanProg++;
         _updateLiveScanProgress();
-        _pumpLiveQueue();
+        setTimeout(_pumpLiveQueue, 120);
         return;
       }
       if (data.msg_type === 'candles' && data.candles) {
@@ -4186,9 +5119,9 @@ function startLiveScan() {
           volume: Math.round(Math.abs(parseFloat(c.close) - parseFloat(c.open)) / parseFloat(c.close) * 100000) + 100,
         }));
         _updateLiveScanProgress();
-        _pumpLiveQueue();
+        setTimeout(_pumpLiveQueue, 120); // throttle — prevents Deriv rate-limit drops
       }
-    } catch(err) { _pumpLiveQueue(); }
+    } catch(err) { setTimeout(_pumpLiveQueue, 120); }
   };
 
   _liveScanWS.onerror = () => {
@@ -4209,7 +5142,7 @@ function startLiveScan() {
 function _pumpLiveQueue() {
   if (!_liveScanWS || _liveScanWS.readyState !== WebSocket.OPEN) return;
   if (_liveScanProg >= _liveScanTotal) {
-    // All done — run analysis on collected data
+    // All done — mark done FIRST before close to prevent onclose race
     _liveScanDone = true;
     _liveScanWS.close();
     _finishLiveScan();
@@ -4234,15 +5167,15 @@ function _updateLiveScanProgress() {
 
 function _finishLiveScan() {
   const prog = document.getElementById('scanProgress');
-  // Telegram alerts for all valid scan setups
-  setTimeout(() => { for (const item of (_scanResults||[])) { if (item.t && !item.t.blocked && item.t.confluence >= 70) maybeSendTG(item.t, item.sym, item.tf); } }, 500);
-  if (prog) prog.textContent = 'Analysing ' + _liveScanTotal + ' datasets…';
+  const _scanTime = new Date().toLocaleTimeString();
+  if (prog) prog.textContent = 'Analysing ' + _liveScanTotal + ' datasets… @ ' + _scanTime;
   // Schedule next auto-refresh in 5 minutes
   clearTimeout(_liveScanInterval);
   if (isConnected) {
     _liveScanInterval = setTimeout(() => { if (isConnected) startLiveScan(); }, 5 * 60 * 1000);
   }
-  // Small delay then run full analysis
+  // FIX: build _scanResults FIRST, then send TG — the old 500ms timeout ran after
+  // the 100ms block cleared _scanResults, so TG was always reading an empty array.
   setTimeout(() => {
     _scanResults = [];
     for (const s of SCAN_SYMBOLS) {
@@ -4252,6 +5185,11 @@ function _finishLiveScan() {
           if (result) _scanResults.push(result);
         } catch(e) { console.warn('scan err', s.id, tf, e); }
       }
+    }
+    // TG alerts ONLY for live-candle results — never demo fallback (wrong price range)
+    for (const item of _scanResults) {
+      if (item.isLive && item.t && !item.t.blocked && item.t.confluence >= 70)
+        maybeSendTG(item.t, item.sym, item.tf);
     }
     renderScanResults();
   }, 100);
@@ -4277,6 +5215,19 @@ async function runDemoScan() {
     }
   }
   if (prog) prog.textContent = _scanResults.length + ' setups found';
+  // Update scanner button badge
+  const _scanBtn = document.getElementById('scannerBtn');
+  if (_scanBtn && _scanResults.length > 0) {
+    const _validCount = _scanResults.filter(i => i.t && !i.t.blocked && i.t.confluence >= 60).length;
+    _scanBtn.textContent = '⊞ SCAN ' + (_validCount > 0 ? '(' + _validCount + ')' : '');
+  }
+  // Update scanner button badge with valid setup count
+  const _scanBtn2 = document.getElementById('scannerBtn');
+  if (_scanBtn2) {
+    const _vc = _scanResults.filter(i => i.t && !i.t.blocked && i.t.confluence >= 60).length;
+    _scanBtn2.textContent = '⊞ SCAN' + (_vc > 0 ? ' (' + _vc + ')' : '');
+  }
+  // Demo scan: DO NOT send TG alerts — candles are generated (wrong prices)
   renderScanResults();
 }
 
@@ -4307,19 +5258,22 @@ function renderScanResults() {
     if (!t || t.blocked) return false;
     // Must have actual SL/TP numbers
     if (!t.sl || !t.tp || !t.rr) return false;
-    // Gate 4 check: confluence 70%+
-    if (t.confluence < 70) return false;
-    // Gate 2 check: RR must be at least minRR
+    // Confluence minimum — lowered from 70% to 60% to show more setups
+    if (t.confluence < 60) return false;
+    // RR must meet minimum
     if (t.rr < CFG.minRR) return false;
-    // READY check: price must be near or inside an aligned OB (actionable now)
+    // PROXIMITY check: price near aligned OB OR near strong S/R
     const isBull = t.dir === 'LONG';
     const alignedOBs = (res.activeOBs || []).filter(o => isBull ? o.isBull : !o.isBull);
     const atr = res.atr || 1;
     const price = item.price;
-    const readyOB = alignedOBs.find(o =>
-      price <= o.top + atr * 2 && price >= o.bottom - atr * 2
+    const nearOB = alignedOBs.find(o =>
+      price <= o.top + atr * 3 && price >= o.bottom - atr * 3
     );
-    if (!readyOB) return false;
+    const nearSR = (res.srLevels || []).find(s =>
+      s.strong && Math.abs(s.price - price) <= atr * 2 && (isBull ? s.isSupport : !s.isSupport)
+    );
+    if (!nearOB && !nearSR) return false;
     return true;
   }
 
@@ -4337,11 +5291,11 @@ function renderScanResults() {
   if (prog) prog.textContent = tfFiltered.length + ' setups | ' + skipped + ' filtered | ' + _scanResults.length + ' scanned';
 
   if (sorted.length === 0) {
-    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 70%+ | RR ' + CFG.minRR + ':1+ | Price within 2x ATR of OB</span></div>';
+    body.innerHTML = '<div class="scan-status" style="color:var(--warn)">No READY setups' + (_scanTFFilter ? ' on ' + tfLabel(_scanTFFilter) : '') + '<br><span style="font-size:8px;color:var(--text-dim)">Need: All Gates Pass | Confluence 60%+ | RR ' + CFG.minRR + ':1+ | Price within 3× ATR of OB</span></div>';
     return;
   }
 
-  const dp = r => r.sym.includes('R_10') || r.sym.includes('1HZ10V') ? 3 : 2;
+  const dp = r => getDP(r.sym);
   body.innerHTML = sorted.map(function(item) {
     const t = item.t;
     if (!t) return '';
@@ -4383,15 +5337,17 @@ function switchToSymbol(sym, tf) {
   currentSymbol = sym;
   document.getElementById('symbolSelect').value = sym;
 
-  // ── Set TF from scanner card (this is the key fix) ──
+  // ── Set TF from scanner card ──
   if (tf && tf !== currentTF) {
     currentTF = tf;
     const tfSel = document.getElementById('tfSelect');
     if (tfSel) tfSel.value = String(tf);
+    // Clear HTF cache entries for old TF to avoid stale bias
+    Object.keys(_scanCandleCache).filter(k => k.includes('_htf4H')).forEach(k => delete _scanCandleCache[k]);
   }
 
   // ── Reset state ──
-  obArray = []; _lockedTrade = null; _lockedOBFingerprint = ''; _lockedBias = null;
+  obArray = []; _lockedTrade = null; _lockedOBFingerprint = ''; _lockedBias = null; _lastSetupDir = null;
   Object.keys(_scanCandleCache).forEach(k => { if (k !== sym + currentTF) delete _scanCandleCache[k]; });
 
   // ── Close scanner ──
@@ -4410,22 +5366,21 @@ function switchToSymbol(sym, tf) {
     return;
   }
 
-  // Demo — use scanner cache if available, otherwise generate
+  // Not connected — use live scanner cache if available, else show waiting state
   const key = sym + currentTF;
   if (_liveScanResults[key] && _liveScanResults[key].length >= 50) {
     _scanCandleCache[key] = _liveScanResults[key];
+    candles = _scanCandleCache[key];
+    setTimeout(() => {
+      if (chart && chart._resize) chart._resize();
+      renderChart();
+      runAnalysis(true);
+      addAlert('→ ' + sym + ' ' + tfLabel(currentTF), 'bull');
+    }, 60);
+  } else {
+    candles = [];
+    addAlert('Connect to Deriv for live data — ' + sym, 'bear');
   }
-  if (!_scanCandleCache[key]) {
-    _scanCandleCache[key] = generateDemoCandles(sym, currentTF, 500);
-  }
-  candles = _scanCandleCache[key];
-
-  setTimeout(() => {
-    if (chart && chart._resize) chart._resize();
-    renderChart();
-    runAnalysis(true);
-    addAlert('→ ' + sym + ' ' + tfLabel(currentTF), 'bull');
-  }, 60);
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4491,7 +5446,14 @@ function fireSetupAlert(t, sym) {
   if (_notifEnabled && document.hidden) {
     try { new Notification('MSB·OB·FS ULTRA', { body: msg, icon: '' }); } catch(e) {}
   }
+  // Try TG on current TF — if TF is below threshold (1m/5m/10m/2m) it will skip
   maybeSendTG(t, sym, currentTF);
+  // Also try on the next higher supported TF if current is too low
+  const _supportedTFs = [900, 1800, 3600, 14400];
+  if (!_supportedTFs.includes(currentTF)) {
+    // Show in-app notice so user knows TF is too low for TG
+    if (_tgEnabled) addAlert('ℹ️ Switch to 15m+ for TG alerts on this setup', 'mit');
+  }
 }
 
 
@@ -4568,7 +5530,10 @@ function setTradeOutcome(id, outcome) {
       }
     } else if (outcome === 'WIN') {
       _consecLosses = 0;
-      try { localStorage.setItem('msb_consec_losses', '0'); } catch(e) {}
+      _tradeLocked = false;
+      try { localStorage.setItem('msb_consec_losses', '0'); localStorage.setItem('msb_trade_locked', '0'); } catch(e) {}
+      const _banner = document.getElementById('loss-lockout-banner');
+      if (_banner) _banner.classList.remove('active');
     }
     renderJournal();
   }
@@ -4731,43 +5696,50 @@ function toggleTG() {
 
 async function sendTG(text) {
   if (!_tgEnabled) return;
-  // Use GET + no-cors fetch — works from file:// without CORS preflight
-  // Telegram Bot API supports GET for sendMessage
-  const url = 'https://api.telegram.org/bot' + TG_TOKEN
-    + '/sendMessage?chat_id=' + encodeURIComponent(TG_CHATID)
-    + '&parse_mode=HTML'
-    + '&text=' + encodeURIComponent(text);
+  const token  = _getTGToken();
+  const chatId = _getTGChatId();
+  if (!token || !chatId) { addAlert('TG: No token/chat ID set in Settings', 'bear'); return; }
+  const url = 'https://api.telegram.org/bot' + token + '/sendMessage';
   try {
-    // no-cors mode: fire-and-forget, no response reading needed
-    fetch(url, { method: 'GET', mode: 'no-cors' }).catch(() => {});
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ chat_id: chatId, text: text, parse_mode: 'HTML' }),
+    }).then(r => r.json()).then(d => {
+      if (!d.ok) addAlert('TG error: ' + (d.description || 'unknown'), 'bear');
+    }).catch(() => {});
   } catch (e) {
-    // Final fallback: Image beacon (always works cross-origin, GET only)
-    try { new Image().src = url; } catch(_) {}
+    addAlert('TG: Failed to send (' + e.message + ')', 'bear');
   }
 }
 
 function buildTGMsg(t, sym, tf) {
   if (!t || t.blocked || !t.sl || !t.tp) return null;
-  const dp   = (sym.includes('R_10') || sym.includes('1HZ10V')) ? 3 : 2;
+  const dp   = getSymbolMT5Spec(sym).digits;
   const dir  = t.dir === 'LONG' ? '\uD83D\uDFE2 LONG' : '\uD83D\uDD34 SHORT';
   const conf = t.confluence || 0;
   // Grade — thresholds reflect the TF tier that was cleared
-  const gradeThresh = (tf === 900) ? [95, 92, 88] : (tf === 1800) ? [93, 90, 85] : [90, 85, 80];
+  const gradeThresh = (tf === 900)   ? [95, 92, 88]
+                    : (tf === 1800)  ? [93, 90, 85]
+                    : (tf === 3600)  ? [90, 85, 80]
+                    : /* 4H */        [88, 82, 75];
   const gr = conf >= gradeThresh[0] ? '\u2B50\u2B50\u2B50\u2B50 S-TIER'
            : conf >= gradeThresh[1] ? '\u2B50\u2B50\u2B50 A+'
-           : '\u2B50\u2B50 A';
+           : conf >= gradeThresh[2] ? '\u2B50\u2B50 A'
+           : '\u2B50 B';
   // TF tier badge
   const tfTier = (tf === 900)  ? '\uD83D\uDD36 15M ELITE'
                : (tf === 1800) ? '\uD83D\uDD37 30M PRIME'
-               : (tf === 3600) ? '\uD83D\uDFE1 1H'
-               : '\uD83D\uDFE0 4H';
+               : (tf === 3600) ? '\uD83D\uDFE1 1H PRIME'
+               : '\uD83D\uDFE0 4H MACRO';
   const zone = t.insideOB ? '\uD83D\uDCE6 Inside OB' : '\uD83D\uDCCA At S/R';
+  const sizeLine = (t.units && t.dollarRisk) ? ('\n\uD83D\uDCB0 Size: <b>' + (sn(t.units)<0.01?sf(t.units,4):sf(t.units,2)) + ' units</b>  Risk: <b>$' + sf(t.dollarRisk,2) + '</b>  Pot. profit: <b>$' + sf(t.potentialProfit,2) + '</b>') : '';
   const hpz  = t.isHPZ ? '\n\u2605 <b>HIGH PROBABILITY ZONE</b>' : '';
   const mtf  = (t.components && t.components.ob && t.components.ob.mtfStack) ? '\n\u229E <b>MTF 4H OB STACK</b>' : '';
   const pat = t.bestPattern
     ? ('\n\u270f ' + '\u2605'.repeat(t.bestPattern.strength) + ' <b>' + t.bestPattern.name + '</b> (' + t.bestPattern.dir + ')')
     : '';
-  const spk = (t.warnReasons && t.warnReasons.find(w => w.includes('G7') && w.includes('confirmed')))
+  const spk = (t.warnReasons && t.warnReasons.find(w => w.includes('SPIKE') && w.toLowerCase().includes('confirm')))
     ? '\n\u26a1 <b>SPIKE-AND-CONTINUE confirmed</b>'
     : '';
   const tln = (t.atTrendLine && t.nearTL)
@@ -4778,42 +5750,48 @@ function buildTGMsg(t, sym, tf) {
   const tp1  = isBull ? t.entry + risk * 1.0 : t.entry - risk * 1.0;
   const tp2  = t.tp;
   const tp3  = isBull ? t.entry + risk * (t.rr * 1.5) : t.entry - risk * (t.rr * 1.5);
+  const beMoveAt = isBull ? t.entry + risk * 0.3 : t.entry - risk * 0.3;
   // Only show confirmed positive notes — filter out any caution language
   const noteLines = (t.warnReasons || [])
     .filter(w => w.startsWith('NOTE') && !w.includes('wait') && !w.includes('No ') && !w.includes('Approaching'))
     .map(w => '\u2139 ' + w.replace(/^NOTE ?G?\d*: ?/, ''))
     .join('\n');
+  // Use MT5-rounded values if available, else raw
+  const _mt5e = (t.mt5 && t.mt5.entry) ? sf(t.mt5.entry, dp) : sf(t.entry, dp);
+  const _mt5s = (t.mt5 && t.mt5.sl)    ? sf(t.mt5.sl,    dp) : sf(t.sl,    dp);
+  const _mt5t = (t.mt5 && t.mt5.tp)    ? sf(t.mt5.tp,    dp) : sf(t.tp,    dp);
+
   return '<b>\uD83C\uDFAF ' + sym + ' ' + tfLabel(tf) + '</b>  ' + dir + '  ' + tfTier + '\n' +
     gr + '  Conf: <b>' + conf + '%</b>  RR: <b>' + sf(t.rr,2) + ':1</b>\n' +
     '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
-    '\uD83D\uDCCD Entry: <b>' + sf(t.entry,dp) + '</b>\n' +
-    '\uD83D\uDED1 SL:    <b>' + sf(t.sl,dp) + '</b>  <i>(' + (t.slSources||[]).join('+') + ')</i>\n' +
-    '\u2705 TP1:   <b>' + sf(tp1,dp) + '</b>  <i>(1:1 — close 33%)</i>\n' +
-    '\u2705 TP2:   <b>' + sf(tp2,dp) + '</b>  <i>(' + sf(t.rr,1) + ':1 — close 50%)</i>\n' +
-    '\u2705 TP3:   <b>' + sf(tp3,dp) + '</b>  <i>(EXT — trail rest)</i>\n' +
-    zone + hpz + mtf + pat + spk + tln +
+    '\uD83D\uDCCD Entry: <b>' + _mt5e + '</b>  <i>(market order)</i>\n' +
+    '\uD83D\uDED1 SL:    <b>' + _mt5s + '</b>  <i>(' + (t.slSources||[]).join('+') + ')</i>\n' +
+    '\u2705 TP1:   <b>' + sf(roundToTick(tp1,sym),dp) + '</b>  <i>(1:1 — close 33%)</i>\n' +
+    '\u27a1 BE @:   <b>' + sf(roundToTick(beMoveAt,sym),dp) + '</b>  <i>(move SL to entry: ' + _mt5e + ')</i>\n' +
+    '\u2705 TP2:   <b>' + _mt5t + '</b>  <i>(full TP · RR ' + sf(t.rr,1) + ':1 — close 50%)</i>\n' +
+    '\u2705 TP3:   <b>' + sf(roundToTick(tp3,sym),dp) + '</b>  <i>(EXT — trail rest)</i>\n' +
+    zone + sizeLine + hpz + mtf + pat + spk + tln +
     (noteLines ? '\n' + noteLines : '') + '\n' +
-    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500';
+    '\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n' +
+    '\u23f0 ' + new Date().toLocaleTimeString() + '  |  \uD83E\uDD16 MSB·OB·FS ULTRA v36.6';
 }
 
 function maybeSendTG(t, sym, tf) {
   if (!t || t.blocked || !_tgEnabled) return;
-  if (!isConnected) return; // never send on demo data
+  // Never alert from demo data — live connection mandatory
+  if (!isConnected) return;
+  // Candles must have been live-fetched — checked by caller (item.isLive) but double-guard here
+  const _liveKey = sym + tf;
+  if (!_liveScanResults[_liveKey] && !(sym === currentSymbol && tf === currentTF && candles.length >= 50)) return;
 
   // ── QUALITY GATE: Tiered rules by timeframe ──────────────
   // 1m and 5m are excluded entirely — too noisy for alerts
   if (tf !== 900 && tf !== 1800 && tf !== 3600 && tf !== 14400) return;
 
-  // Block if ANY WARN-level reason exists (caution = skip on ALL TFs)
+  // Block only on genuine WARN-level reasons (not NOTE informational messages)
+  // NOTE messages like 'Approaching OB' are informational and must NOT block alerts
   const hasWarn = (t.warnReasons || []).some(w =>
-    w.startsWith('WARN') ||
-    w.includes('opposes') ||
-    w.includes('conflict') ||
-    w.includes('counter-momentum') ||
-    w.includes('wait for bounce') ||
-    w.includes('wait for touch') ||
-    w.includes('No spike yet') ||
-    w.includes('Spike does not align')
+    w.startsWith('WARN')
   );
   if (hasWarn) return;
 
@@ -4822,35 +5800,25 @@ function maybeSendTG(t, sym, tf) {
   const hasPremiumZone = t.isHPZ || (t.components && t.components.ob && t.components.ob.mtfStack);
 
   if (tf === 3600 || tf === 14400) {
-    // ── 1H / 4H: standard premium rules ──────────────────
-    if (conf < 80) return;
-    if (rr < 2.0) return;
+    // ── 1H / 4H: balanced quality rules ──────────────────
+    if (conf < 70) return;
+    if (rr < 1.5) return;
     if (!t.insideOB && !t.atSRLevel) return;
-    if (!hasPremiumZone && conf < 85) return;
 
   } else if (tf === 1800) {
-    // ── 30M: tighter than 1H — needs HTF stack + inside OB ─
-    // 30m has good structure but is still below the 1H HTF layer.
-    // Require: 85%+ confluence, 2.5:1 RR, MUST be inside OB (S/R alone not enough),
-    // and MUST have MTF 4H stack OR HPZ to confirm 4H zone alignment.
-    if (conf < 85) return;
-    if (rr < 2.5) return;
-    if (!t.insideOB) return;          // S/R alone not sufficient on 30m
-    if (!hasPremiumZone) return;       // must have HPZ or 4H OB stack
+    // ── 30M: quality rules ────────────────────────────────
+    if (conf < 72) return;
+    if (rr < 1.8) return;
+    if (!t.insideOB && !t.atSRLevel) return;
 
   } else if (tf === 900) {
-    // ── 15M: strictest — needs everything aligned ──────────
-    // 15m is fast-moving. Only fire when confluence is exceptional,
-    // RR is strong, price is inside OB, AND there is 4H MTF stack
-    // confirming the zone is valid on higher structure.
-    if (conf < 88) return;
-    if (rr < 3.0) return;
-    if (!t.insideOB) return;           // must be inside OB, not just near
-    // MTF 4H stack is MANDATORY on 15m — no standalone 15m setups
+    // ── 15M: strict rules ─────────────────────────────────
+    if (conf < 78) return;
+    if (rr < 2.0) return;
+    if (!t.insideOB && !t.atSRLevel) return;
+    // Need at least HPZ OR MTF stack (not both mandatory)
     const hasMtfStack = t.components && t.components.ob && t.components.ob.mtfStack;
-    if (!hasMtfStack) return;
-    // HPZ is also required — high probability zone on the 15m OB
-    if (!t.isHPZ) return;
+    if (!t.isHPZ && !hasMtfStack) return;
   }
 
   // ── Cooldown check ───────────────────────────────────────
@@ -4860,7 +5828,10 @@ function maybeSendTG(t, sym, tf) {
   _tgLastSent[key] = now;
 
   const msg = buildTGMsg(t, sym, tf);
-  if (msg) sendTG(msg);
+  if (msg) {
+    sendTG(msg);
+    addAlert('✈ TG sent: ' + sym + ' ' + tfLabel(tf) + ' ' + t.dir + ' ' + t.confluence + '%', t.dir==='LONG'?'bull':'bear');
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -4872,12 +5843,99 @@ function maybeSendTG(t, sym, tf) {
 // ═══════════════════════════════════════════════════════════════
 let _cscanWorker = null;
 
-function _buildCScanWorker() {
-  // Inline the worker as a Blob URL so no separate file is needed
-  const workerSrc = '\n// ═══════════════════════════════════════════════════════════════\n// MSB ULTRA — CONTINUOUS SCAN WEB WORKER\n// Runs analyseCandles + calcSLTP off the main thread\n// Communicates via postMessage\n// ═══════════════════════════════════════════════════════════════\n\nconst CFG = {\n  pivotLen: 5,\n  msbZScore: 0.5,\n  obLookback: 10,\n  maxOBs: 10,\n  hpzThreshold: 70,\n  atrLen: 14,\n  atrSlMult: 1.2,    // tighter default — 1.5 was too wide for synthetic indices\n  atrTpMult: 2.5,    // reduced from 3.0\n  obSlBuf: 5,        // reduced from 10% — OB edges are structural, less buffer needed\n  swingLen: 10,\n  swingSamples: 8,\n  volPercentile: 90,\n  maxRiskPct: 2.0,   // hard cap: never risk more than this % regardless of input\n  minRR: 1.3,        // minimum RR — lower = more frequent signals\n};\n\nconst SCAN_SYMBOLS = [\n  {id:\'R_10\',name:\'Vol 10\'},{id:\'R_25\',name:\'Vol 25\'},{id:\'R_50\',name:\'Vol 50\'},\n  {id:\'R_75\',name:\'Vol 75\'},{id:\'R_100\',name:\'Vol 100\'},{id:\'1HZ10V\',name:\'Vol 10 1s\'},\n  {id:\'1HZ100V\',name:\'Vol 100 1s\'},\n  {id:\'BOOM1000\',name:\'Boom 1000\'},{id:\'BOOM500\',name:\'Boom 500\'},{id:\'BOOM300\',name:\'Boom 300\'},\n  {id:\'CRASH1000\',name:\'Crash 1000\'},{id:\'CRASH500\',name:\'Crash 500\'},{id:\'CRASH300\',name:\'Crash 300\'},\n  {id:\'STPRNG\',name:\'Step\'},\n  {id:\'JD10\',name:\'Jump 10\'},{id:\'JD25\',name:\'Jump 25\'},{id:\'JD50\',name:\'Jump 50\'},\n  {id:\'JD75\',name:\'Jump 75\'},{id:\'JD100\',name:\'Jump 100\'},\n];\n\nconst SCAN_TFS = [60, 300, 900, 1800, 3600, 14400];\n\nlet _scanCandleCache = {};\n\nfunction getSymbolProfile(sym) {\n  const s = sym || currentSymbol;\n  // type: \'jump\' | \'boom\' | \'crash\' | \'vol\' | \'step\' | \'vol1s\'\n  // slAtrMult: base SL ATR multiplier for this symbol type\n  // tpAtrMult: base TP ATR multiplier\n  // spikeGuard: extra ATR added to SL to clear spike wicks\n  // minSlPct:   minimum SL as % of price (floor — never tighter than this)\n  // maxSlPct:   maximum SL as % of price (cap — never wider than this)\n  // entryFilter: how strict confirmation must be before entry\n  //   \'strict\' = needs OB + MSB + FS all aligned\n  //   \'normal\' = OB + MSB\n  //   \'loose\'  = MSB only\n  const profiles = {\n    // ── Jump Indices ──────────────────────────────────────────\n    // Jump spikes are RANDOM and instant. SL must be wider than spike ATR.\n    // A 1-bar spike on JD100 can be 300+ points. Use 3x ATR minimum.\n    JD10:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD25:  { type:\'jump\', slAtrMult:3.5, tpAtrMult:5.0, spikeGuard:1.5, minSlPct:0.3, maxSlPct:4.0, entryFilter:\'strict\', trendBias: null },\n    JD50:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD75:  { type:\'jump\', slAtrMult:3.0, tpAtrMult:4.5, spikeGuard:1.2, minSlPct:0.25,maxSlPct:3.5, entryFilter:\'strict\', trendBias: null },\n    JD100: { type:\'jump\', slAtrMult:2.8, tpAtrMult:4.0, spikeGuard:1.0, minSlPct:0.2, maxSlPct:3.0, entryFilter:\'strict\', trendBias: null },\n    // ── Boom indices ─────────────────────────────────────────\n    // Boom trends UP with sudden DOWN spikes. Only trade LONG (with trend).\n    // Short positions get destroyed by the uptrend between spikes.\n    BOOM1000: { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM500:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    BOOM300:  { type:\'boom\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bull\' },\n    // ── Crash indices ────────────────────────────────────────\n    // Crash trends DOWN with sudden UP spikes. Only trade SHORT (with trend).\n    CRASH1000: { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH500:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    CRASH300:  { type:\'crash\', slAtrMult:2.5, tpAtrMult:6.0, spikeGuard:2.0, minSlPct:0.3, maxSlPct:5.0, entryFilter:\'strict\', trendBias:\'bear\' },\n    // ── Volatility indices ───────────────────────────────────\n    R_10:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.04,maxSlPct:0.8,  entryFilter:\'normal\', trendBias: null },\n    R_25:  { type:\'vol\', slAtrMult:1.5, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.06,maxSlPct:0.9,  entryFilter:\'normal\', trendBias: null },\n    R_50:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.2, minSlPct:0.08,maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_75:  { type:\'vol\', slAtrMult:1.4, tpAtrMult:2.5, spikeGuard:0.3, minSlPct:0.1, maxSlPct:1.0,  entryFilter:\'normal\', trendBias: null },\n    R_100: { type:\'vol\', slAtrMult:1.3, tpAtrMult:2.3, spikeGuard:0.3, minSlPct:0.12,maxSlPct:1.2,  entryFilter:\'normal\', trendBias: null },\n    // ── 1-second Volatility ──────────────────────────────────\n    \'1HZ10V\':  { type:\'vol1s\', slAtrMult:2.0, tpAtrMult:3.5, spikeGuard:0.5, minSlPct:0.06,maxSlPct:2.0, entryFilter:\'normal\', trendBias: null },\n    \'1HZ100V\': { type:\'vol1s\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.6, minSlPct:0.15,maxSlPct:3.0, entryFilter:\'normal\', trendBias: null },\n    // ── Step Index ───────────────────────────────────────────\n    STPRNG: { type:\'step\', slAtrMult:1.2, tpAtrMult:2.0, spikeGuard:0.1, minSlPct:0.02,maxSlPct:0.8, entryFilter:\'loose\', trendBias: null },\n  };\n  return profiles[s] || { type:\'vol\', slAtrMult:1.8, tpAtrMult:3.0, spikeGuard:0.5, minSlPct:0.1, maxSlPct:2.5, entryFilter:\'normal\', trendBias: null };\n}\nfunction getSymbolVolScale(sym) {\n  const p = getSymbolProfile(sym || currentSymbol);\n  return p.slAtrMult / 1.2; // normalise to old scale\n}\nfunction getDP(sym) {\n  const s = sym || currentSymbol;\n  if (s.includes(\'R_10\') || s.includes(\'1HZ10V\')) return 3;\n  if (s.includes(\'STPRNG\')) return 2;\n  return 2;\n}\nfunction tfLabel(tf) {\n  return {60:\'1m\',120:\'2m\',300:\'5m\',600:\'10m\',900:\'15m\',1800:\'30m\',3600:\'1h\',14400:\'4h\',86400:\'1D\'}[tf] || tf+\'s\';\n}\nfunction sma(arr, len) {\n  // O(n) sliding window SMA\n  const result = new Array(arr.length).fill(0);\n  let sum = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sum += arr[i];\n    if (i >= len) sum -= arr[i - len];\n    if (i >= len - 1) result[i] = sum / len;\n  }\n  return result;\n}\nfunction stdev(arr, len) {\n  // O(n) Welford-style rolling stdev\n  const result = new Array(arr.length).fill(0);\n  let sumX = 0, sumX2 = 0;\n  for (let i = 0; i < arr.length; i++) {\n    sumX  += arr[i];  sumX2  += arr[i] * arr[i];\n    if (i >= len) { sumX -= arr[i-len]; sumX2 -= arr[i-len] * arr[i-len]; }\n    if (i >= len - 1) {\n      const mean = sumX / len;\n      const variance = sumX2 / len - mean * mean;\n      result[i] = variance > 0 ? Math.sqrt(variance) : 0;\n    }\n  }\n  return result;\n}\nfunction calcRSI(closes, len) {\n  if (closes.length < len + 1) return 50;\n  let gains = 0, losses = 0;\n  for (let i = closes.length - len; i < closes.length; i++) {\n    const d = closes[i] - closes[i - 1];\n    if (d > 0) gains += d; else losses -= d;\n  }\n  const avgGain = gains / len;\n  const avgLoss = losses / len;\n  if (avgLoss === 0) return 100;\n  const rs = avgGain / avgLoss;\n  return 100 - (100 / (1 + rs));\n}\nfunction calcEMA(arr, len) {\n  const result = new Array(arr.length).fill(0);\n  const k = 2 / (len + 1);\n  let ema = arr[0];\n  result[0] = ema;\n  for (let i = 1; i < arr.length; i++) {\n    ema = arr[i] * k + ema * (1 - k);\n    result[i] = ema;\n  }\n  return result;\n}\nfunction calcATR(candles, len) {\n  if (candles.length < len + 1) return 0;\n  // True ranges\n  const tr = candles.map((c, i) => {\n    if (i === 0) return c.high - c.low;\n    return Math.max(c.high - c.low, Math.abs(c.high - candles[i-1].close), Math.abs(c.low - candles[i-1].close));\n  });\n  // Seed with SMA of first `len` bars\n  let atr = tr.slice(0, len).reduce((a, b) => a + b, 0) / len;\n  for (let i = len; i < tr.length; i++) {\n    atr = (atr * (len - 1) + tr[i]) / len; // Wilder smoothing\n  }\n  return atr;\n}\nfunction calcSpikeATR(candleArr, lookback) {\n  if (!candleArr || candleArr.length < 10) return 0;\n  const recent = candleArr.slice(-Math.min(lookback, candleArr.length));\n  const barMoves = recent.map(c => c.high - c.low);\n  barMoves.sort((a, b) => b - a);\n  // Take average of top 10% worst bars\n  const topN = Math.max(1, Math.floor(barMoves.length * 0.1));\n  const sum = barMoves.slice(0, topN).reduce((a, b) => a + b, 0);\n  return sum / topN;\n}\nfunction percentRank(arr, len, idx) {\n  const start = Math.max(0, idx - len + 1);\n  const window = arr.slice(start, idx + 1);\n  const val = arr[idx];\n  const below = window.filter(v => v < val).length;\n  return (below / window.length) * 100;\n}\nfunction sf(val, dp) {\n  if (val === null || val === undefined || isNaN(Number(val)) || !isFinite(Number(val))) return \'—\';\n  return Number(val).toFixed(dp === undefined ? 2 : dp);\n}\nfunction sn(val, fallback) {\n  const n = Number(val);\n  return (val === null || val === undefined || isNaN(n) || !isFinite(n)) ? (fallback || 0) : n;\n}\nfunction formatVol(v) {\n  const n = Number(v) || 0;\n  if (n >= 1e6) return sf(n/1e6,1)+\'M\';\n  if (n >= 1e3) return sf(n/1e3,0)+\'K\';\n  return Math.floor(n).toString();\n}\nfunction generateDemoCandles(symbol, tf, count) {\n  const now = Math.floor(Date.now() / 1000);\n  const bars = [];\n  const basePrice =\n    symbol === \'BOOM1000\' || symbol === \'CRASH1000\' ? 3000 :\n    symbol === \'BOOM500\'  || symbol === \'CRASH500\'  ? 3500 :\n    symbol === \'BOOM300\'  || symbol === \'CRASH300\'  ? 4000 :\n    symbol.includes(\'R_10\')  ? 5200 :\n    symbol.includes(\'R_25\')  ? 4800 :\n    symbol.includes(\'R_50\')  ? 4500 :\n    symbol.includes(\'R_75\')  ? 4200 :\n    symbol.includes(\'R_100\') ? 3900 :\n    symbol.includes(\'JD\')    ? 2000 : 1000;\n\n  let price = basePrice;\n  const vltMap = {\n    R_10:0.0008, R_25:0.002, R_50:0.005, R_75:0.0085, R_100:0.012,\n    BOOM1000:0.004, BOOM500:0.005, BOOM300:0.006,\n    CRASH1000:0.004, CRASH500:0.005, CRASH300:0.006,\n    STPRNG:0.001,\n    JD10:0.006,JD25:0.009,JD50:0.012,JD75:0.015,JD100:0.018,\n    \'1HZ10V\':0.001,\'1HZ100V\':0.014,\n  };\n  const vlt = vltMap[symbol] || 0.008;\n\n  // Boom: mostly rises, occasional sharp spike DOWN; Crash: opposite\n  const isBoom  = symbol.includes(\'BOOM\');\n  const isCrash = symbol.includes(\'CRASH\');\n  // Spike probability per bar\n  const spikeProb = isBoom ? 0.003 : isCrash ? 0.003 : 0;\n  // Spike magnitude (multiplier of ATR)\n  const spikeMag  = isBoom ? -0.08 : 0.08; // Boom spikes down, Crash spikes up\n\n  const dp = symbol.includes(\'R_10\') || symbol.includes(\'1HZ10V\') ? 3 : 2;\n  let trendBias = 0, trendBarsLeft = 0;\n\n  for (let i = count - 1; i >= 0; i--) {\n    if (trendBarsLeft <= 0) {\n      // Boom/Crash trend strongly in one direction between spikes\n      if (isBoom)  trendBias = 0.0015 + Math.random() * 0.001;  // upward drift\n      else if (isCrash) trendBias = -(0.0015 + Math.random() * 0.001); // downward drift\n      else trendBias = (Math.random() - 0.5) * 0.003;\n      trendBarsLeft = Math.floor(Math.random() * 40) + 10;\n    }\n    trendBarsLeft--;\n\n    let baseMove = (Math.random() - 0.5 + trendBias) * vlt;\n\n    // Inject spike bar\n    const isSpike = spikeProb > 0 && Math.random() < spikeProb;\n    if (isSpike) {\n      baseMove = spikeMag * (0.5 + Math.random() * 0.5);\n      trendBarsLeft = 0; // reset trend after spike\n    }\n\n    const range = Math.abs(baseMove) * price + price * vlt * 0.5;\n    const open  = price;\n    const close = price * (1 + baseMove);\n    const high  = Math.max(open, close) + Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const low   = Math.min(open, close) - Math.random() * range * (isSpike ? 0.1 : 0.5);\n    const movePct  = Math.abs(close - open) / open;\n    const volMult  = isSpike ? 8 + Math.random() * 4 : (Math.random() < 0.05 ? 3 + Math.random() * 4 : 1);\n    const normalVol = Math.round(movePct * 100000 * (0.5 + Math.random()) * volMult);\n    bars.push({\n      time: now - i * tf,\n      open: parseFloat(open.toFixed(dp)), high: parseFloat(high.toFixed(dp)),\n      low: parseFloat(low.toFixed(dp)),   close: parseFloat(close.toFixed(dp)),\n      volume: Math.max(100, Math.min(99999, normalVol)),\n    });\n    price = close;\n  }\n  return bars;\n}\nfunction analyseCandles(candleArr, symId) {\n  if (candleArr.length < 50) return null;\n  const savedSym = currentSymbol;\n  currentSymbol = symId; // for getDP / getSymbolVolScale\n  const n = candleArr.length;  const closes = candleArr.map(c => c.close);\n  const highs  = candleArr.map(c => c.high);\n  const lows   = candleArr.map(c => c.low);\n  const opens  = candleArr.map(c => c.open);\n  const vols   = candleArr.map(c => c.volume);\n\n  // Momentum Z-Score\n  const changes = closes.map((c, i) => i > 0 ? c - closes[i-1] : 0);\n  const avgChange = sma(changes, 50);\n  const stdChange = stdev(changes, 50);\n  const momentumZ = stdChange[n-1] !== 0 ? (changes[n-1] - avgChange[n-1]) / stdChange[n-1] : 0;\n\n  // Volume stats — pre-compute percentile ranks for all bars (O(n log n) once)\n  const volPctRank = percentRank(vols, 100, n-1);\n  const _volRankCache = new Float32Array(n);\n  { const _sorted = vols.slice().sort((a,b) => a-b);\n    for (let _i = 0; _i < n; _i++) {\n      const _v = vols[_i]; let _lo2 = 0, _hi2 = _sorted.length;\n      while (_lo2 < _hi2) { const _m = (_lo2+_hi2)>>1; if (_sorted[_m] < _v) _lo2=_m+1; else _hi2=_m; }\n      _volRankCache[_i] = _lo2 / _sorted.length * 100;\n    }\n  }\n  const volSMA = sma(vols, 100);\n  const volSTD = stdev(vols, 100);\n  const volZScore = volSTD[n-1] !== 0 ? (vols[n-1] - volSMA[n-1]) / volSTD[n-1] : 0;\n\n  // ATR (Wilder, proper period) — must use candleArr NOT global candles\n  const atr = calcATR(candleArr, CFG.atrLen);\n  const atrPct = closes[n-1] > 0 ? (atr / closes[n-1]) * 100 : 0;\n\n\n  // ── Spike Filter (Jump/Boom/Crash protection) ─────────────\n  // A bar is a spike if its range > 3× the 20-bar average range.\n  // Spike bars are excluded from MSB and OB detection.\n  const barRanges = candleArr.map(c => c.high - c.low);\n  const spikeFlags = barRanges.map((r, i) => {\n    if (i < 20) return false;\n    const avgRange = barRanges.slice(i - 20, i).reduce((a, b) => a + b, 0) / 20;\n    return r > avgRange * 3.0;\n  });\n\n  // Pivot Detection\n  const pLen = CFG.pivotLen;\n  const pivotHighs = [], pivotLows = [];\n  for (let i = pLen; i < n - pLen; i++) {\n    let isHigh = true, isLow = true;\n    for (let j = i - pLen; j <= i + pLen; j++) {\n      if (j === i) continue;\n      if (highs[j] >= highs[i]) isHigh = false;\n      if (lows[j]  <= lows[i])  isLow  = false;\n    }\n    if (isHigh && !spikeFlags[i]) pivotHighs.push({ idx: i, val: highs[i] });\n    if (isLow  && !spikeFlags[i]) pivotLows.push({ idx: i, val: lows[i] });\n  }\n\n  // MSB Detection\n  const msbBull = [], msbBear = [];\n  let lastPH = null, lastPL = null, prevPH = null, prevPL = null;\n\n  for (let i = 1; i < n; i++) {\n    const newPH = pivotHighs.find(p => p.idx === i - pLen);\n    const newPL = pivotLows.find(p => p.idx === i - pLen);\n    if (newPH) { prevPH = lastPH; lastPH = newPH; }\n    if (newPL) { prevPL = lastPL; lastPL = newPL; }\n    if (!lastPH || !lastPL) continue;\n    const mZ = stdChange[i] !== 0 ? (changes[i] - avgChange[i]) / stdChange[i] : 0;\n    if (closes[i] > lastPH.val && closes[i-1] <= lastPH.val && mZ > CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPH && lastPH.val > prevPH.val;\n      const volConfBull = volPctRank >= 45;\n      msbBull.push({ idx: i, level: lastPH.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bull\', volConfirmed: volConfBull });\n    }\n    if (closes[i] < lastPL.val && closes[i-1] >= lastPL.val && mZ < -CFG.msbZScore && !spikeFlags[i]) {\n      const isCHoCH = prevPL && lastPL.val < prevPL.val;\n      const volConfBear = volPctRank >= 45;\n      msbBear.push({ idx: i, level: lastPL.val, type: isCHoCH ? \'CHoCH\' : \'BOS\', dir: \'bear\', volConfirmed: volConfBear });\n    }\n  }\n\n  // OB Detection\n  const localObArray = [];\n  for (const msb of [...msbBull, ...msbBear]) {\n    const isBull = msb.dir === \'bull\';\n    let obIdx = -1;\n    for (let k = 1; k <= CFG.obLookback; k++) {\n      const ci = msb.idx - k;\n      if (ci < 0) break;\n      if ((isBull && closes[ci] < opens[ci]) || (!isBull && closes[ci] > opens[ci])) { obIdx = ci; break; }\n    }\n    if (obIdx < 0) continue;\n\n    const obTop  = highs[obIdx];\n    const obBot  = lows[obIdx];\n    const obSize = obTop - obBot;\n    const bodyRatio = obSize > 0 ? Math.abs(closes[obIdx] - opens[obIdx]) / obSize : 0.5;\n    const volPct = _volRankCache[obIdx] || 0;\n    const mZi = stdChange[obIdx] !== 0 ? (changes[obIdx] - avgChange[obIdx]) / stdChange[obIdx] : 0;\n    const vZi = volSTD[obIdx] !== 0 ? (vols[obIdx] - volSMA[obIdx]) / volSTD[obIdx] : 0;\n\n    // FIX: normalised score, capped properly\n    const rawScore =\n      Math.min(Math.abs(mZi), 4) * 15 +\n      volPct * 0.4 +\n      bodyRatio * 20 +\n      Math.min(vZi, 3) * 5;\n    const score = Math.min(100, rawScore);\n    const ageBars = n - 1 - obIdx;\n    const ageDecay = Math.max(0, 1 - Math.floor(ageBars / 20) * 0.20); // -20% per 20 bars\n    const isHPZ = (score * ageDecay) >= CFG.hpzThreshold;\n\n    const overlaps = localObArray.some(o =>\n      ((obTop <= o.top && obTop >= o.bottom) || (obBot <= o.top && obBot >= o.bottom)));\n    if (overlaps) continue;\n\n    let touchCount = 0, mitigated = false, mitigatedAt = -1;\n    for (let j = obIdx + 1; j < n; j++) {\n      const entered = isBull ? (lows[j] <= obTop && lows[j] >= obBot) : (highs[j] >= obBot && highs[j] <= obTop);\n      if (entered) touchCount++;\n      const mit = isBull ? lows[j] < obBot : highs[j] > obTop;\n      if (mit) { mitigated = true; mitigatedAt = j; break; }\n    }\n\n    localObArray.push({\n      idx: obIdx, top: obTop, bottom: obBot, poc: (obTop + obBot) / 2,\n      isBull, score: parseFloat((score * ageDecay).toFixed(1)), rawScore: score, ageBars, isHPZ, mitigated, mitigatedAt, touchCount,\n      msbType: msb.type, barTime: candleArr[obIdx].time,\n    });\n  }\n  // Only keep OBs that are at least pLen bars old (confirmed, not forming)\n  const finalObArray = localObArray.filter(o => o.idx < n - pLen).slice(-CFG.maxOBs);\n\n  // ═══════════════════════════════════════════════════════════\n  // FIX: Future Swing — rebuilt from scratch each call\n  // Uses pivot pairs (PH-PL or PL-PH) to compute swing %\n  // ═══════════════════════════════════════════════════════════\n  const swingPcts = [];\n  const allPivots = [\n    ...pivotHighs.map(p => ({ ...p, type: \'H\' })),\n    ...pivotLows.map(p => ({ ...p, type: \'L\' })),\n  ].sort((a, b) => a.idx - b.idx);\n\n  for (let k = 1; k < allPivots.length; k++) {\n    const prev = allPivots[k - 1];\n    const curr = allPivots[k];\n    if (prev.type === curr.type) continue; // skip same-type\n    // Only include "meaningful" swings — filter micro-noise\n    if (curr.idx - prev.idx < 2) continue;\n    let pct;\n    if (prev.type === \'L\' && curr.type === \'H\') {\n      pct = (curr.val - prev.val) / prev.val * 100; // bull swing\n    } else {\n      pct = (prev.val - curr.val) / curr.val * 100; // bear swing (positive %)\n    }\n    // Filter out implausibly large or near-zero swings\n    if (Math.abs(pct) > 0.01 && Math.abs(pct) < 30) {\n      swingPcts.push({ pct, bullish: prev.type === \'L\', fromIdx: prev.idx, toIdx: curr.idx });\n    }\n  }\n\n  // Keep last N samples\n  const recentSwings = swingPcts.slice(-CFG.swingSamples);\n  const absPcts = recentSwings.map(s => Math.abs(s.pct));\n  const avgSwingPct = absPcts.length > 0 ? absPcts.reduce((a, b) => a + b, 0) / absPcts.length : 0;\n  const minSwingPct = absPcts.length > 0 ? Math.min(...absPcts) : 0;\n  const maxSwingPct = absPcts.length > 0 ? Math.max(...absPcts) : 0;\n\n  // Determine next expected direction from last pivot pair\n  let fsDir = null, fsTarget = null, fsFromPrice = null, fsFromIdx = null;\n  const lastPivH = pivotHighs[pivotHighs.length - 1];\n  const lastPivL = pivotLows[pivotLows.length - 1];\n\n  if (lastPivH && lastPivL) {\n    const currentP = closes[n - 1];\n    if (lastPivH.idx > lastPivL.idx) {\n      // Last confirmed swing ended at a HIGH → next expected move: DOWN\n      fsDir = \'bear\';\n      fsFromPrice = lastPivH.val;\n      fsFromIdx = lastPivH.idx;\n      // Target = project DOWN from the recent pivot high\n      fsTarget = lastPivH.val * (1 - avgSwingPct / 100);\n      // Sanity: target must be below current price for a bear setup\n      if (fsTarget >= currentP) fsTarget = currentP * (1 - avgSwingPct / 100);\n    } else {\n      // Last confirmed swing ended at a LOW → next expected move: UP\n      fsDir = \'bull\';\n      fsFromPrice = lastPivL.val;\n      fsFromIdx = lastPivL.idx;\n      fsTarget = lastPivL.val * (1 + avgSwingPct / 100);\n      // Sanity: target must be above current price for a bull setup\n      if (fsTarget <= currentP) fsTarget = currentP * (1 + avgSwingPct / 100);\n    }\n  }\n\n  // Bias + buy/sell vol\n  const lookback50 = 50;\n  const recentBull = msbBull.filter(m => m.idx >= n - lookback50).length;\n  const recentBear = msbBear.filter(m => m.idx >= n - lookback50).length;\n\n  let buyVolSum = 0, sellVolSum = 0;\n  for (const c of candleArr.slice(-50)) {\n    if (c.close > c.open) buyVolSum += c.volume;\n    else sellVolSum += c.volume;\n  }\n\n  // Trend strength: ratio of dominant bias MSBs\n  const totalMSB50 = recentBull + recentBear;\n  const trendStrength = totalMSB50 > 0 ? Math.max(recentBull, recentBear) / totalMSB50 : 0.5;\n\n  const rsi = calcRSI(closes, 14);\n  const spikeAtr = calcSpikeATR(candleArr, 100);\n\n  // ── EMA 20 / 50 / 200 ─────────────────────────────────────\n  const ema20  = calcEMA(closes, 20);\n  const ema50  = calcEMA(closes, 50);\n  const ema200 = calcEMA(closes, 200);\n  const emaTrend = ema20[n-1] > ema50[n-1] && ema50[n-1] > ema200[n-1] ? \'bull\'\n                 : ema20[n-1] < ema50[n-1] && ema50[n-1] < ema200[n-1] ? \'bear\' : \'mixed\';\n\n  // ── Fair Value Gaps (FVG / Imbalance) ─────────────────────\n  // A bull FVG: candle[i-2].high < candle[i].low  (gap up)\n  // A bear FVG: candle[i-2].low  > candle[i].high (gap down)\n  const fvgZones = [];\n  for (let i = 2; i < n; i++) {\n    if (lows[i] > highs[i-2]) {\n      // Bull FVG\n      fvgZones.push({ top: lows[i], bottom: highs[i-2], isBull: true, idx: i, filled: false });\n    } else if (highs[i] < lows[i-2]) {\n      // Bear FVG\n      fvgZones.push({ top: lows[i-2], bottom: highs[i], isBull: false, idx: i, filled: false });\n    }\n  }\n  // Check if each FVG has been filled (price returned into zone)\n  for (const fvg of fvgZones) {\n    for (let j = fvg.idx + 1; j < n; j++) {\n      if (lows[j] <= fvg.top && highs[j] >= fvg.bottom) { fvg.filled = true; break; }\n    }\n  }\n  // Keep only last 20 unfilled FVGs\n  const activeFVGs = fvgZones.filter(f => !f.filled).slice(-20);\n\n  // ── Liquidity Sweeps ──────────────────────────────────────\n  // Sweep: wick breaks a recent pivot level but candle closes back inside\n  const liqSweeps = [];\n  for (let i = pLen + 1; i < n; i++) {\n    // Check if this bar\'s high swept a recent pivot high but closed below it (bear trap)\n    const recentPH = pivotHighs.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const ph of recentPH) {\n      if (highs[i] > ph.val && closes[i] < ph.val) {\n        liqSweeps.push({ idx: i, level: ph.val, dir: \'bear\', type: \'SWEEP HIGH\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n    // Check if this bar\'s low swept a recent pivot low but closed above it (bull trap)\n    const recentPL = pivotLows.filter(p => p.idx >= i - 30 && p.idx < i);\n    for (const pl of recentPL) {\n      if (lows[i] < pl.val && closes[i] > pl.val) {\n        liqSweeps.push({ idx: i, level: pl.val, dir: \'bull\', type: \'SWEEP LOW\', barTime: candleArr[i].time });\n        break;\n      }\n    }\n  }\n  const recentSweeps = liqSweeps.slice(-10);\n\n\n  // ── MTF OB Stack detection (4H confluence) ───────────────\n  const _htfKey4H = symId + 14400;\n  const _htfC4H   = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_htfKey4H] : null;\n  let _htfOBs4H   = [];\n  // Use cached 4H OB analysis — recompute only when 4H candle cache changes\n  const _htfCacheKey = symId + \'_htf4H_obs\';\n  if (typeof _scanCandleCache !== \'undefined\') {\n    if (!_scanCandleCache[_htfCacheKey] && _htfC4H && _htfC4H.length >= 50) {\n      try {\n        const _htfR = analyseCandles(_htfC4H, symId);\n        if (_htfR) _scanCandleCache[_htfCacheKey] = _htfR.activeOBs || [];\n      } catch(_e) {}\n    }\n    _htfOBs4H = _scanCandleCache[_htfCacheKey] || [];\n  }\n  const activeOBsFinal = finalObArray.filter(o => !o.mitigated).map(ob => {\n    const stacked = _htfOBs4H.find(h =>\n      (ob.top >= h.bottom && ob.top <= h.top) || (ob.bottom >= h.bottom && ob.bottom <= h.top)\n    );\n    return Object.assign({}, ob, { mtfStack: !!stacked, htfOBScore: stacked ? stacked.score : 0 });\n  });\n\n  // S/R LEVEL ENGINE — cluster + touch-count based (cached per candle count)\n  // ══════════════════════════════════════════════════════════\n  let srLevels = [], srSupport = [], srResistance = [], nearestSup = null, nearestRes = null, srZone = \'OPEN\';\n  {\n    const _srKey    = symId + \'_sr_\' + n;\n    const _srCached = (typeof _scanCandleCache !== \'undefined\') ? _scanCandleCache[_srKey] : null;\n    if (_srCached) {\n      // Fast path: reclassify cached clusters against current price only\n      const _cp = closes[n - 1];\n      srLevels = _srCached.map(s => Object.assign({}, s, {\n        isSupport: s.price <= _cp,\n        dist: Math.abs(s.price - _cp),\n      })).sort((a, b) => a.dist - b.dist).slice(0, 16);\n    } else {\n      // Full compute: cluster pivots → count touches → build levels\n      const srCandidates = [\n        ...pivotHighs.map(p => p.val),\n        ...pivotLows.map(p => p.val),\n      ];\n      const srClusterZone = atr * 0.6;\n      const srClusters = [];\n      for (const val of srCandidates) {\n        const existing = srClusters.find(c => Math.abs(c.price - val) <= srClusterZone);\n        if (existing) {\n          existing.price = (existing.price * existing.count + val) / (existing.count + 1);\n          existing.count++;\n        } else {\n          srClusters.push({ price: val, count: 1, touches: 0 });\n        }\n      }\n      const srTouchZone = atr * 0.8;\n      for (const cl of srClusters) {\n        cl.touches = 0;\n        for (let i = 0; i < n; i++) {\n          if (highs[i] >= cl.price - srTouchZone && lows[i] <= cl.price + srTouchZone) cl.touches++;\n        }\n      }\n      const _cp2 = closes[n - 1];\n      srLevels = srClusters\n        .filter(c => c.touches >= 2)\n        .map(c => ({\n          price:     parseFloat(c.price.toFixed(6)),\n          touches:   c.touches,\n          strong:    c.touches >= 3,\n          isSupport: c.price <= _cp2,\n          dist:      Math.abs(c.price - _cp2),\n        }))\n        .sort((a, b) => a.dist - b.dist)\n        .slice(0, 16);\n      // Cache for subsequent ticks within the same bar\n      if (typeof _scanCandleCache !== \'undefined\') {\n        _scanCandleCache[_srKey] = srLevels.map(s => ({ price: s.price, touches: s.touches, strong: s.strong }));\n      }\n    }\n    // Shared post-processing for both paths\n    srSupport    = srLevels.filter(s =>  s.isSupport).sort((a, b) => b.price - a.price);\n    srResistance = srLevels.filter(s => !s.isSupport).sort((a, b) => a.price - b.price);\n    nearestSup   = srSupport[0]    || null;\n    nearestRes   = srResistance[0] || null;\n    if (nearestSup && nearestRes) {\n      const _sd = closes[n-1] - nearestSup.price;\n      const _rd = nearestRes.price - closes[n-1];\n      if      (_sd <= atr * 1.2) srZone = \'AT SUPPORT\';\n      else if (_rd <= atr * 1.2) srZone = \'AT RESIST\';\n      else                        srZone = \'MID RANGE\';\n    }\n  }\n\n  currentSymbol = savedSym; // restore before returning\n  return {\n    symId, rsi, spikeAtr, candleArr,\n    ema20, ema50, ema200, emaTrend,\n    activeFVGs, recentSweeps,\n    momentumZ, volPctRank, volZScore, atr, atrPct,\n    msbBull, msbBear, recentBull, recentBear,\n    totalBullMSBs: msbBull.length, totalBearMSBs: msbBear.length,\n    activeOBs: activeOBsFinal,\n    buyVol: buyVolSum, sellVol: sellVolSum,\n    recentSwings, avgSwingPct, minSwingPct, maxSwingPct,\n    fsDir, fsTarget, fsFromPrice, fsFromIdx,\n    currentPrice: closes[n-1],\n    trendStrength, n,\n    srLevels, srSupport, srResistance, nearestSup, nearestRes, srZone,\n    spikeFlags,\n    spikeCount: spikeFlags.filter(Boolean).length,\n  };\n}\nfunction calcSLTP(r) {\n  const price   = r.currentPrice;\n  const atr     = r.atr;\n  const active  = r.activeOBs || [];\n  const profile = getSymbolProfile(r.symId);\n\n  if (!price || !atr || atr <= 0) return null;\n\n  // ══════════════════════════════════════════════════════════\n  // THE 5-GATE ENTRY SYSTEM\n  // Gates 1-4 are HARD gates — all must pass for a trade.\n  // Gate 5 is a WARNING only — shown but doesn\'t block.\n  // This ensures trades show regularly while keeping quality.\n  // ══════════════════════════════════════════════════════════\n\n  const isBullBias = r.recentBull >= r.recentBear;\n  const isBull     = isBullBias;\n  const dir        = isBull ? \'LONG\' : \'SHORT\';\n  const failReasons = [];\n  const warnReasons = [];\n\n  // ── GATE 1: EMA trend alignment ───────────────────────────\n  // EMA20 vs EMA50 must agree with bias direction.\n  // (Not requiring all 3 EMAs — that\'s too strict for ranging markets)\n  const ema20val = r.ema20 ? r.ema20[r.n - 1] : null;\n  const ema50val = r.ema50 ? r.ema50[r.n - 1] : null;\n  const emaShortAligned = ema20val && ema50val\n    ? (isBull ? ema20val > ema50val : ema20val < ema50val)\n    : true; // if no EMA data, don\'t block\n  if (!emaShortAligned) {\n    failReasons.push(\'GATE1: EMA 20 vs 50 not aligned with bias\');\n  }\n  // Full EMA alignment (20/50/200) shown as warning not hard block\n  if (r.emaTrend === \'mixed\') {\n    warnReasons.push(\'NOTE: EMA 200 mixed — partial trend alignment\');\n  }\n\n  // ── GATE 2: Bias + Future Swing agree ────────────────────\n  if (profile.trendBias === \'bull\' && !isBullBias) {\n    failReasons.push(\'GATE2: Boom requires BULL bias\');\n  } else if (profile.trendBias === \'bear\' && isBullBias) {\n    failReasons.push(\'GATE2: Crash requires BEAR bias\');\n  } else if (r.fsDir && r.fsDir !== (isBull ? \'bull\' : \'bear\')) {\n    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality\n    failReasons.push(\'GATE2: Future Swing is \' + r.fsDir + \' — conflicts with \' + (isBull?\'bull\':\'bear\') + \' bias\');\n  }\n\n  // ── GATE 3: Price near aligned OB OR strong S/R ──────────\n  const alignedOBs = active.filter(o => isBull ? o.isBull : !o.isBull);\n  const nearOB = alignedOBs.find(o => price <= o.top + atr * 2 && price >= o.bottom - atr * 2);\n  const insideOB = alignedOBs.find(o => price <= o.top && price >= o.bottom);\n  const srLevels = r.srLevels || [];\n  const nearSR = srLevels.find(s =>\n    s.strong && Math.abs(s.price - price) <= atr * 1.5 && (isBull ? s.isSupport : !s.isSupport)\n  );\n  const atSRLevel = !!nearSR;\n  if (!nearOB && !atSRLevel) {\n    if (alignedOBs.length === 0) {\n      warnReasons.push(\'NOTE G3: No \' + (isBull?\'bull\':\'bear\') + \' OB or S/R yet\');\n    } else {\n      const nearest = isBull\n        ? alignedOBs.sort((a,b) => b.top - a.top)[0]\n        : alignedOBs.sort((a,b) => a.bottom - b.bottom)[0];\n      const dist = isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2);\n      failReasons.push(\'GATE3: Price too far from OB/S/R (\' + dist + \' pts)\');\n    }\n  } else if (atSRLevel && !insideOB) {\n    warnReasons.push(\'NOTE: At S/R ×\' + nearSR.touches + \' — \' + (nearSR.isSupport?\'support\':\'resist\') + \' confluence\');\n  } else if (!insideOB) {\n    warnReasons.push(\'NOTE: Approaching OB — wait for touch\');\n  }\n\n\n  // ── BREAK & RETEST CHECK ─────────────────────────────────\n  // Verify price has actually touched the zone and started to reverse\n  // (at least 0.5 ATR bounce from zone edge) — prevents entries on\n  // first approach before any confirmation of zone respect.\n  let zoneRetestConfirmed = false;\n  const candlesForRetest = r.candleArr || [];\n  const nRt = candlesForRetest.length;\n  if (nearOB && nRt >= 3) {\n    const zoneTop = nearOB.top;\n    const zoneBot = nearOB.bottom;\n    // Look at last 5 bars for a touch + bounce\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = isBull ? (c.low <= zoneTop && c.low >= zoneBot - atr * 0.5)\n                              : (c.high >= zoneBot && c.high <= zoneTop + atr * 0.5);\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > c.low + atr * 0.5 : nextClose < c.high - atr * 0.5;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (atSRLevel && nRt >= 3) {\n    const srPrice = nearSR ? nearSR.price : 0;\n    for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {\n      const c = candlesForRetest[ri];\n      const touched = Math.abs((isBull ? c.low : c.high) - srPrice) <= atr * 0.6;\n      if (touched) {\n        const nextClose = candlesForRetest[ri + 1] ? candlesForRetest[ri + 1].close : price;\n        const bounced = isBull ? nextClose > srPrice + atr * 0.4 : nextClose < srPrice - atr * 0.4;\n        if (bounced) { zoneRetestConfirmed = true; break; }\n      }\n    }\n  } else if (!nearOB && !atSRLevel) {\n    zoneRetestConfirmed = true; // no zone — don\'t double-block\n  } else {\n    zoneRetestConfirmed = true; // if first approach, allow but warn\n    warnReasons.push(\'NOTE: Zone not yet retested — wait for bounce confirmation\');\n  }\n\n  // ── GATE 4: Minimum bias strength ────────────────────────\n  // At least 55% of recent MSBs must be in trade direction.\n  const biasTotal    = (r.recentBull + r.recentBear) || 1;\n  const biasStrength = Math.max(r.recentBull, r.recentBear) / biasTotal;\n  if (biasStrength < 0.50) {\n    failReasons.push(\'GATE4: Bias too weak (\' + sf(biasStrength*100,0) + \'%) — need 50%+\');\n  }\n\n  // ── GATE 5: Momentum (WARNING only — not a hard block) ────\n  const momentumOk = isBull ? sn(r.momentumZ) > -2.0 : sn(r.momentumZ) < 2.0;\n  if (!momentumOk) {\n    warnReasons.push(\'WARN G5: Momentum Z-Score weak (\' + sf(r.momentumZ,2) + \') — counter-momentum entry\');\n  }\n\n\n  // ── GATE 6: HTF Bias alignment (HARD block if 1H+4H both oppose) ─\n  // Uses cached HTF candles from _scanCandleCache.\n  // Only blocks if BOTH 1H and 4H are confirmed opposite to trade dir.\n  (function() {\n    const htfTFs = [3600, 14400]; // 1H, 4H\n    let opposingCount = 0;\n    for (const tf of htfTFs) {\n      const key = (r.symId || currentSymbol) + tf;\n      const htfC = _scanCandleCache[key];\n      if (!htfC || htfC.length < 50) continue;\n      const htfCloses = htfC.map(c => c.close);\n      const e20 = calcEMA(htfCloses, 20);\n      const e50 = calcEMA(htfCloses, 50);\n      const nn  = htfCloses.length - 1;\n      const htfBull = e20[nn] > e50[nn] && htfCloses[nn] > e50[nn];\n      const htfBear = e20[nn] < e50[nn] && htfCloses[nn] < e50[nn];\n      if (isBull && htfBear) opposingCount++;\n      if (!isBull && htfBull) opposingCount++;\n    }\n    if (opposingCount >= 2) {\n      failReasons.push(\'GATE6: HTF 1H+4H both oppose trade direction — structure conflict\');\n    } else if (opposingCount === 1) {\n      warnReasons.push(\'WARN G6: One HTF TF opposes — partial HTF conflict\');\n    }\n  })();\n\n  // ── RESULT ────────────────────────────────────────────────\n  if (failReasons.length > 0) {\n    return { blocked: true, failReasons, warnReasons, dir, isBull };\n  }\n\n  // All hard gates passed — proceed to SL/TP calculation\n\n  // Spike-aware distances\n  const spikeAtr = r.spikeAtr || atr * 2;\n  const spikeGuardDist = spikeAtr * profile.spikeGuard;\n  const minSlDist = Math.max(atr * 0.5, price * (profile.minSlPct / 100));\n  const maxSlDist = price * (profile.maxSlPct / 100);\n\n  let sl = null, slSources = [];\n\n  // A1: S/R structural SL — place beyond nearest strong S/R\n  const srLevs = r.srLevels || [];\n  if (isBull) {\n    const supBelow = srLevs.filter(s => s.isSupport && s.strong && s.price < price && (price - s.price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => b.price - a.price);\n    if (supBelow.length > 0) {\n      const cand = supBelow[0].price - atr * 0.3 - spikeGuardDist * 0.5;\n      const dist = price - cand;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  } else {\n    const resAbove = srLevs.filter(s => !s.isSupport && s.strong && s.price > price && (s.price - price) <= atr * profile.slAtrMult * 1.5).sort((a,b) => a.price - b.price);\n    if (resAbove.length > 0) {\n      const cand = resAbove[0].price + atr * 0.3 + spikeGuardDist * 0.5;\n      const dist = cand - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = cand; slSources = [\'SR+SPIKE\']; }\n    }\n  }\n\n  // A2: OB structural SL — place BEYOND full OB + spike guard\n  // IMPORTANT: only use OBs that are within 2x ATR of current price\n  // (distant OBs produce insane SL distances)\n  if (isBull) {\n    const bullOBs = active\n      .filter(o => o.isBull && o.top < price && (price - o.top) <= atr * 3)\n      .sort((a,b) => b.top - a.top);\n    if (bullOBs.length > 0) {\n      const ob = bullOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.bottom - extra;\n      const dist = price - candidate;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  } else {\n    const bearOBs = active\n      .filter(o => !o.isBull && o.bottom > price && (o.bottom - price) <= atr * 3)\n      .sort((a,b) => a.bottom - b.bottom);\n    if (bearOBs.length > 0) {\n      const ob = bearOBs[0];\n      const extra = (profile.type === \'jump\' || profile.type === \'boom\' || profile.type === \'crash\')\n        ? spikeGuardDist + atr * 0.3 : atr * 0.3;\n      const candidate = ob.top + extra;\n      const dist = candidate - price;\n      if (dist >= minSlDist && dist <= maxSlDist) { sl = candidate; slSources = [\'OB+SPIKE\']; }\n    }\n  }\n\n  // B: Swing pivot SL\n  if (sl === null && r.fsFromPrice) {\n    const pivotDist = Math.abs(price - r.fsFromPrice);\n    if (pivotDist <= maxSlDist) {\n      const extra = (profile.type === \'jump\') ? spikeGuardDist : atr * 0.3;\n      const candidate = isBull\n        ? Math.min(r.fsFromPrice, price) - extra\n        : Math.max(r.fsFromPrice, price) + extra;\n      const dist = Math.abs(price - candidate);\n      if (dist >= minSlDist && dist <= maxSlDist && (isBull ? candidate < price : candidate > price)) {\n        sl = candidate; slSources = [\'SWING+SPIKE\'];\n      }\n    }\n  }\n\n  // C: Profile ATR fallback (uses profile multiplier not generic 1.2)\n  if (sl === null) {\n    const atrDist = Math.min(atr * profile.slAtrMult + spikeGuardDist, maxSlDist);\n    sl = isBull ? price - atrDist : price + atrDist;\n    slSources = [\'ATR×\' + sf(profile.slAtrMult,1)];\n  }\n\n  // Enforce minimum\n  if (Math.abs(price - sl) < minSlDist) sl = isBull ? price - minSlDist : price + minSlDist;\n  if (isBull && sl >= price)  sl = price - minSlDist;\n  if (!isBull && sl <= price) sl = price + minSlDist;\n\n  const risk = Math.abs(price - sl);\n  if (risk <= 0) return null;\n\n  // TP calculation — max distance capped tightly by profile\n  const maxTpDist = Math.min(price * 0.08, atr * profile.tpAtrMult * 2.5);\n  let tp = null, tpSources = [];\n\n  // TP-A1: Snap to nearest strong S/R on reward side\n  if (tp === null) {\n    const srLevTP = r.srLevels || [];\n    if (isBull) {\n      const resAbove = srLevTP.filter(s => !s.isSupport && s.strong && s.price > price).sort((a,b) => a.price - b.price);\n      if (resAbove.length > 0) {\n        const dist = resAbove[0].price - price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = resAbove[0].price; tpSources = [\'SR×\' + resAbove[0].touches]; }\n      }\n    } else {\n      const supBelow = srLevTP.filter(s => s.isSupport && s.strong && s.price < price).sort((a,b) => b.price - a.price);\n      if (supBelow.length > 0) {\n        const dist = price - supBelow[0].price;\n        if (dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = supBelow[0].price; tpSources = [\'SR×\' + supBelow[0].touches]; }\n      }\n    }\n  }\n\n  if (r.fsTarget && r.fsDir === (isBull ? \'bull\' : \'bear\')) {\n    const onSide = isBull ? r.fsTarget > price : r.fsTarget < price;\n    const dist = Math.abs(r.fsTarget - price);\n    if (onSide && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = r.fsTarget; tpSources = [\'SWING\']; }\n  }\n  if (tp === null && r.avgSwingPct > 0.01) {\n    const proj = isBull ? price * (1 + r.avgSwingPct / 100) : price * (1 - r.avgSwingPct / 100);\n    const dist = Math.abs(proj - price);\n    if ((isBull ? proj > price : proj < price) && dist / risk >= CFG.minRR && dist <= maxTpDist) { tp = proj; tpSources = [\'PROJ\']; }\n  }\n  if (tp === null) {\n    if (isBull) {\n      const res = active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom);\n      if (res.length > 0 && (res[0].bottom - price) / risk >= CFG.minRR) { tp = res[0].bottom; tpSources = [\'NEXT-OB\']; }\n    } else {\n      const sup = active.filter(o => o.isBull && o.top < price).sort((a,b) => b.top - a.top);\n      if (sup.length > 0 && (price - sup[0].top) / risk >= CFG.minRR) { tp = sup[0].top; tpSources = [\'NEXT-OB\']; }\n    }\n  }\n  if (tp === null) {\n    tp = isBull ? price + Math.min(atr * profile.tpAtrMult, maxTpDist) : price - Math.min(atr * profile.tpAtrMult, maxTpDist);\n    tpSources = [\'ATR×\' + sf(profile.tpAtrMult,1)];\n  }\n\n  const minTP = isBull ? price + risk * CFG.minRR : price - risk * CFG.minRR;\n  if (isBull  && tp < minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n  if (!isBull && tp > minTP) { tp = minTP; tpSources = [\'MIN-RR\']; }\n\n  const reward = Math.abs(tp - price);\n  const rr     = reward / risk;\n  if (rr < CFG.minRR) return null;\n\n  // Confluence scoring\n  const bestOB = slSources[0] && slSources[0].startsWith(\'OB\')\n    ? (isBull ? active.filter(o => o.isBull  && o.top    < price).sort((a,b) => b.top    - a.top)[0]\n             : active.filter(o => !o.isBull && o.bottom > price).sort((a,b) => a.bottom - b.bottom)[0])\n    : null;\n\n  const srUsedSL = slSources[0] === \'SR+SPIKE\';\n  const srUsedTP = tpSources[0] && tpSources[0].startsWith(\'SR\');\n  const srTouches = srUsedTP ? parseInt((tpSources[0]||\'\').replace(\'SR×\',\'\')) || 0\n    : srUsedSL ? ((r.srLevels||[]).find(s => s.isSupport===isBull && s.strong)||{}).touches||0 : 0;\n  const biasTotalConf = (r.recentBull + r.recentBear) || 1;\n  const biasScore   = Math.round((isBull ? r.recentBull : r.recentBear) / biasTotalConf * 20);\n  const obScore2    = bestOB ? Math.round(20 * bestOB.score / 100) : 0;\n  const srScore     = (srUsedSL || srUsedTP) ? Math.min(15, (srTouches||2) * 3) : 0;\n  const slScore     = (risk <= atr * profile.slAtrMult + spikeGuardDist + 0.001) ? 12 : 0;\n  const swingScore  = (tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\') ? 18 : 0;\n  const rrScore     = Math.min(18, Math.round((rr / 3) * 18));\n  const fsBonus     = (r.fsDir === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const emaBonus    = (r.emaTrend === (isBull ? \'bull\' : \'bear\')) ? 8 : 0;\n  const sweepBonus  = (r.recentSweeps && r.recentSweeps.some(s => s.dir === (isBull ? \'bull\' : \'bear\'))) ? 5 : 0;\n  const profileBonus = profile.trendBias === (isBull ? \'bull\' : \'bear\') ? 8 : 0;\n  const mtfBonus = (bestOB && bestOB.mtfStack) ? 15 : 0;\n  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + sweepBonus + profileBonus + mtfBonus);\n\n  const components = {\n    ob:    { active: !!bestOB,            label: \'OB\',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },\n    sr:    { active: srUsedSL||srUsedTP,  label: \'S/R\',   score: srScore > 0 ? Math.round(srScore/15*100) : 0, touches: srTouches },\n    atr:   { active: true,                label: \'ATR\',   score: slScore > 0 ? 100 : 50 },\n    swing: { active: tpSources[0] === \'SWING\' || tpSources[0] === \'PROJ\', label: \'SWING\', score: Math.min(100, rr / 3 * 100) },\n  };\n\n  const basis = \'SL:\' + slSources.join(\'+\') + \' | TP:\' + tpSources.join(\'+\') + \' | \' + profile.type.toUpperCase();\n\n  const balance       = parseFloat(document.getElementById(\'accountBalance\')?.value) || 1000;\n  const riskPctRaw    = parseFloat(document.getElementById(\'riskPct\')?.value) || 1.0;\n  const riskPctCapped = Math.min(riskPctRaw, CFG.maxRiskPct);\n  const dollarRisk    = balance * (riskPctCapped / 100);\n  const slDistance    = Math.abs(price - sl);\n  const units         = slDistance > 0 ? dollarRisk / slDistance : 0;\n  const potentialProfit = units * reward;\n  const maxConsecLosses = dollarRisk > 0 ? Math.floor((balance * 0.1) / dollarRisk) : 0;\n\n  return {\n    dir, entry: price, sl, tp, rr, risk, reward,\n    basis, components, confluence,\n    slSources, tpSources,\n    obScore: bestOB ? bestOB.score : null,\n    isHPZ: bestOB ? bestOB.isHPZ : false,\n    dollarRisk, units, potentialProfit,\n    riskPct: riskPctCapped, balance, maxConsecLosses,\n    profileType: profile.type, spikeAtr,\n    warnReasons, insideOB: !!insideOB, atSRLevel: !!atSRLevel,\n  };\n}\n\n// Receive candle data + kick off scan\nself.onmessage = function(e) {\n  const { type, candleCache, minConf, minRR } = e.data;\n  if (type !== \'RUN\') return;\n\n  // Restore candle cache sent from main thread\n  if (candleCache) _scanCandleCache = candleCache;\n\n  const results = [];\n  const total = SCAN_SYMBOLS.length * SCAN_TFS.length;\n  let done = 0;\n\n  for (const s of SCAN_SYMBOLS) {\n    for (const tf of SCAN_TFS) {\n      done++;\n      try {\n        const key = s.id + tf;\n        if (!_scanCandleCache[key]) {\n          _scanCandleCache[key] = generateDemoCandles(s.id, tf, 500);\n        }\n        const cArr = _scanCandleCache[key];\n        if (!cArr || cArr.length < 50) continue;\n        const r = analyseCandles(cArr, s.id);\n        if (!r) continue;\n        const t = calcSLTP(r);\n        if (!t || t.blocked || t.confluence < (minConf||70) || t.rr < (minRR||1.3)) continue;\n        results.push({\n          sym:       s.id,\n          name:      s.name,\n          tf,\n          dir:       t.dir,\n          entry:     t.entry,\n          sl:        t.sl,\n          tp:        t.tp,\n          rr:        t.rr,\n          confluence: t.confluence,\n          insideOB:  t.insideOB,\n          atSRLevel: t.atSRLevel,\n          slSources: t.slSources,\n          tpSources: t.tpSources,\n          isHPZ:     t.isHPZ,\n          mtfStack:  t.components && t.components.ob && t.components.ob.mtfStack,\n          blocked:   false,\n        });\n      } catch (err) { /* skip */ }\n      // Post progress every 10 items\n      if (done % 10 === 0) self.postMessage({ type: \'PROGRESS\', done, total });\n    }\n  }\n\n  self.postMessage({ type: \'DONE\', results });\n};\n';
-  const blob = new Blob([workerSrc], { type: 'application/javascript' });
-  return new Worker(URL.createObjectURL(blob));
+// ═══════════════════════════════════════════════════════════════
+// CONTINUOUS SCANNER — main-thread chunked (no Web Worker / no CSP issues)
+// Processes one symbol×TF per setTimeout tick → zero UI blocking
+// ═══════════════════════════════════════════════════════════════
+function _runCScanChunked() {
+  if (!_cscanRunning) return;
+  const prog = document.getElementById('scanProgress');
+  const pairs = [];
+  for (const s of SCAN_SYMBOLS) {
+    for (const tf of SCAN_TFS) {
+      pairs.push({ sym: s.id, name: s.name, tf });
+    }
+  }
+  const total = pairs.length;
+  let idx = 0;
+  const results = [];
+
+  function processNext() {
+    if (!_cscanRunning) return;
+    if (idx >= total) {
+      if (prog) prog.textContent = 'AUTO done ' + new Date().toLocaleTimeString() + ' (' + results.length + ' setups)';
+      _lastScanTime = Date.now(); // keepalive stamp
+
+      // Build live key set — only fire TG for real candle data
+      const _liveKeys = new Set();
+      for (const s of SCAN_SYMBOLS) {
+        for (const tf of SCAN_TFS) {
+          const key = s.id + tf;
+          if (_liveScanResults[key] && _liveScanResults[key].length >= 50) _liveKeys.add(key);
+          if (isConnected && s.id === currentSymbol && tf === currentTF && candles.length >= 50) _liveKeys.add(key);
+        }
+      }
+
+      for (const item of results) {
+        item.warnReasons = item.warnReasons || [];
+        item.bestPattern = item.bestPattern || null;
+        item.atTrendLine = item.atTrendLine || false;
+        item.nearTL      = item.nearTL      || null;
+        item.components  = item.components  || { ob: { mtfStack: item.mtfStack || false } };
+        if (_liveKeys.has(item.sym + item.tf)) {
+          maybeSendTG(item, item.sym, item.tf);
+        }
+        addAlert('\uD83C\uDFAF ' + item.sym + ' ' + tfLabel(item.tf) + ' ' + item.dir + ' ' + item.confluence + '% conf', item.dir === 'LONG' ? 'bull' : 'bear');
+      }
+
+      // Schedule next full cycle
+      _lastScanTime = Date.now();
+      if (_cscanRunning) _cscanTimer = setTimeout(_runCScanChunked, CSCAN_MS);
+      return;
+    }
+
+    const { sym, name, tf } = pairs[idx++];
+    if (prog && idx % 10 === 0) prog.textContent = 'AUTO ' + idx + '/' + total;
+
+    try {
+      const key = sym + tf;
+      if (_liveScanResults[key] && _liveScanResults[key].length >= 50) {
+        _scanCandleCache[key] = _liveScanResults[key];
+      } else if (isConnected && sym === currentSymbol && tf === currentTF && candles.length >= 50) {
+        _scanCandleCache[key] = candles;
+      }
+      const cArr = _scanCandleCache[key]; // live data only — no demo fallback
+      if (cArr && cArr.length >= 50) {
+        const _savedSym = currentSymbol;
+        currentSymbol = sym;
+        let r;
+        try { r = analyseCandles(cArr, sym); } catch(e) { r = null; }
+        currentSymbol = _savedSym;
+        if (r) {
+          const t = calcSLTP(r);
+          if (t && !t.blocked && t.confluence >= 70 && t.rr >= CFG.minRR) {
+            results.push({
+              sym, name, tf,
+              dir: t.dir, entry: t.entry, sl: t.sl, tp: t.tp,
+              rr: t.rr, confluence: t.confluence,
+              insideOB: t.insideOB, atSRLevel: t.atSRLevel,
+              slSources: t.slSources, tpSources: t.tpSources,
+              isHPZ: t.isHPZ, mtfStack: t.components && t.components.ob && t.components.ob.mtfStack,
+              warnReasons: t.warnReasons || [], blocked: false,
+            });
+          }
+        }
+      }
+    } catch(e) { /* skip */ }
+
+    setTimeout(processNext, 0);
+  }
+
+  if (prog) prog.textContent = 'AUTO scanning…';
+  setTimeout(processNext, 0);
 }
+
+function _buildCScanWorker() { return null; } // stub — blob workers CSP-blocked
 
 function toggleCScan() {
   if (_cscanRunning) {
@@ -4897,54 +5955,42 @@ function toggleCScan() {
 }
 
 function _runCScanWorker() {
-  if (!_cscanRunning) return;
-  const prog = document.getElementById('scanProgress');
-
-  // Terminate any existing worker
-  if (_cscanWorker) { _cscanWorker.terminate(); _cscanWorker = null; }
-
-  // Snapshot the candle cache to send to worker (only primitive data)
-  // Filter to only symbol+TF keys (skip internal cache keys like _sr_N and _htf4H)
-  const cacheSnap = {};
-  for (const [k, v] of Object.entries(_scanCandleCache)) {
-    if (Array.isArray(v) && v.length > 0 && typeof v[0] === 'object' && 'time' in v[0]) {
-      cacheSnap[k] = v;
-    }
-  }
-
-  _cscanWorker = _buildCScanWorker();
-
-  _cscanWorker.onmessage = function(e) {
-    const { type, done, total, results } = e.data;
-    if (type === 'PROGRESS') {
-      if (prog) prog.textContent = 'AUTO ' + done + '/' + total;
-    } else if (type === 'DONE') {
-      if (prog) prog.textContent = 'AUTO done ' + new Date().toLocaleTimeString() + ' (' + results.length + ' setups)';
-      // Process results on main thread (lightweight — just TG sends)
-      for (const item of results) {
-        maybeSendTG(item, item.sym, item.tf);
-        addAlert('\uD83C\uDFAF ' + item.sym + ' ' + tfLabel(item.tf) + ' ' + item.dir + ' ' + item.confluence + '% conf', item.dir==='LONG'?'bull':'bear');
-      }
-      // Schedule next cycle
-      if (_cscanRunning) {
-        _cscanTimer = setTimeout(_runCScanWorker, CSCAN_MS);
-      }
-    }
-  };
-
-  _cscanWorker.onerror = function(e) {
-    console.warn('CScan worker error:', e.message);
-    // Fallback: schedule retry
-    if (_cscanRunning) _cscanTimer = setTimeout(_runCScanWorker, CSCAN_MS * 2);
-  };
-
-  _cscanWorker.postMessage({ type: 'RUN', candleCache: cacheSnap, minConf: 70, minRR: CFG.minRR });
+  // Blob workers are CSP-blocked on claudeusercontent.com — use chunked main-thread scanner
+  _runCScanChunked();
 }
 
 function testTG() {
-  const msg = '✅ <b>MSB·OB·FS ULTRA v36 — TEST</b>\n\nTelegram alerts working!\n⏰ ' + new Date().toLocaleTimeString();
+  const msg = '✅ <b>MSB·OB·FS ULTRA v36.6 — TEST</b>\n\nTelegram alerts working!\n⏰ ' + new Date().toLocaleTimeString();
   sendTG(msg);
   addAlert('TG test sent — check Telegram', 'bull');
+}
+
+// Mobile panel drawer — clones left+right panel content for small screens
+let _mobilePanelsOpen = false;
+function toggleMobilePanels() {
+  _mobilePanelsOpen = !_mobilePanelsOpen;
+  const overlay = document.getElementById('mobile-panels-overlay');
+  if (!overlay) return;
+  overlay.classList.toggle('open', _mobilePanelsOpen);
+  if (_mobilePanelsOpen) {
+    // Clone panel content into mobile drawer
+    const target = document.getElementById('mobile-panel-content');
+    const left = document.getElementById('left-panel');
+    const right = document.getElementById('right-panel');
+    if (target && left && right) {
+      target.innerHTML = '';
+      const lClone = left.cloneNode(true);
+      lClone.removeAttribute('id');
+      lClone.style.display = 'block';
+      lClone.style.borderRight = 'none';
+      lClone.style.borderBottom = '1px solid var(--border-bright)';
+      const rClone = right.cloneNode(true);
+      rClone.removeAttribute('id');
+      rClone.style.display = 'block';
+      target.appendChild(lClone);
+      target.appendChild(rClone);
+    }
+  }
 }
 
 // Legacy alias — used by live scanner finish callback
@@ -5006,8 +6052,7 @@ function runHeatmap() {
     for (const tf of tfs) {
       try {
         const key = s.id + tf;
-        if (!_scanCandleCache[key]) _scanCandleCache[key] = generateDemoCandles(s.id, tf, 500);
-        const c = _scanCandleCache[key];
+        const c = _scanCandleCache[key]; // live data only — no demo fallback
         if (!c || c.length < 50) { res[s.id+'_'+tf] = null; continue; }
         const rr = analyseCandles(c, s.id);
         if (!rr) { res[s.id+'_'+tf] = null; continue; }
@@ -5015,8 +6060,12 @@ function runHeatmap() {
         res[s.id+'_'+tf] = t ? { conf: t.confluence||0, dir: t.dir, rr: t.rr, blocked: t.blocked } : null;
       } catch(e) { res[s.id+'_'+tf] = null; }
     }
-    // Yield to browser between each symbol
-    setTimeout(processNextSymbol, 0);
+    // Yield to browser between each symbol — use rIC for true idle scheduling
+    if (typeof requestIdleCallback !== 'undefined') {
+      requestIdleCallback(processNextSymbol, { timeout: 200 });
+    } else {
+      setTimeout(processNextSymbol, 0);
+    }
   }
 
   grid.innerHTML = header + '<div class="scan-status" style="grid-column:1/-1">Scanning...</div>';
@@ -5028,7 +6077,12 @@ function runHeatmap() {
 // ═══════════════════════════════════════════════════════════════
 function openTrade(t, sym) {
   if (!t || t.blocked) return;
-  _openTrades.push({ id: Date.now(), sym, dir: t.dir, entry: t.entry, sl: t.sl, tp: t.tp, risk: t.risk, units: t.units||0, time: new Date().toLocaleTimeString() });
+  // Always recompute units from current DOM balance/risk (worker may have used different values)
+  const _bal   = parseFloat(document.getElementById('accountBalance')?.value) || 1000;
+  const _rPct  = Math.min(parseFloat(document.getElementById('riskPct')?.value) || 1.0, CFG.maxRiskPct);
+  const _dRisk = _bal * (_rPct / 100);
+  const _units = t.risk > 0 ? _dRisk / t.risk : 0;
+  _openTrades.push({ id: Date.now(), sym, dir: t.dir, entry: t.entry, sl: t.sl, tp: t.tp, risk: t.risk, units: _units, time: new Date().toLocaleTimeString() });
   refreshPnL();
 }
 
@@ -5037,8 +6091,9 @@ function refreshPnL() {
   if (!el) return;
   if (!_openTrades.length) { el.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:8px">No open trades</div>'; return; }
   const cur = candles.length ? candles[candles.length-1].close : 0;
+  if (!cur) { el.innerHTML = '<div style="text-align:center;color:var(--text-dim);padding:8px">Waiting for price data...</div>'; return; }
   const dp  = getDP();
-  el.innerHTML = _openTrades.map((tr,i) => {
+  el.innerHTML = _openTrades.map((tr) => {
     const bull = tr.dir === 'LONG';
     const fpts = bull ? cur - tr.entry : tr.entry - cur;
     const fdol = tr.units > 0 ? fpts * tr.units : 0;
@@ -5047,17 +6102,53 @@ function refreshPnL() {
     const be   = bull ? cur >= tr.entry + tr.risk * 0.3 : cur <= tr.entry - tr.risk * 0.3;
     return '<div class="pnl-card ' + cls + '">' +
       '<div style="display:flex;justify-content:space-between">' +
-        '<span style="color:' + (bull?'var(--bull)':'var(--bear)') + '">' + tr.sym + ' ' + (bull?'\u25b2':'\u25bc') + ' ' + tr.time + '</span>' +
-        '<button onclick="_openTrades.splice(' + i + ',1);refreshPnL()" style="background:none;border:none;color:var(--text-dim);cursor:pointer">\u2715</button>' +
+        '<span style="color:' + (bull?'var(--bull)':'var(--bear)') + '">' + tr.sym + ' ' + (bull?'▲':'▼') + ' ' + tr.time + '</span>' +
+        '<button onclick="closeTrade(\'' + tr.id + '\')" style="background:none;border:none;color:var(--text-dim);cursor:pointer">✕</button>' +
       '</div>' +
       '<div style="display:flex;justify-content:space-between;margin-top:2px">' +
         '<span style="color:var(--text-dim)">Float</span>' +
         '<span style="color:' + col + '">' + (fpts>=0?'+':'') + sf(fpts,dp) + 'pts  $' + (fdol>=0?'+':'') + sf(fdol,2) + '</span>' +
       '</div>' +
-      (be ? '<div style="color:var(--cyan);font-size:8px;margin-top:2px">\u27f3 Move SL to BE now</div>' : '') +
+      (be ? '<div style="color:var(--cyan);font-size:8px;margin-top:2px">⟳ Move SL to BE now</div>' : '') +
     '</div>';
   }).join('');
 }
+
+function closeTrade(id) {
+  _openTrades = _openTrades.filter(t => String(t.id) !== String(id));
+  refreshPnL();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// SCANNER KEEPALIVE — restart immediately on tab focus/visibility
+// Browsers throttle/freeze setTimeout in background tabs.
+// On return: clear any stale timer and kick a new cycle instantly.
+// ═══════════════════════════════════════════════════════════════
+let _lastScanTime = 0;
+
+function _scanKeepalive() {
+  if (!_cscanRunning) return;
+  const now = Date.now();
+  // If more than CSCAN_MS has passed since last scan completed, run now
+  if (now - _lastScanTime >= CSCAN_MS) {
+    clearTimeout(_cscanTimer);
+    _cscanTimer = null;
+    _runCScanChunked();
+  }
+}
+
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden) _scanKeepalive();
+});
+
+window.addEventListener('focus', () => {
+  _scanKeepalive();
+});
+
+// Stamp hidden time so keepalive fires immediately on return
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) _lastScanTime = Date.now() - CSCAN_MS + 5000;
+});
 
 // ═══════════════════════════════════════════════════════════════
 // BOOT
@@ -5078,6 +6169,14 @@ window.addEventListener('load', () => {
       setTimeout(() => {
         if (chart && chart._resize) chart._resize();
         loadDemoData();
+        // Auto-start continuous scanner — runs every cycle without user action
+        if (!_cscanRunning) {
+          _cscanRunning = true;
+          const btn = document.getElementById('csBtn');
+          if (btn) { btn.textContent = '\u27f3 SCANNING'; btn.className = 'cs-badge cs-on'; }
+          _lastScanTime = 0;
+          _runCScanWorker();
+        }
       }, 150);
     });
   });
@@ -5124,5 +6223,516 @@ window.addEventListener('load', () => {
 <div id="loss-lockout-banner">
   ⛔ COOLDOWN: 3 consecutive losses — trading paused. <button onclick="resetLossLock()" style="background:none;border:1px solid var(--bear);color:var(--bear);font-family:var(--font-mono);font-size:9px;padding:1px 8px;cursor:pointer;margin-left:8px">RESET</button>
 </div>
+<!-- MOBILE PANEL OVERLAY -->
+<div id="mobile-panels-overlay" onclick="if(event.target===this)toggleMobilePanels()">
+  <div id="mobile-panel-drawer">
+    <div style="padding:8px 12px;border-bottom:1px solid var(--border-bright);display:flex;justify-content:space-between;align-items:center">
+      <span style="font-family:var(--font-display);font-size:9px;letter-spacing:2px;color:var(--cyan)">PANELS</span>
+      <button onclick="toggleMobilePanels()" style="background:none;border:none;color:var(--text-dim);cursor:pointer;font-size:14px">✕</button>
+    </div>
+    <div id="mobile-panel-content" style="padding:0"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MOBILE SHELL — visible on ≤ 768px
+     All logic runs in background via desktop #app
+════════════════════════════════════════════ -->
+<div id="mobile-shell">
+
+  <!-- Top bar -->
+  <div id="mob-topbar">
+    <div id="mob-logo">MSB·<span>ULTRA</span></div>
+    <select id="mob-symbol-select" onchange="onSymbolChange(this.value);mobSyncSelects()">
+      <option value="R_10">Vol 10</option>
+      <option value="R_25">Vol 25</option>
+      <option value="R_50">Vol 50</option>
+      <option value="R_75" selected>Vol 75</option>
+      <option value="R_100">Vol 100</option>
+      <option value="1HZ10V">Vol 10 1s</option>
+      <option value="1HZ25V">Vol 25 1s</option>
+      <option value="1HZ50V">Vol 50 1s</option>
+      <option value="1HZ75V">Vol 75 1s</option>
+      <option value="1HZ100V">Vol 100 1s</option>
+      <option value="BOOM1000">Boom 1000</option>
+      <option value="BOOM500">Boom 500</option>
+      <option value="BOOM300">Boom 300</option>
+      <option value="CRASH1000">Crash 1000</option>
+      <option value="CRASH500">Crash 500</option>
+      <option value="CRASH300">Crash 300</option>
+      <option value="STPRNG">Step Index</option>
+      <option value="RNGBR100">Range Brk 100</option>
+      <option value="RNGBR200">Range Brk 200</option>
+      <option value="DSW10">Drift Sw 10</option>
+      <option value="JD10">Jump 10</option>
+      <option value="JD25">Jump 25</option>
+      <option value="JD50">Jump 50</option>
+      <option value="JD75">Jump 75</option>
+      <option value="JD100">Jump 100</option>
+    </select>
+    <select id="mob-tf-select" onchange="onTFChange(this.value);mobSyncSelects()">
+      <option value="60">1m</option>
+      <option value="120">2m</option>
+      <option value="300" selected>5m</option>
+      <option value="600">10m</option>
+      <option value="900">15m</option>
+      <option value="1800">30m</option>
+      <option value="3600">1h</option>
+      <option value="14400">4h</option>
+      <option value="86400">1D</option>
+    </select>
+    <button id="mob-connect-btn" onclick="toggleConnect();setTimeout(mobUpdateStatus,800)">CONNECT</button>
+    <div id="mob-status-dot"></div>
+  </div>
+
+  <!-- Price bar -->
+  <div id="mob-price-bar">
+    <div>
+      <div id="mob-price">—</div>
+    </div>
+    <div id="mob-chg" style="color:var(--text-dim)">+0.00%</div>
+    <div id="mob-bias-badge">NEUTRAL</div>
+  </div>
+
+  <!-- Tab content -->
+  <div id="mob-content">
+
+    <!-- Tab: Chart -->
+    <div class="mob-tab-pane active" id="mob-pane-chart">
+      <canvas id="mob-chart-canvas"></canvas>
+    </div>
+
+    <!-- Tab: Signal -->
+    <div class="mob-tab-pane" id="mob-pane-signal">
+      <div id="mob-signal-pane">
+        <div class="mob-no-signal" id="mob-no-signal">Connect to load signal</div>
+        <div id="mob-signal-card" style="display:none"></div>
+      </div>
+    </div>
+
+    <!-- Tab: Scanner -->
+    <div class="mob-tab-pane" id="mob-pane-scanner">
+      <div id="mob-scanner-pane">
+        <div class="mob-scan-header">
+          <span class="mob-section-title">SCANNER</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span id="mob-scan-progress" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)"></span>
+            <button class="mob-scan-btn" onclick="runScanner();setTimeout(mobUpdateScanner,35000)">⊞ SCAN</button>
+          </div>
+        </div>
+        <div id="mob-scan-results"><div class="mob-no-signal">Run scan to see setups</div></div>
+      </div>
+    </div>
+
+    <!-- Tab: Settings -->
+    <div class="mob-tab-pane" id="mob-pane-settings">
+      <div id="mob-settings-pane">
+
+        <div class="mob-set-group">
+          <div class="mob-set-label">Connection</div>
+          <div class="mob-set-row">
+            <label>App ID</label>
+            <input type="text" id="mob-appid" placeholder="1089" oninput="document.getElementById('appIdInput').value=this.value">
+          </div>
+          <div class="mob-set-row">
+            <label>Account Balance</label>
+            <input type="number" id="mob-balance" value="1000" min="1"
+              oninput="document.getElementById('accountBalance').value=this.value;updateSLTP(true);updateRiskDisplay()">
+          </div>
+          <div class="mob-set-row">
+            <label>Risk %</label>
+            <input type="number" id="mob-risk" value="1" min="0.1" max="10" step="0.1"
+              oninput="document.getElementById('riskPct').value=this.value;updateSLTP(true);updateRiskDisplay()">
+          </div>
+        </div>
+
+        <div class="mob-set-group">
+          <div class="mob-set-label">Telegram Alerts</div>
+          <div class="mob-set-row">
+            <label>Bot Token</label>
+            <input type="text" id="mob-tg-token" placeholder="••• token •••"
+              oninput="try{sessionStorage.setItem('msb_tg_token',this.value)}catch(e){}">
+          </div>
+          <div class="mob-set-row">
+            <label>Chat ID</label>
+            <input type="text" id="mob-tg-chatid" placeholder="-100xxxxxxxxx"
+              oninput="try{sessionStorage.setItem('msb_tg_chatid',this.value)}catch(e){}">
+          </div>
+          <div class="mob-toggle-row">
+            <span class="mob-toggle-label">TG Alerts Enabled</span>
+            <div class="mob-toggle on" id="mob-tg-toggle" onclick="toggleTG();this.classList.toggle('on')"></div>
+          </div>
+          <button class="mob-tg-btn" onclick="testTG()">✈ SEND TEST MESSAGE</button>
+        </div>
+
+        <div class="mob-set-group">
+          <div class="mob-set-label">Features</div>
+          <div class="mob-toggle-row">
+            <span class="mob-toggle-label">Auto Scan</span>
+            <div class="mob-toggle" id="mob-autoscan-toggle" onclick="toggleCScan();this.classList.toggle('on')"></div>
+          </div>
+          <div class="mob-toggle-row">
+            <span class="mob-toggle-label">Heikin Ashi</span>
+            <div class="mob-toggle" id="mob-ha-toggle" onclick="toggleHA();this.classList.toggle('on')"></div>
+          </div>
+          <div class="mob-toggle-row">
+            <span class="mob-toggle-label">Sound Alerts</span>
+            <div class="mob-toggle" id="mob-sound-toggle" onclick="toggleSound();this.classList.toggle('on')"></div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /#mob-content -->
+
+  <!-- Bottom tab bar -->
+  <div id="mob-tabbar">
+    <button class="mob-tab active" id="mobtab-chart" onclick="mobSwitchTab('chart')">
+      <span class="mob-tab-icon">📊</span>
+      <span>CHART</span>
+    </button>
+    <button class="mob-tab" id="mobtab-signal" onclick="mobSwitchTab('signal')">
+      <span class="mob-tab-icon">🎯</span>
+      <span>SIGNAL</span>
+      <span class="mob-badge" id="mob-signal-badge"></span>
+    </button>
+    <button class="mob-tab" id="mobtab-scanner" onclick="mobSwitchTab('scanner')">
+      <span class="mob-tab-icon">⊞</span>
+      <span>SCAN</span>
+      <span class="mob-badge" id="mob-scan-badge"></span>
+    </button>
+    <button class="mob-tab" id="mobtab-settings" onclick="mobSwitchTab('settings')">
+      <span class="mob-tab-icon">⚙</span>
+      <span>SETTINGS</span>
+    </button>
+  </div>
+
+</div><!-- /#mobile-shell -->
+
+<script>
+// ═══════════════════════════════════════════════════════
+// MOBILE UI CONTROLLER
+// ═══════════════════════════════════════════════════════
+
+let _mobActiveTab = 'chart';
+let _mobChartCtx  = null;
+let _mobChartAnim = null;
+
+function mobSwitchTab(tab) {
+  _mobActiveTab = tab;
+  document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.mob-tab-pane').forEach(p => p.classList.remove('active'));
+  const btn  = document.getElementById('mobtab-' + tab);
+  const pane = document.getElementById('mob-pane-' + tab);
+  if (btn)  btn.classList.add('active');
+  if (pane) pane.classList.add('active');
+  if (tab === 'chart') mobDrawChart();
+  if (tab === 'signal') mobUpdateSignal();
+  if (tab === 'scanner') mobUpdateScanner();
+}
+
+// ── Sync mobile selects with desktop state ──
+function mobSyncSelects() {
+  const ms = document.getElementById('mob-symbol-select');
+  const mt = document.getElementById('mob-tf-select');
+  if (ms) ms.value = currentSymbol;
+  if (mt) mt.value = String(currentTF);
+}
+
+// ── Status dot ──
+function mobUpdateStatus() {
+  const dot = document.getElementById('mob-status-dot');
+  const btn = document.getElementById('mob-connect-btn');
+  if (!dot) return;
+  if (isConnected) {
+    dot.className = 'live';
+    if (btn) btn.textContent = 'LIVE';
+    if (btn) btn.style.color = 'var(--bull)';
+  } else {
+    dot.className = 'error';
+    if (btn) btn.textContent = 'CONNECT';
+    if (btn) btn.style.color = 'var(--accent)';
+  }
+}
+
+// ── Price bar update (called from runAnalysis patch) ──
+function mobUpdatePrice(price, chgPct, bias) {
+  const dp = getDP(currentSymbol);
+  const pel = document.getElementById('mob-price');
+  const cel = document.getElementById('mob-chg');
+  const bel = document.getElementById('mob-bias-badge');
+  if (pel) pel.textContent = price ? price.toFixed(dp) : '—';
+  if (cel) {
+    const pct = chgPct || 0;
+    cel.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
+    cel.style.color = pct >= 0 ? 'var(--bull)' : 'var(--bear)';
+  }
+  if (bel) {
+    bel.textContent = bias === 'bull' ? '▲ LONG' : bias === 'bear' ? '▼ SHORT' : 'NEUTRAL';
+    bel.className   = 'mob-bias-badge ' + (bias || '');
+  }
+}
+
+// ── Chart tab: draw from main candles array ──
+function mobDrawChart() {
+  if (_mobActiveTab !== 'chart') return;
+  const canvas = document.getElementById('mob-chart-canvas');
+  if (!canvas || !candles || candles.length < 2) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.parentElement.clientWidth;
+  const H = canvas.parentElement.clientHeight;
+  canvas.width  = W * dpr;
+  canvas.height = H * dpr;
+  canvas.style.width  = W + 'px';
+  canvas.style.height = H + 'px';
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const bars = candles.slice(-120); // last 120 bars
+  const highs  = bars.map(b => b.high);
+  const lows   = bars.map(b => b.low);
+  const hi = Math.max(...highs);
+  const lo = Math.min(...lows);
+  const range = hi - lo || 1;
+
+  const pad = { t: 20, b: 30, l: 6, r: 48 };
+  const cw = (W - pad.l - pad.r) / bars.length;
+  const ch = H - pad.t - pad.b;
+
+  const yOf = v => pad.t + ch - ((v - lo) / range) * ch;
+  const xOf = i => pad.l + i * cw;
+
+  // Background
+  ctx.fillStyle = 'rgba(5,10,14,0)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(15,37,53,0.8)';
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+    const v = hi - (range / 4) * i;
+    ctx.fillStyle = 'rgba(74,98,114,0.8)';
+    ctx.font = '9px Share Tech Mono, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(v.toFixed(getDP(currentSymbol)), W - pad.r + 4, y + 3);
+  }
+
+  // Candles
+  bars.forEach((b, i) => {
+    const bull = b.close >= b.open;
+    const x = xOf(i) + cw * 0.1;
+    const bw = Math.max(1, cw * 0.8);
+    const cy1 = yOf(Math.max(b.open, b.close));
+    const cy2 = yOf(Math.min(b.open, b.close));
+    const bh  = Math.max(1, cy2 - cy1);
+    ctx.fillStyle = bull ? 'rgba(0,229,160,0.85)' : 'rgba(255,61,90,0.85)';
+    ctx.fillRect(x, cy1, bw, bh);
+    // Wick
+    ctx.strokeStyle = bull ? 'rgba(0,229,160,0.6)' : 'rgba(255,61,90,0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(x + bw / 2, yOf(b.high));
+    ctx.lineTo(x + bw / 2, yOf(b.low));
+    ctx.stroke();
+  });
+
+  // Last price line
+  if (bars.length > 0) {
+    const lp = bars[bars.length - 1].close;
+    const ly = yOf(lp);
+    ctx.setLineDash([3, 3]);
+    ctx.strokeStyle = 'rgba(0,229,255,0.5)';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(pad.l, ly); ctx.lineTo(W - pad.r, ly); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = 'var(--cyan)';
+    ctx.font = 'bold 10px Share Tech Mono, monospace';
+    ctx.textAlign = 'left';
+    ctx.fillText(lp.toFixed(getDP(currentSymbol)), W - pad.r + 4, ly + 3);
+  }
+}
+
+// ── Signal tab ──
+function mobUpdateSignal() {
+  if (_mobActiveTab !== 'signal') return;
+  const noEl   = document.getElementById('mob-no-signal');
+  const cardEl = document.getElementById('mob-signal-card');
+  if (!noEl || !cardEl) return;
+
+  const r = (typeof lastAnalysis !== 'undefined') ? lastAnalysis : null;
+  const t = r ? calcSLTP(r) : null;
+  const dp = getDP(currentSymbol);
+
+  if (!r || !t) {
+    noEl.style.display   = 'block';
+    cardEl.style.display = 'none';
+    noEl.textContent = isConnected ? 'Analysing…' : 'Connect to load signal';
+    return;
+  }
+
+  noEl.style.display   = 'none';
+  cardEl.style.display = 'block';
+
+  if (t.blocked) {
+    const reasons = (t.failReasons || []).map(f =>
+      '<div class="mob-gate-item fail">✕ ' + f + '</div>'
+    ).join('');
+    const warns = (t.warnReasons || []).filter(w => w.startsWith('WARN')).map(w =>
+      '<div class="mob-gate-item warn">⚠ ' + w + '</div>'
+    ).join('');
+    cardEl.innerHTML = `
+      <div class="mob-signal-card blocked">
+        <div class="mob-card-header">
+          <div class="mob-dir-label blocked">NO TRADE</div>
+          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${currentSymbol} ${tfLabel(currentTF)}</div>
+        </div>
+        <div class="mob-gates-list">${reasons}${warns}</div>
+      </div>`;
+    // clear badge
+    const badge = document.getElementById('mob-signal-badge');
+    if (badge) { badge.textContent = ''; badge.classList.remove('show'); }
+    return;
+  }
+
+  const isBull = t.dir === 'LONG';
+  const cls    = isBull ? 'bull' : 'bear';
+  const warns  = (t.warnReasons || []).filter(w => w.startsWith('WARN')).map(w =>
+    '<div class="mob-gate-item warn">⚠ ' + w + '</div>'
+  ).join('');
+  const notes  = (t.warnReasons || []).filter(w => w.startsWith('NOTE')).map(w =>
+    '<div class="mob-gate-item pass">· ' + w.replace('NOTE: ','').replace('NOTE ','') + '</div>'
+  ).join('');
+
+  cardEl.innerHTML = `
+    <div class="mob-signal-card ${cls}">
+      <div class="mob-card-header">
+        <div class="mob-dir-label ${cls}">${isBull ? '▲ LONG' : '▼ SHORT'}</div>
+        <div class="mob-conf-ring">${t.confluence}%</div>
+      </div>
+      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-bottom:10px">${currentSymbol} · ${tfLabel(currentTF)}</div>
+      <div class="mob-sltp-grid">
+        <div class="mob-sltp-cell">
+          <div class="mob-sltp-cell-label">ENTRY</div>
+          <div class="mob-sltp-cell-val">${t.entry.toFixed(dp)}</div>
+        </div>
+        <div class="mob-sltp-cell">
+          <div class="mob-sltp-cell-label">SL</div>
+          <div class="mob-sltp-cell-val sl">${t.sl.toFixed(dp)}</div>
+        </div>
+        <div class="mob-sltp-cell">
+          <div class="mob-sltp-cell-label">TP</div>
+          <div class="mob-sltp-cell-val tp">${t.tp.toFixed(dp)}</div>
+        </div>
+      </div>
+      <div class="mob-rr-bar">
+        <span>Risk: $${(t.dollarRisk||0).toFixed(2)}</span>
+        <span class="mob-rr-val">${t.rr.toFixed(2)}:1 RR</span>
+        <span>Profit: $${(t.potentialProfit||0).toFixed(2)}</span>
+      </div>
+      <div class="mob-gates-list">${warns}${notes}</div>
+    </div>`;
+
+  // Signal badge on tab
+  const badge = document.getElementById('mob-signal-badge');
+  if (badge && !t.blocked) {
+    badge.textContent = isBull ? '▲' : '▼';
+    badge.style.background = isBull ? 'var(--bull)' : 'var(--bear)';
+    badge.classList.add('show');
+  }
+}
+
+// ── Scanner tab ──
+function mobUpdateScanner() {
+  if (_mobActiveTab !== 'scanner') return;
+  const el = document.getElementById('mob-scan-results');
+  if (!el) return;
+
+  const results = (typeof _scanResults !== 'undefined') ? _scanResults : [];
+  const valid = results.filter(r => r.t && !r.t.blocked).sort((a,b) => (b.t.confluence||0) - (a.t.confluence||0));
+
+  if (valid.length === 0) {
+    el.innerHTML = '<div class="mob-no-signal">No setups found — run scan</div>';
+    const badge = document.getElementById('mob-scan-badge');
+    if (badge) { badge.textContent = ''; badge.classList.remove('show'); }
+    return;
+  }
+
+  el.innerHTML = valid.map(item => {
+    const isBull = item.t.dir === 'LONG';
+    const cls = isBull ? 'bull' : 'bear';
+    const dp = getDP(item.sym);
+    return `<div class="mob-scan-item ${cls}" onclick="onSymbolChange('${item.sym}');document.getElementById('mob-symbol-select').value='${item.sym}';mobSwitchTab('signal')">
+      <div class="mob-scan-left">
+        <div class="mob-scan-sym">${item.name}</div>
+        <div class="mob-scan-sub">${tfLabel(item.tf)} · ${item.t.entry ? item.t.entry.toFixed(dp) : '—'}</div>
+      </div>
+      <div class="mob-scan-right">
+        <div class="mob-scan-conf">${item.t.confluence}%</div>
+        <div class="mob-scan-dir ${cls}">${isBull ? '▲ LONG' : '▼ SHORT'}</div>
+      </div>
+    </div>`;
+  }).join('');
+
+  const badge = document.getElementById('mob-scan-badge');
+  if (badge) {
+    badge.textContent = String(valid.length);
+    badge.style.background = 'var(--accent)';
+    badge.classList.add('show');
+  }
+}
+
+// ── Patch runAnalysis to update mobile UI ──
+const _origRunAnalysis = (typeof runAnalysis === 'function') ? runAnalysis : null;
+// Hook into the ohlc / candle update to refresh mobile
+function _mobAfterAnalysis() {
+  // price
+  if (candles && candles.length > 1) {
+    const last = candles[candles.length - 1];
+    const prev = candles[0];
+    const chg = prev.close > 0 ? ((last.close - prev.close) / prev.close * 100) : 0;
+    const bias = (typeof lastAnalysis !== 'undefined' && lastAnalysis)
+      ? (lastAnalysis.recentBull > lastAnalysis.recentBear ? 'bull' : lastAnalysis.recentBull < lastAnalysis.recentBear ? 'bear' : '')
+      : '';
+    mobUpdatePrice(last.close, chg, bias);
+  }
+  mobUpdateStatus();
+  if (_mobActiveTab === 'chart')   mobDrawChart();
+  if (_mobActiveTab === 'signal')  mobUpdateSignal();
+  if (_mobActiveTab === 'scanner') mobUpdateScanner();
+}
+
+// Poll every 2s to keep mobile in sync with background processing
+setInterval(_mobAfterAnalysis, 2000);
+
+// Init on load
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    mobSyncSelects();
+    // Restore TG fields if set
+    const tok = sessionStorage.getItem('msb_tg_token');
+    const cid = sessionStorage.getItem('msb_tg_chatid');
+    const tidEl = document.getElementById('mob-tg-token');
+    const cidEl = document.getElementById('mob-tg-chatid');
+    if (tidEl && tok) tidEl.placeholder = '••••••• (set)';
+    if (cidEl && cid) cidEl.value = cid;
+    // Restore balance/risk
+    const bal = document.getElementById('accountBalance');
+    const rsk = document.getElementById('riskPct');
+    const mbal = document.getElementById('mob-balance');
+    const mrsk = document.getElementById('mob-risk');
+    if (bal && mbal) mbal.value = bal.value;
+    if (rsk && mrsk) mrsk.value = rsk.value;
+    mobDrawChart();
+  }, 500);
+});
+
+// Redraw chart on orientation change
+window.addEventListener('resize', () => {
+  if (_mobActiveTab === 'chart') mobDrawChart();
+});
+</script>
 </body>
 </html>
