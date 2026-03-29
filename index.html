@@ -860,15 +860,10 @@ body::after {
 .mob-tab-pane.active { display: block; }
 
 /* ── Chart tab ── */
-#mob-chart-wrap {
-  width: 100%;
-  height: 100%;
-  position: relative;
-}
-#mob-chart-canvas {
-  width: 100%;
-  height: 100%;
-  display: block;
+#mob-pane-chart {
+  overflow: hidden !important;
+  padding: 0 !important;
+  background: var(--bg-deep);
 }
 
 /* ── Signal tab ── */
@@ -1193,9 +1188,12 @@ body::after {
 .mob-badge.show { display: block; }
 
 @media (max-width: 768px) {
+  body { overflow: hidden !important; height: 100vh !important; }
   #app { display: none !important; }
   #mobile-panels-overlay { display: none !important; }
   #mobile-shell { display: flex !important; }
+  #mob-pane-chart { padding: 0 !important; }
+  #mob-chart-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
 }
 
 </head>
@@ -6478,10 +6476,26 @@ function mobUpdatePrice(price, chgPct, bias) {
 function mobDrawChart() {
   if (_mobActiveTab !== 'chart') return;
   const canvas = document.getElementById('mob-chart-canvas');
-  if (!canvas || !candles || candles.length < 2) return;
+  if (!canvas || !candles || candles.length < 2) {
+    // Draw placeholder
+    const canvas2 = document.getElementById('mob-chart-canvas');
+    if (!canvas2) return;
+    const W = window.innerWidth, H = window.innerHeight - 48 - 40 - 56;
+    canvas2.width = W; canvas2.height = H;
+    canvas2.style.width = W + 'px'; canvas2.style.height = H + 'px';
+    const ctx2 = canvas2.getContext('2d');
+    ctx2.fillStyle = '#0d1a22';
+    ctx2.fillRect(0,0,W,H);
+    ctx2.fillStyle = '#4a6272';
+    ctx2.font = '12px Share Tech Mono, monospace';
+    ctx2.textAlign = 'center';
+    ctx2.fillText('No data — connect to load chart', W/2, H/2);
+    return;
+  }
   const dpr = window.devicePixelRatio || 1;
-  const W = canvas.parentElement.clientWidth;
-  const H = canvas.parentElement.clientHeight;
+  const pane = canvas.parentElement;
+  const W = pane.clientWidth  || window.innerWidth;
+  const H = pane.clientHeight || (window.innerHeight - 48 - 40 - 56);
   canvas.width  = W * dpr;
   canvas.height = H * dpr;
   canvas.style.width  = W + 'px';
@@ -6562,8 +6576,8 @@ function mobUpdateSignal() {
   const cardEl = document.getElementById('mob-signal-card');
   if (!noEl || !cardEl) return;
 
-  const r = (typeof lastAnalysis !== 'undefined') ? lastAnalysis : null;
-  const t = r ? calcSLTP(r) : null;
+  const r = (typeof analysisResult !== 'undefined') ? analysisResult : null;
+  const t = (typeof _lockedTrade !== 'undefined') ? _lockedTrade : (r ? calcSLTP(r) : null);
   const dp = getDP(currentSymbol);
 
   if (!r || !t) {
@@ -6693,8 +6707,8 @@ function _mobAfterAnalysis() {
     const last = candles[candles.length - 1];
     const prev = candles[0];
     const chg = prev.close > 0 ? ((last.close - prev.close) / prev.close * 100) : 0;
-    const bias = (typeof lastAnalysis !== 'undefined' && lastAnalysis)
-      ? (lastAnalysis.recentBull > lastAnalysis.recentBear ? 'bull' : lastAnalysis.recentBull < lastAnalysis.recentBear ? 'bear' : '')
+    const bias = (typeof analysisResult !== 'undefined' && analysisResult)
+      ? (analysisResult.recentBull > analysisResult.recentBear ? 'bull' : analysisResult.recentBull < analysisResult.recentBear ? 'bear' : '')
       : '';
     mobUpdatePrice(last.close, chg, bias);
   }
@@ -6711,14 +6725,12 @@ setInterval(_mobAfterAnalysis, 2000);
 window.addEventListener('load', () => {
   setTimeout(() => {
     mobSyncSelects();
-    // Restore TG fields if set
     const tok = sessionStorage.getItem('msb_tg_token');
     const cid = sessionStorage.getItem('msb_tg_chatid');
     const tidEl = document.getElementById('mob-tg-token');
     const cidEl = document.getElementById('mob-tg-chatid');
     if (tidEl && tok) tidEl.placeholder = '••••••• (set)';
     if (cidEl && cid) cidEl.value = cid;
-    // Restore balance/risk
     const bal = document.getElementById('accountBalance');
     const rsk = document.getElementById('riskPct');
     const mbal = document.getElementById('mob-balance');
@@ -6726,8 +6738,12 @@ window.addEventListener('load', () => {
     if (bal && mbal) mbal.value = bal.value;
     if (rsk && mrsk) mrsk.value = rsk.value;
     mobDrawChart();
-  }, 500);
+    mobUpdateStatus();
+  }, 800);
 });
+
+// Also try immediately in case load already fired
+setTimeout(() => { mobDrawChart(); mobUpdateStatus(); mobSyncSelects(); }, 1200);
 
 // Redraw chart on orientation change
 window.addEventListener('resize', () => {
