@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MSB · OB · FUTURE SWING — ULTRA v36.6</title>
+<title>MSB · OB · FUTURE SWING — ULTRA v36.9 [FVG:ALL]</title>
 <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -730,472 +730,7 @@ body::after {
 }
 .trade-long  { background: rgba(0,229,160,0.12); border: 1px solid rgba(0,229,160,0.4); color: var(--bull); text-shadow: 0 0 8px rgba(0,229,160,0.4); }
 .trade-short { background: rgba(255,61,90,0.12);  border: 1px solid rgba(255,61,90,0.4);  color: var(--bear); text-shadow: 0 0 8px rgba(255,61,90,0.4); }
-
-/* ═══════════════════════════════════════════
-   MOBILE UI — shows on screens ≤ 768px
-   Desktop #app is hidden; mobile shell takes over
-═══════════════════════════════════════════ */
-#mobile-shell {
-  display: none;
-  flex-direction: column;
-  height: 100vh;
-  width: 100vw;
-  background: var(--bg-deep);
-  position: fixed;
-  inset: 0;
-  z-index: 5000;
-  font-family: var(--font-body);
-}
-
-/* ── Mobile topbar ── */
-#mob-topbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  height: 48px;
-  background: var(--bg-panel);
-  border-bottom: 1px solid var(--border-bright);
-  flex-shrink: 0;
-  gap: 8px;
-}
-#mob-logo {
-  font-family: var(--font-display);
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 2px;
-  color: var(--cyan);
-  text-shadow: var(--glow-cyan);
-  white-space: nowrap;
-}
-#mob-logo span { color: var(--bull); }
-#mob-symbol-select {
-  flex: 1;
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 5px 6px;
-  outline: none;
-  max-width: 130px;
-}
-#mob-tf-select {
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  color: var(--text);
-  font-family: var(--font-mono);
-  font-size: 11px;
-  padding: 5px 6px;
-  outline: none;
-  width: 56px;
-}
-#mob-connect-btn {
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  color: var(--accent);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 5px 8px;
-  cursor: pointer;
-  white-space: nowrap;
-}
-#mob-status-dot {
-  width: 8px; height: 8px;
-  border-radius: 50%;
-  background: var(--neutral);
-  flex-shrink: 0;
-}
-#mob-status-dot.live  { background: var(--bull); box-shadow: 0 0 6px var(--bull); }
-#mob-status-dot.error { background: var(--bear); }
-
-/* ── Mobile price bar ── */
-#mob-price-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 14px;
-  background: var(--bg-card2);
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-#mob-price {
-  font-family: var(--font-mono);
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--text-bright);
-  letter-spacing: 1px;
-}
-#mob-chg {
-  font-family: var(--font-mono);
-  font-size: 13px;
-}
-#mob-bias-badge {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  padding: 3px 8px;
-  border-radius: 2px;
-  background: rgba(96,125,139,0.2);
-  border: 1px solid rgba(96,125,139,0.4);
-  color: var(--neutral);
-}
-#mob-bias-badge.bull { background: rgba(0,229,160,0.15); border-color: var(--bull); color: var(--bull); }
-#mob-bias-badge.bear { background: rgba(255,61,90,0.15);  border-color: var(--bear); color: var(--bear); }
-
-/* ── Tab content area ── */
-#mob-content {
-  flex: 1;
-  overflow: hidden;
-  position: relative;
-}
-.mob-tab-pane {
-  display: none;
-  position: absolute;
-  inset: 0;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}
-.mob-tab-pane.active { display: block; }
-
-/* ── Chart tab ── */
-#mob-pane-chart {
-  overflow: hidden !important;
-  padding: 0 !important;
-  background: var(--bg-deep);
-}
-
-/* ── Signal tab ── */
-#mob-signal-pane {
-  padding: 12px;
-}
-.mob-signal-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-.mob-signal-card.bull { border-left: 3px solid var(--bull); }
-.mob-signal-card.bear { border-left: 3px solid var(--bear); }
-.mob-signal-card.blocked { border-left: 3px solid var(--neutral); opacity: 0.7; }
-.mob-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.mob-dir-label {
-  font-family: var(--font-display);
-  font-size: 16px;
-  font-weight: 900;
-  letter-spacing: 2px;
-}
-.mob-dir-label.bull { color: var(--bull); text-shadow: var(--glow-bull); }
-.mob-dir-label.bear { color: var(--bear); text-shadow: var(--glow-bear); }
-.mob-dir-label.blocked { color: var(--neutral); }
-.mob-conf-ring {
-  font-family: var(--font-mono);
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--cyan);
-}
-.mob-sltp-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-.mob-sltp-cell {
-  background: var(--bg-deep);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 8px 6px;
-  text-align: center;
-}
-.mob-sltp-cell-label {
-  font-family: var(--font-mono);
-  font-size: 8px;
-  color: var(--text-dim);
-  letter-spacing: 1px;
-  margin-bottom: 4px;
-}
-.mob-sltp-cell-val {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-bright);
-}
-.mob-sltp-cell-val.sl { color: var(--bear); }
-.mob-sltp-cell-val.tp { color: var(--bull); }
-.mob-rr-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-top: 1px solid var(--border);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text-dim);
-}
-.mob-rr-val {
-  font-size: 13px;
-  font-weight: 700;
-  color: var(--cyan);
-}
-.mob-gates-list {
-  margin-top: 8px;
-  border-top: 1px solid var(--border);
-  padding-top: 8px;
-}
-.mob-gate-item {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  padding: 2px 0;
-  color: var(--text-dim);
-  line-height: 1.4;
-}
-.mob-gate-item.fail { color: var(--bear); }
-.mob-gate-item.warn { color: var(--warn); }
-.mob-gate-item.pass { color: var(--bull); }
-.mob-no-signal {
-  text-align: center;
-  padding: 40px 20px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--text-dim);
-  letter-spacing: 1px;
-}
-.mob-section-title {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  padding: 4px 0 8px;
-}
-
-/* ── Scanner tab ── */
-#mob-scanner-pane {
-  padding: 10px;
-}
-.mob-scan-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 10px;
-}
-.mob-scan-btn {
-  background: var(--accent2);
-  border: 1px solid var(--accent);
-  color: var(--cyan);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 6px 14px;
-  cursor: pointer;
-  letter-spacing: 1px;
-}
-#mob-scan-progress {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-dim);
-}
-.mob-scan-item {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
-  border-radius: 3px;
-  padding: 10px 12px;
-  margin-bottom: 6px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  cursor: pointer;
-  active: background var(--bg-card2);
-}
-.mob-scan-item.bull { border-left: 2px solid var(--bull); }
-.mob-scan-item.bear { border-left: 2px solid var(--bear); }
-.mob-scan-left { display: flex; flex-direction: column; gap: 2px; }
-.mob-scan-sym {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  color: var(--text-bright);
-}
-.mob-scan-sub {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  color: var(--text-dim);
-}
-.mob-scan-right { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
-.mob-scan-conf {
-  font-family: var(--font-mono);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--cyan);
-}
-.mob-scan-dir {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 1px;
-}
-.mob-scan-dir.bull { color: var(--bull); }
-.mob-scan-dir.bear { color: var(--bear); }
-
-/* ── Settings tab ── */
-#mob-settings-pane {
-  padding: 14px;
-}
-.mob-set-group {
-  background: var(--bg-card);
-  border: 1px solid var(--border-bright);
-  border-radius: 4px;
-  padding: 14px;
-  margin-bottom: 12px;
-}
-.mob-set-label {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  letter-spacing: 2px;
-  color: var(--text-dim);
-  text-transform: uppercase;
-  margin-bottom: 10px;
-}
-.mob-set-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 0;
-  border-bottom: 1px solid var(--border);
-  gap: 10px;
-}
-.mob-set-row:last-child { border-bottom: none; }
-.mob-set-row label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text);
-  flex: 1;
-}
-.mob-set-row input[type="text"],
-.mob-set-row input[type="number"] {
-  background: var(--bg-deep);
-  border: 1px solid var(--border-bright);
-  color: var(--text-bright);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 5px 8px;
-  outline: none;
-  width: 120px;
-  text-align: right;
-}
-.mob-tg-btn {
-  background: var(--bg-card2);
-  border: 1px solid var(--accent);
-  color: var(--cyan);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  padding: 8px 16px;
-  cursor: pointer;
-  letter-spacing: 1px;
-  width: 100%;
-  margin-top: 8px;
-}
-.mob-toggle-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--border);
-}
-.mob-toggle-row:last-child { border-bottom: none; }
-.mob-toggle-label {
-  font-family: var(--font-mono);
-  font-size: 10px;
-  color: var(--text);
-}
-.mob-toggle {
-  width: 36px; height: 20px;
-  background: var(--border-bright);
-  border-radius: 10px;
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-  flex-shrink: 0;
-}
-.mob-toggle.on { background: var(--bull); }
-.mob-toggle::after {
-  content: '';
-  position: absolute;
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: #fff;
-  top: 3px; left: 3px;
-  transition: left 0.2s;
-}
-.mob-toggle.on::after { left: 19px; }
-
-/* ── Bottom tab bar ── */
-#mob-tabbar {
-  display: flex;
-  border-top: 1px solid var(--border-bright);
-  background: var(--bg-panel);
-  flex-shrink: 0;
-  height: 56px;
-}
-.mob-tab {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 3px;
-  cursor: pointer;
-  border: none;
-  background: none;
-  color: var(--text-dim);
-  font-family: var(--font-mono);
-  font-size: 8px;
-  letter-spacing: 1px;
-  padding: 0;
-  transition: color 0.15s;
-  position: relative;
-}
-.mob-tab.active { color: var(--cyan); }
-.mob-tab.active::after {
-  content: '';
-  position: absolute;
-  top: 0; left: 20%; right: 20%;
-  height: 2px;
-  background: var(--cyan);
-  box-shadow: var(--glow-cyan);
-}
-.mob-tab-icon { font-size: 18px; line-height: 1; }
-.mob-badge {
-  position: absolute;
-  top: 4px; right: 18%;
-  background: var(--bear);
-  color: #fff;
-  font-size: 7px;
-  font-family: var(--font-mono);
-  border-radius: 8px;
-  padding: 0 4px;
-  min-width: 14px;
-  text-align: center;
-  line-height: 14px;
-  display: none;
-}
-.mob-badge.show { display: block; }
-
-@media (max-width: 768px) {
-  body { overflow: hidden !important; height: 100vh !important; }
-  #app { display: none !important; }
-  #mobile-panels-overlay { display: none !important; }
-  #mobile-shell { display: flex !important; }
-  #mob-pane-chart { padding: 0 !important; }
-  #mob-chart-canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
-}
-
+</style>
 </head>
 <body>
 <div id="app">
@@ -1203,7 +738,7 @@ body::after {
   <!-- TOPBAR -->
   <div id="topbar">
     <button id="mobile-menu-btn" onclick="toggleMobilePanels()" title="Show panels">☰</button>
-    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36.6</span></div>
+    <div class="logo">MSB·OB·FS <span>ULTRA</span> <span style="font-size:9px;color:var(--text-dim)">v36.9</span></div>
 
     <!-- GROUP 1: Market selectors -->
     <div class="tb-group">
@@ -4035,6 +3570,24 @@ function drawChartOverlays() {
     obBoxes.push(fsLine);
   }
 
+  // ── FVG ZONES — draw all active unfilled FVGs on chart ────
+  if (r.activeFVGs && OV.sltp) {
+    for (const fvg of r.activeFVGs.slice(-12)) {
+      const fvgCol = fvg.isBull ? '#00b4d8' : '#f97316';
+      const fvgMid = (fvg.top + fvg.bottom) / 2;
+      obBoxes.push(candleSeries.createPriceLine({
+        price: fvg.top,    color: fvgCol + '99', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '',
+      }));
+      obBoxes.push(candleSeries.createPriceLine({
+        price: fvg.bottom, color: fvgCol + '55', lineWidth: 1, lineStyle: 2, axisLabelVisible: false, title: '',
+      }));
+      obBoxes.push(candleSeries.createPriceLine({
+        price: fvgMid, color: fvgCol, lineWidth: 1, lineStyle: 3, axisLabelVisible: true,
+        title: (fvg.isBull ? '▲' : '▼') + 'FVG',
+      }));
+    }
+  }
+
   // ── ENTRY SIGNAL — big arrow when all gates pass ──────────
   if (_lockedTrade && !_lockedTrade.blocked && _lockedTrade.sl && _lockedTrade.tp) {
     const t  = _lockedTrade;
@@ -4108,19 +3661,37 @@ function calcSLTP(r) {
   const emaShortAligned = ema20val && ema50val
     ? (isBull ? ema20val > ema50val : ema20val < ema50val)
     : true;
+  // Step Index: mean reversion trades INTO the short-term trend —
+  // EMA20/50 misalignment is expected and desirable (price pulling back).
+  // Downgrade to a WARNING only for STPRNG.
   if (!emaShortAligned) {
-    failReasons.push('GATE1: EMA 20 vs 50 not aligned with bias');
+    if (profile.type === 'step') {
+      warnReasons.push('NOTE G1: EMA20/50 counter-aligned — expected for mean reversion entry ✓');
+    } else {
+      failReasons.push('GATE1: EMA 20 vs 50 not aligned with bias');
+    }
   }
-  // G1b: Price must be on the correct side of EMA200 — HARD block
-  // This is the main fix for wrong-way signals in downtrends:
-  // if price < EMA200 we are in macro downtrend → no longs
-  // if price > EMA200 we are in macro uptrend → no shorts
+  // G1b: Price vs EMA200 — HARD block for trend instruments.
+  // Step Index: trading below EMA200 for a long is actually a STRONGER mean reversion
+  // setup (more extended = bigger snap potential). Downgraded to a NOTE only.
   if (ema200val) {
     const priceAbove200 = price > ema200val;
-    if (isBull && !priceAbove200) {
-      failReasons.push('GATE1: Price below EMA200 — macro downtrend, no longs');
-    } else if (!isBull && priceAbove200) {
-      failReasons.push('GATE1: Price above EMA200 — macro uptrend, no shorts');
+    if (profile.type === 'step') {
+      if (isBull && !priceAbove200) {
+        warnReasons.push('NOTE G1: Price below EMA200 — extended MR long, larger snap-back potential ▲');
+      } else if (!isBull && priceAbove200) {
+        warnReasons.push('NOTE G1: Price above EMA200 — extended MR short, larger snap-back potential ▼');
+      } else if (isBull && priceAbove200) {
+        warnReasons.push('NOTE G1: Price above EMA200 — mild MR long, smaller move expected');
+      } else {
+        warnReasons.push('NOTE G1: Price below EMA200 — mild MR short, smaller move expected');
+      }
+    } else {
+      if (isBull && !priceAbove200) {
+        failReasons.push('GATE1: Price below EMA200 — macro downtrend, no longs');
+      } else if (!isBull && priceAbove200) {
+        failReasons.push('GATE1: Price above EMA200 — macro uptrend, no shorts');
+      }
     }
   }
   // G1c: Full EMA stack alignment is a strong bonus note
@@ -4134,52 +3705,114 @@ function calcSLTP(r) {
   } else if (profile.trendBias === 'bear' && isBullBias) {
     failReasons.push('GATE2: Crash requires BEAR bias');
   } else if (r.fsDir && r.fsDir !== (isBull ? 'bull' : 'bear')) {
-    // FS conflict is a HARD BLOCK — trading against projected swing reduces quality
-    failReasons.push('GATE2: Future Swing is ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias');
+    if (profile.type === 'step') {
+      // Mean reversion by definition trades against the current swing projection —
+      // the whole premise is that price will snap back. Downgrade to a note.
+      warnReasons.push('NOTE G2: Future Swing is ' + r.fsDir + ' — mean reversion trades against swing (expected) ✓');
+    } else {
+      failReasons.push('GATE2: Future Swing is ' + r.fsDir + ' — conflicts with ' + (isBull?'bull':'bear') + ' bias');
+    }
+  } else if (r.fsDir && r.fsDir === (isBull ? 'bull' : 'bear') && profile.type === 'step') {
+    warnReasons.push('NOTE G2: Future Swing aligned — swing + mean reversion confluence ✓✓');
   }
 
   // ── GATE 3: Price near aligned OB OR strong S/R ──────────
   const alignedOBs = active.filter(o => isBull ? o.isBull : !o.isBull);
-  const nearOB = alignedOBs.find(o => price <= o.top + atr * 3 && price >= o.bottom - atr * 3); // widened 2→3 ATR for earlier proximity detection
+  const nearOB = alignedOBs.find(o => price <= o.top + atr * 3 && price >= o.bottom - atr * 3);
   const insideOB = alignedOBs.find(o => price <= o.top && price >= o.bottom);
   const srLevels = r.srLevels || [];
   const nearSR = srLevels.find(s =>
     s.strong && Math.abs(s.price - price) <= atr * 2.0 && (isBull ? s.isSupport : !s.isSupport)
-  ); // widened 1.5→2.0 ATR for earlier S/R proximity
+  );
   const atSRLevel = !!nearSR;
   const _tls   = r.trendLines || [];
   const _nearTL = _tls.find(tl => Math.abs(tl.currentY - price) <= atr * 1.2 && (isBull ? tl.isSupport : !tl.isSupport));
   const atTrendLine = !!_nearTL;
-  if (!nearOB && !atSRLevel) {
-    if (alignedOBs.length === 0) {
-      warnReasons.push('NOTE G3: No ' + (isBull?'bull':'bear') + ' OB or S/R yet');
-    } else {
-      const nearest = isBull
-        ? alignedOBs.sort((a,b) => b.top - a.top)[0]
-        : alignedOBs.sort((a,b) => a.bottom - b.bottom)[0];
-      const dist = isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2);
-      failReasons.push('GATE3: Price too far from OB/S/R (' + dist + ' pts)');
+
+  if (profile.type === 'step') {
+    // Step Index: FVG proximity is the primary zone requirement (handled in STEP-FVG gate).
+    // OB/SR are bonus confluence — add notes but never hard block here.
+    if (insideOB) {
+      warnReasons.push('NOTE G3: Inside aligned OB — FVG + OB zone confluence ✓✓');
+    } else if (nearOB) {
+      warnReasons.push('NOTE G3: Near aligned OB — additional confluence ✓');
+    } else if (atSRLevel) {
+      warnReasons.push('NOTE G3: At S/R ×' + nearSR.touches + ' — FVG + S/R confluence ✓');
+    } else if (atTrendLine) {
+      warnReasons.push('NOTE G3: At trend line — FVG + TL confluence ✓');
     }
-  } else if (atTrendLine && !insideOB && !atSRLevel) {
-    warnReasons.push('NOTE G3: At trend line ' + (_nearTL.isSupport?'support':'resist') + ' ×' + _nearTL.touches + ' touches');
-  } else if (atSRLevel && !insideOB) {
-    warnReasons.push('NOTE: At S/R ×' + nearSR.touches + ' — ' + (nearSR.isSupport?'support':'resist') + ' confluence');
-  } else if (!insideOB) {
-    warnReasons.push('NOTE: Approaching OB — wait for touch');
+    // No hard block — STEP-FVG gate below handles zone requirement
+  } else {
+    // Check FVG proximity for all symbols — aligned unfilled FVG within 2.5 ATR passes Gate 3
+    const _allFVGsG3 = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+    const _nearFVGG3 = _allFVGsG3.slice().sort((a, b) => {
+      const da = Math.min(Math.abs(price - a.top), Math.abs(price - a.bottom));
+      const db = Math.min(Math.abs(price - b.top), Math.abs(price - b.bottom));
+      return da - db;
+    })[0] || null;
+    const _atFVG = _nearFVGG3 && (
+      (price >= _nearFVGG3.bottom && price <= _nearFVGG3.top) ||
+      Math.min(Math.abs(price - _nearFVGG3.top), Math.abs(price - _nearFVGG3.bottom)) <= atr * 2.5
+    );
+
+    if (!nearOB && !atSRLevel && !_atFVG) {
+      if (alignedOBs.length === 0 && _allFVGsG3.length === 0) {
+        warnReasons.push('NOTE G3: No ' + (isBull?'bull':'bear') + ' OB, S/R or FVG yet');
+      } else {
+        const nearest = alignedOBs.length > 0
+          ? (isBull ? alignedOBs.sort((a,b) => b.top - a.top)[0] : alignedOBs.sort((a,b) => a.bottom - b.bottom)[0])
+          : null;
+        const distOB = nearest ? (isBull ? sf(price - nearest.top, 2) : sf(nearest.bottom - price, 2)) : '—';
+        const distFVG = _nearFVGG3
+          ? sf(Math.min(Math.abs(price - _nearFVGG3.top), Math.abs(price - _nearFVGG3.bottom)), 2)
+          : '—';
+        failReasons.push('GATE3: Price too far from OB/S/R/FVG (OB:' + distOB + ' FVG:' + distFVG + ' pts)');
+      }
+    } else {
+      if (_atFVG && _nearFVGG3) {
+        const _inFVG = price >= _nearFVGG3.bottom && price <= _nearFVGG3.top;
+        warnReasons.push('NOTE G3: ' + (_inFVG ? '✓ Inside' : 'Approaching') + ' ' + (isBull?'bull▲':'bear▼') + ' FVG [' + sf(_nearFVGG3.bottom,2) + '–' + sf(_nearFVGG3.top,2) + ']');
+      }
+    }
+    if (atTrendLine && !insideOB && !atSRLevel) {
+      warnReasons.push('NOTE G3: At trend line ' + (_nearTL.isSupport?'support':'resist') + ' ×' + _nearTL.touches + ' touches');
+    } else if (atSRLevel && !insideOB) {
+      warnReasons.push('NOTE: At S/R ×' + nearSR.touches + ' — ' + (nearSR.isSupport?'support':'resist') + ' confluence');
+    } else if (!insideOB) {
+      warnReasons.push('NOTE: Approaching OB — wait for touch');
+    }
   }
 
 
   // ── BREAK & RETEST CHECK ─────────────────────────────────
-  // Verify price has actually touched the zone and started to reverse
-  // (at least 0.5 ATR bounce from zone edge) — prevents entries on
-  // first approach before any confirmation of zone respect.
   let zoneRetestConfirmed = false;
   const candlesForRetest = r.candleArr || [];
   const nRt = candlesForRetest.length;
-  if (nearOB && nRt >= 3) {
+
+  if (profile.type === 'step') {
+    // Step Index: entering an FVG (imbalance fill) IS the confirmation.
+    // No separate OB bounce needed. Check if any aligned FVG was recently touched.
+    const _allFVGs = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+    let _fvgTouched = false;
+    for (const _fg of _allFVGs) {
+      for (let ri = Math.max(0, nRt - 8); ri < nRt - 1; ri++) {
+        const _c = candlesForRetest[ri];
+        const _touched = isBull
+          ? (_c.low <= _fg.top && _c.low >= _fg.bottom - atr * 0.5)
+          : (_c.high >= _fg.bottom && _c.high <= _fg.top + atr * 0.5);
+        if (_touched) { _fvgTouched = true; break; }
+      }
+      if (_fvgTouched) break;
+    }
+    zoneRetestConfirmed = true; // FVG entries self-confirm — no bounce bar required
+    if (_fvgTouched) {
+      warnReasons.push('NOTE G3b: FVG touched on recent bar — mean reversion entry confirmed ✓');
+    } else {
+      warnReasons.push('NOTE G3b: FVG not yet touched — first approach, consider reduced size');
+    }
+  } else if (nearOB && nRt >= 3) {
     const zoneTop = nearOB.top;
     const zoneBot = nearOB.bottom;
-    // Look at last 5 bars for a touch + bounce
     for (let ri = Math.max(0, nRt - 6); ri < nRt - 1; ri++) {
       const c = candlesForRetest[ri];
       const touched = isBull ? (c.low <= zoneTop && c.low >= zoneBot - atr * 0.5)
@@ -4202,15 +3835,36 @@ function calcSLTP(r) {
       }
     }
   } else if (!nearOB && !atSRLevel) {
-    zoneRetestConfirmed = true; // no zone — don't double-block
+    // Check FVG touch for all symbols — entering FVG = self-confirming zone
+    const _fvgsRt = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+    const _fvgRtNear = _fvgsRt.slice().sort((a, b) => {
+      const da = Math.min(Math.abs(price - a.top), Math.abs(price - a.bottom));
+      const db = Math.min(Math.abs(price - b.top), Math.abs(price - b.bottom));
+      return da - db;
+    })[0] || null;
+    if (_fvgRtNear) {
+      let _fvgTouchedRt = false;
+      for (let ri = Math.max(0, nRt - 8); ri < nRt - 1; ri++) {
+        const _c = candlesForRetest[ri];
+        const _t = isBull
+          ? (_c.low <= _fvgRtNear.top && _c.low >= _fvgRtNear.bottom - atr * 0.5)
+          : (_c.high >= _fvgRtNear.bottom && _c.high <= _fvgRtNear.top + atr * 0.5);
+        if (_t) { _fvgTouchedRt = true; break; }
+      }
+      zoneRetestConfirmed = true; // FVG touch is self-confirming
+      if (_fvgTouchedRt) {
+        warnReasons.push('NOTE G3b: FVG touched on recent bar — imbalance fill entry confirmed ✓');
+      } else {
+        warnReasons.push('NOTE G3b: Approaching FVG — first touch, consider reduced size');
+      }
+    } else {
+      zoneRetestConfirmed = true;
+    }
   } else {
-    zoneRetestConfirmed = true; // if first approach, allow but warn
+    zoneRetestConfirmed = true;
     warnReasons.push('NOTE: Zone not yet retested — wait for bounce confirmation');
   }
 
-  // ── Zone retest gate: enforce the bounce confirmation ────
-  // zoneRetestConfirmed was computed above but never enforced — fix that.
-  // Only block if we are specifically near an OB/SR (otherwise zoneRetestConfirmed=true)
   if (!zoneRetestConfirmed && (nearOB || atSRLevel)) {
     failReasons.push('GATE3b: Zone not confirmed — price must touch & bounce from OB/S/R first');
   }
@@ -4231,10 +3885,6 @@ function calcSLTP(r) {
 
 
   // ── GATE 6: HTF Bias alignment — HARD block if ANY confirmed HTF opposes ──
-  // FIX: was "both 1H+4H" — too lenient. One clear HTF opposing = block.
-  // Reason: a downtrend on 1H while buying 5m is the main cause of bad longs.
-  // Logic: check 1H, 4H, 1D. If any one is clearly opposite → hard block.
-  // "Clearly" = EMA20 < EMA50 AND price < EMA50 (not just mixed).
   (function() {
     const htfTFs = [3600, 14400, 86400]; // 1H, 4H, 1D
     let opposingCount = 0, checkedCount = 0;
@@ -4247,16 +3897,25 @@ function calcSLTP(r) {
       const e20 = calcEMA(htfCloses, 20);
       const e50 = calcEMA(htfCloses, 50);
       const nn  = htfCloses.length - 1;
-      // Require BOTH EMA stack AND price-side confirmation for "clear" trend
       const htfBull = e20[nn] > e50[nn] && htfCloses[nn] > e50[nn];
       const htfBear = e20[nn] < e50[nn] && htfCloses[nn] < e50[nn];
       if (isBull && htfBear) opposingCount++;
       if (!isBull && htfBull) opposingCount++;
     }
-    // Block if ANY single confirmed HTF opposes (was: require both)
-    if (opposingCount >= 1) {
-      const tfNames = ['1H','4H','1D'];
-      failReasons.push('GATE6: HTF structure opposes — no ' + (isBull?'long':'short') + ' against higher-TF trend');
+    if (profile.type === 'step') {
+      // Step Index mean reversion: trading INTO the HTF trend is the HIGH-PROBABILITY
+      // setup — price is extended and ripe for a snap-back. Never hard block.
+      if (opposingCount >= 2) {
+        warnReasons.push('WARN G6: ' + opposingCount + ' HTFs oppose — deep counter-trend MR, widen SL & reduce size');
+      } else if (opposingCount === 1) {
+        warnReasons.push('NOTE G6: 1 HTF opposes — moderate counter-trend MR, confirm FVG proximity');
+      } else if (checkedCount > 0) {
+        warnReasons.push('NOTE G6: HTF structure aligned with MR direction — strong confluence ✓✓');
+      }
+    } else {
+      if (opposingCount >= 1) {
+        failReasons.push('GATE6: HTF structure opposes — no ' + (isBull?'long':'short') + ' against higher-TF trend');
+      }
     }
   })();
 
@@ -4293,6 +3952,68 @@ function calcSLTP(r) {
     }
   }
 
+  // ══════════════════════════════════════════════════════════
+  // STEP INDEX — FVG + MEAN REVERSION GATE
+  // Primary entry requirement for STPRNG — replaces generic OB
+  // proximity with imbalance-fill mean reversion logic:
+  //   • Find nearest unfilled FVG aligned with bias direction
+  //   • Price must be inside or within 2.5 ATR of the gap
+  //   • RSI confirms mean reversion setup (not extended)
+  //   • No aligned FVG in range → HARD BLOCK
+  // ══════════════════════════════════════════════════════════
+  if (profile.type === 'step') {
+    const _fvgs = r.activeFVGs || [];
+    const _alignedFVGs = _fvgs.filter(f => isBull ? f.isBull : !f.isBull);
+    // Sort by proximity to price
+    const _sortedFVGs = _alignedFVGs.slice().sort((a, b) => {
+      const da = Math.min(Math.abs(price - a.top), Math.abs(price - a.bottom));
+      const db = Math.min(Math.abs(price - b.top), Math.abs(price - b.bottom));
+      return da - db;
+    });
+    const _nearFVG = _sortedFVGs[0] || null;
+
+    if (!_nearFVG) {
+      failReasons.push('STEP-FVG: No aligned ' + (isBull ? 'bull▲' : 'bear▼') + ' FVG found — wait for imbalance setup');
+    } else {
+      const _inZone  = price >= _nearFVG.bottom && price <= _nearFVG.top;
+      const _fvgDist = Math.min(Math.abs(price - _nearFVG.top), Math.abs(price - _nearFVG.bottom));
+      const _fvgMid  = (_nearFVG.top + _nearFVG.bottom) / 2;
+
+      if (!_inZone && _fvgDist > atr * 2.5) {
+        failReasons.push('STEP-FVG: FVG too far (' + sf(_fvgDist, 1) + ' pts, limit ' + sf(atr * 2.5, 1) + ') — wait for pullback into gap [' + sf(_nearFVG.bottom, 1) + '–' + sf(_nearFVG.top, 1) + ']');
+      } else if (_inZone) {
+        warnReasons.push('NOTE STEP-FVG: ✓ Inside ' + (isBull ? 'bull▲' : 'bear▼') + ' FVG [' + sf(_nearFVG.bottom, 1) + '–' + sf(_nearFVG.top, 1) + '] mid=' + sf(_fvgMid, 1) + ' — MR zone ACTIVE');
+      } else if (_fvgDist <= atr * 1.5) {
+        warnReasons.push('NOTE STEP-FVG: Entering ' + (isBull ? 'bull▲' : 'bear▼') + ' FVG [' + sf(_nearFVG.bottom, 1) + '–' + sf(_nearFVG.top, 1) + '] — mean reversion trigger zone');
+      } else {
+        warnReasons.push('NOTE STEP-FVG: Approaching ' + (isBull ? 'bull▲' : 'bear▼') + ' FVG [' + sf(_nearFVG.bottom, 1) + '–' + sf(_nearFVG.top, 1) + '] — wait for price to enter gap');
+      }
+    }
+
+    // RSI mean reversion confirmation
+    const _rsiStep = (typeof r.rsi !== 'undefined' && r.rsi !== null) ? r.rsi : null;
+    if (_rsiStep !== null) {
+      if (isBull && _rsiStep > 60) {
+        failReasons.push('STEP-MR: RSI ' + sf(_rsiStep, 1) + ' too elevated for bull MR — need pullback below 60');
+      } else if (!isBull && _rsiStep < 40) {
+        failReasons.push('STEP-MR: RSI ' + sf(_rsiStep, 1) + ' too depressed for bear MR — need push above 40');
+      } else if (isBull && _rsiStep <= 35) {
+        warnReasons.push('NOTE STEP-MR: RSI ' + sf(_rsiStep, 1) + ' oversold ← strong bull MR signal ▲▲');
+      } else if (!isBull && _rsiStep >= 65) {
+        warnReasons.push('NOTE STEP-MR: RSI ' + sf(_rsiStep, 1) + ' overbought → strong bear MR signal ▼▼');
+      } else if (isBull && _rsiStep <= 50) {
+        warnReasons.push('NOTE STEP-MR: RSI ' + sf(_rsiStep, 1) + ' pulled back — bull MR confirmed ▲');
+      } else if (!isBull && _rsiStep >= 50) {
+        warnReasons.push('NOTE STEP-MR: RSI ' + sf(_rsiStep, 1) + ' pushed up — bear MR confirmed ▼');
+      } else {
+        warnReasons.push('NOTE STEP-MR: RSI ' + sf(_rsiStep, 1) + ' in mean reversion range');
+      }
+    }
+
+    // Cache nearest FVG for use in SL/TP calculation below
+    r._stepFVG = _nearFVG || null;
+  }
+
   // ── RESULT ────────────────────────────────────────────────
   if (failReasons.length > 0) {
     return { blocked: true, failReasons, warnReasons, dir, isBull };
@@ -4307,6 +4028,37 @@ function calcSLTP(r) {
   const maxSlDist = price * (profile.maxSlPct / 100);
 
   let sl = null, slSources = [];
+
+  // A-FVG: FVG-anchored SL — place just beyond the aligned FVG edge.
+  // For all instruments: SL below FVG bottom (long) or above FVG top (short).
+  // Step Index: uses _stepFVG cached from the STEP-FVG gate.
+  // All others: find the nearest aligned unfilled FVG within 2.5 ATR.
+  if (sl === null) {
+    let _slFVG = profile.type === 'step' ? (r._stepFVG || null) : null;
+    if (!_slFVG) {
+      const _fvgsSL = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+      const _fvgSLNear = _fvgsSL.slice().sort((a, b) => {
+        const da = Math.min(Math.abs(price - a.top), Math.abs(price - a.bottom));
+        const db = Math.min(Math.abs(price - b.top), Math.abs(price - b.bottom));
+        return da - db;
+      })[0] || null;
+      if (_fvgSLNear) {
+        const _d = Math.min(Math.abs(price - _fvgSLNear.top), Math.abs(price - _fvgSLNear.bottom));
+        if (_d <= atr * 2.5) _slFVG = _fvgSLNear;
+      }
+    }
+    if (_slFVG) {
+      const _fvgSLcand = isBull
+        ? _slFVG.bottom - atr * 0.3
+        : _slFVG.top   + atr * 0.3;
+      const _fvgSLdist = Math.abs(price - _fvgSLcand);
+      if (_fvgSLdist >= minSlDist && _fvgSLdist <= maxSlDist
+          && (isBull ? _fvgSLcand < price : _fvgSLcand > price)) {
+        sl = _fvgSLcand;
+        slSources = ['FVG-EDGE'];
+      }
+    }
+  }
 
   // A0: Spike-extreme SL
   if (sl === null && profile && profile.waitSpike && r.recentSpikeEvents) {
@@ -4446,6 +4198,58 @@ function calcSLTP(r) {
       if (sup.length > 0 && (price - sup[0].top) / risk >= CFG.minRR) { tp = sup[0].top; tpSources = ['NEXT-OB']; }
     }
   }
+  // TP-FVG: Snap TP to FVG edge / mid — applies to ALL symbols.
+  // For Step Index: uses the cached _stepFVG; for others: nearest aligned FVG on reward side.
+  if (tp === null) {
+    let _tpFVG = profile.type === 'step' ? (r._stepFVG || null) : null;
+    if (!_tpFVG) {
+      // For non-step: find nearest OPPOSING direction FVG on the TP side (gap fill target)
+      // or nearest aligned FVG on reward side if no opposing one found
+      const _oppFVGsTP = (r.activeFVGs || []).filter(f => isBull ? !f.isBull : f.isBull);
+      const _oppNearTP = _oppFVGsTP.slice().sort((a, b) => {
+        const da = Math.abs(price - (isBull ? a.bottom : a.top));
+        const db = Math.abs(price - (isBull ? b.bottom : b.top));
+        return da - db;
+      })[0] || null;
+      if (_oppNearTP) {
+        const _oppTPcand = isBull ? _oppNearTP.bottom : _oppNearTP.top;
+        const _oppTPside = isBull ? _oppTPcand > price : _oppTPcand < price;
+        const _oppTPdist = Math.abs(_oppTPcand - price);
+        if (_oppTPside && _oppTPdist / risk >= CFG.minRR && _oppTPdist <= maxTpDist) {
+          tp = _oppTPcand; tpSources = ['OPP-FVG'];
+        }
+      }
+      if (tp === null) {
+        // Try aligned FVG on reward side
+        const _alnFVGsTP = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+        const _alnNearTP = _alnFVGsTP.slice().sort((a, b) => {
+          const da = Math.abs(price - (isBull ? a.top : a.bottom));
+          const db = Math.abs(price - (isBull ? b.top : b.bottom));
+          return da - db;
+        })[0] || null;
+        if (_alnNearTP) {
+          _tpFVG = _alnNearTP;
+        }
+      }
+    }
+    if (tp === null && _tpFVG) {
+      const _fvgMidTP = (_tpFVG.top + _tpFVG.bottom) / 2;
+      const _fvgFullTP = isBull ? _tpFVG.top : _tpFVG.bottom;
+      const _fullDist  = Math.abs(_fvgFullTP - price);
+      const _onSide    = isBull ? _fvgFullTP > price : _fvgFullTP < price;
+      if (_onSide && _fullDist > 0 && _fullDist / risk >= CFG.minRR && _fullDist <= maxTpDist) {
+        tp = _fvgFullTP; tpSources = ['FVG-FILL'];
+      }
+      if (tp === null) {
+        const _midOnSide = isBull ? _fvgMidTP > price : _fvgMidTP < price;
+        const _midDist   = Math.abs(_fvgMidTP - price);
+        if (_midOnSide && _midDist / risk >= CFG.minRR && _midDist <= maxTpDist) {
+          tp = _fvgMidTP; tpSources = ['FVG-MID'];
+        }
+      }
+    }
+  }
+
   if (tp === null) {
     tp = isBull ? price + Math.min(atr * profile.tpAtrMult, maxTpDist) : price - Math.min(atr * profile.tpAtrMult, maxTpDist);
     tpSources = ['ATR×' + sf(profile.tpAtrMult,1)];
@@ -4490,13 +4294,38 @@ function calcSLTP(r) {
   const _alignedPats = _pats.filter(p => p.dir === (isBull ? 'bull' : 'bear'));
   const _topPat = _alignedPats.sort((a,b) => b.strength - a.strength)[0];
   const patBonus = _topPat ? Math.min(15, _topPat.strength * 5) : 0;
-  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + ema200Bonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus);
+  // FVG confluence bonus — applies to ALL symbols.
+  // Step Index uses _stepFVG; all others use nearest aligned unfilled FVG.
+  const _fvgBonus = (() => {
+    let _activeFVGRef = profile.type === 'step' ? r._stepFVG : null;
+    if (!_activeFVGRef) {
+      const _fvgsConf = (r.activeFVGs || []).filter(f => isBull ? f.isBull : !f.isBull);
+      _activeFVGRef = _fvgsConf.slice().sort((a, b) => {
+        const da = Math.min(Math.abs(price - a.top), Math.abs(price - a.bottom));
+        const db = Math.min(Math.abs(price - b.top), Math.abs(price - b.bottom));
+        return da - db;
+      })[0] || null;
+    }
+    if (!_activeFVGRef) return 0;
+    const _f = _activeFVGRef;
+    const _inZone = price >= _f.bottom && price <= _f.top;
+    const _rsiMR  = (typeof r.rsi !== 'undefined' && r.rsi !== null)
+      ? (isBull ? r.rsi <= 50 : r.rsi >= 50) : false;
+    const _tpBonus = tpSources[0] === 'FVG-FILL' ? 8 : tpSources[0] === 'FVG-MID' ? 4 : tpSources[0] === 'OPP-FVG' ? 6 : 0;
+    const _slBonus = slSources[0] === 'FVG-EDGE' ? 6 : 0;
+    // Step Index gets larger bonus (full mean reversion setup); others get structural bonus
+    return profile.type === 'step'
+      ? (_inZone ? 18 : 10) + (_rsiMR ? 10 : 0) + _tpBonus
+      : (_inZone ? 12 : 6) + _tpBonus + _slBonus;
+  })();
+  const confluence  = Math.min(100, obScore2 + srScore + slScore + swingScore + biasScore + rrScore + fsBonus + emaBonus + ema200Bonus + sweepBonus + profileBonus + mtfBonus + spikeBonus + patBonus + tlBonus + _fvgBonus);
 
   const components = {
     ob:    { active: !!bestOB,            label: 'OB',    score: bestOB ? bestOB.score : 0, isHPZ: bestOB ? bestOB.isHPZ : false },
     sr:    { active: srUsedSL||srUsedTP,  label: 'S/R',   score: srScore > 0 ? Math.round(srScore/15*100) : 0, touches: srTouches },
     atr:   { active: true,                label: 'ATR',   score: slScore > 0 ? 100 : 50 },
     swing: { active: tpSources[0] === 'SWING' || tpSources[0] === 'PROJ', label: 'SWING', score: Math.min(100, rr / 3 * 100) },
+    fvg:   { active: _fvgBonus > 0, label: 'FVG', score: _fvgBonus > 0 ? Math.min(100, _fvgBonus * 2) : 0 },
   };
 
   const basis = 'SL:' + slSources.join('+') + ' | TP:' + tpSources.join('+') + ' | ' + profile.type.toUpperCase();
@@ -4707,6 +4536,7 @@ function updateSLTP(forceRecalc = true) {
       (t.components.sr && t.components.sr.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">S/R ✓×' + (t.components.sr.touches||0) + '</span>' : '') +
       '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.1);border:1px solid rgba(0,180,216,0.3);color:var(--cyan)">ATR ✓</span>' +
       (t.components.swing.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(249,115,22,0.1);border:1px solid rgba(249,115,22,0.3);color:var(--warn)">SWING ✓</span>' : '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(96,125,139,0.1);border:1px solid var(--border);color:var(--text-dim)">SWING ✗</span>') +
+      (t.components.fvg && t.components.fvg.active ? '<span style="font-family:var(--font-mono);font-size:8px;padding:2px 5px;background:rgba(0,180,216,0.15);border:1px solid rgba(0,180,216,0.4);color:var(--cyan)">FVG ✓</span>' : '') +
     '</div>' +
     '<div class="stat-row"><span class="stat-label">ENTRY</span><span class="stat-val bright">' + sf(t.entry,dp) + '</span></div>' +
     '<div class="stat-row"><span class="stat-label">TAKE PROFIT</span><span class="stat-val bull">' + sf(t.tp,dp) + '</span></div>' +
@@ -6231,524 +6061,5 @@ window.addEventListener('load', () => {
     <div id="mobile-panel-content" style="padding:0"></div>
   </div>
 </div>
-
-<!-- ═══════════════════════════════════════════
-     MOBILE SHELL — visible on ≤ 768px
-     All logic runs in background via desktop #app
-════════════════════════════════════════════ -->
-<div id="mobile-shell">
-
-  <!-- Top bar -->
-  <div id="mob-topbar">
-    <div id="mob-logo">MSB·<span>ULTRA</span></div>
-    <select id="mob-symbol-select" onchange="onSymbolChange(this.value);mobSyncSelects()">
-      <option value="R_10">Vol 10</option>
-      <option value="R_25">Vol 25</option>
-      <option value="R_50">Vol 50</option>
-      <option value="R_75" selected>Vol 75</option>
-      <option value="R_100">Vol 100</option>
-      <option value="1HZ10V">Vol 10 1s</option>
-      <option value="1HZ25V">Vol 25 1s</option>
-      <option value="1HZ50V">Vol 50 1s</option>
-      <option value="1HZ75V">Vol 75 1s</option>
-      <option value="1HZ100V">Vol 100 1s</option>
-      <option value="BOOM1000">Boom 1000</option>
-      <option value="BOOM500">Boom 500</option>
-      <option value="BOOM300">Boom 300</option>
-      <option value="CRASH1000">Crash 1000</option>
-      <option value="CRASH500">Crash 500</option>
-      <option value="CRASH300">Crash 300</option>
-      <option value="STPRNG">Step Index</option>
-      <option value="RNGBR100">Range Brk 100</option>
-      <option value="RNGBR200">Range Brk 200</option>
-      <option value="DSW10">Drift Sw 10</option>
-      <option value="JD10">Jump 10</option>
-      <option value="JD25">Jump 25</option>
-      <option value="JD50">Jump 50</option>
-      <option value="JD75">Jump 75</option>
-      <option value="JD100">Jump 100</option>
-    </select>
-    <select id="mob-tf-select" onchange="onTFChange(this.value);mobSyncSelects()">
-      <option value="60">1m</option>
-      <option value="120">2m</option>
-      <option value="300" selected>5m</option>
-      <option value="600">10m</option>
-      <option value="900">15m</option>
-      <option value="1800">30m</option>
-      <option value="3600">1h</option>
-      <option value="14400">4h</option>
-      <option value="86400">1D</option>
-    </select>
-    <button id="mob-connect-btn" onclick="toggleConnect();setTimeout(mobUpdateStatus,800)">CONNECT</button>
-    <div id="mob-status-dot"></div>
-  </div>
-
-  <!-- Price bar -->
-  <div id="mob-price-bar">
-    <div>
-      <div id="mob-price">—</div>
-    </div>
-    <div id="mob-chg" style="color:var(--text-dim)">+0.00%</div>
-    <div id="mob-bias-badge">NEUTRAL</div>
-  </div>
-
-  <!-- Tab content -->
-  <div id="mob-content">
-
-    <!-- Tab: Chart -->
-    <div class="mob-tab-pane active" id="mob-pane-chart">
-      <canvas id="mob-chart-canvas"></canvas>
-    </div>
-
-    <!-- Tab: Signal -->
-    <div class="mob-tab-pane" id="mob-pane-signal">
-      <div id="mob-signal-pane">
-        <div class="mob-no-signal" id="mob-no-signal">Connect to load signal</div>
-        <div id="mob-signal-card" style="display:none"></div>
-      </div>
-    </div>
-
-    <!-- Tab: Scanner -->
-    <div class="mob-tab-pane" id="mob-pane-scanner">
-      <div id="mob-scanner-pane">
-        <div class="mob-scan-header">
-          <span class="mob-section-title">SCANNER</span>
-          <div style="display:flex;align-items:center;gap:8px">
-            <span id="mob-scan-progress" style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim)"></span>
-            <button class="mob-scan-btn" onclick="runScanner();setTimeout(mobUpdateScanner,35000)">⊞ SCAN</button>
-          </div>
-        </div>
-        <div id="mob-scan-results"><div class="mob-no-signal">Run scan to see setups</div></div>
-      </div>
-    </div>
-
-    <!-- Tab: Settings -->
-    <div class="mob-tab-pane" id="mob-pane-settings">
-      <div id="mob-settings-pane">
-
-        <div class="mob-set-group">
-          <div class="mob-set-label">Connection</div>
-          <div class="mob-set-row">
-            <label>App ID</label>
-            <input type="text" id="mob-appid" placeholder="1089" oninput="document.getElementById('appIdInput').value=this.value">
-          </div>
-          <div class="mob-set-row">
-            <label>Account Balance</label>
-            <input type="number" id="mob-balance" value="1000" min="1"
-              oninput="document.getElementById('accountBalance').value=this.value;updateSLTP(true);updateRiskDisplay()">
-          </div>
-          <div class="mob-set-row">
-            <label>Risk %</label>
-            <input type="number" id="mob-risk" value="1" min="0.1" max="10" step="0.1"
-              oninput="document.getElementById('riskPct').value=this.value;updateSLTP(true);updateRiskDisplay()">
-          </div>
-        </div>
-
-        <div class="mob-set-group">
-          <div class="mob-set-label">Telegram Alerts</div>
-          <div class="mob-set-row">
-            <label>Bot Token</label>
-            <input type="text" id="mob-tg-token" placeholder="••• token •••"
-              oninput="try{sessionStorage.setItem('msb_tg_token',this.value)}catch(e){}">
-          </div>
-          <div class="mob-set-row">
-            <label>Chat ID</label>
-            <input type="text" id="mob-tg-chatid" placeholder="-100xxxxxxxxx"
-              oninput="try{sessionStorage.setItem('msb_tg_chatid',this.value)}catch(e){}">
-          </div>
-          <div class="mob-toggle-row">
-            <span class="mob-toggle-label">TG Alerts Enabled</span>
-            <div class="mob-toggle on" id="mob-tg-toggle" onclick="toggleTG();this.classList.toggle('on')"></div>
-          </div>
-          <button class="mob-tg-btn" onclick="testTG()">✈ SEND TEST MESSAGE</button>
-        </div>
-
-        <div class="mob-set-group">
-          <div class="mob-set-label">Features</div>
-          <div class="mob-toggle-row">
-            <span class="mob-toggle-label">Auto Scan</span>
-            <div class="mob-toggle" id="mob-autoscan-toggle" onclick="toggleCScan();this.classList.toggle('on')"></div>
-          </div>
-          <div class="mob-toggle-row">
-            <span class="mob-toggle-label">Heikin Ashi</span>
-            <div class="mob-toggle" id="mob-ha-toggle" onclick="toggleHA();this.classList.toggle('on')"></div>
-          </div>
-          <div class="mob-toggle-row">
-            <span class="mob-toggle-label">Sound Alerts</span>
-            <div class="mob-toggle" id="mob-sound-toggle" onclick="toggleSound();this.classList.toggle('on')"></div>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-  </div><!-- /#mob-content -->
-
-  <!-- Bottom tab bar -->
-  <div id="mob-tabbar">
-    <button class="mob-tab active" id="mobtab-chart" onclick="mobSwitchTab('chart')">
-      <span class="mob-tab-icon">📊</span>
-      <span>CHART</span>
-    </button>
-    <button class="mob-tab" id="mobtab-signal" onclick="mobSwitchTab('signal')">
-      <span class="mob-tab-icon">🎯</span>
-      <span>SIGNAL</span>
-      <span class="mob-badge" id="mob-signal-badge"></span>
-    </button>
-    <button class="mob-tab" id="mobtab-scanner" onclick="mobSwitchTab('scanner')">
-      <span class="mob-tab-icon">⊞</span>
-      <span>SCAN</span>
-      <span class="mob-badge" id="mob-scan-badge"></span>
-    </button>
-    <button class="mob-tab" id="mobtab-settings" onclick="mobSwitchTab('settings')">
-      <span class="mob-tab-icon">⚙</span>
-      <span>SETTINGS</span>
-    </button>
-  </div>
-
-</div><!-- /#mobile-shell -->
-
-<script>
-// ═══════════════════════════════════════════════════════
-// MOBILE UI CONTROLLER
-// ═══════════════════════════════════════════════════════
-
-let _mobActiveTab = 'chart';
-let _mobChartCtx  = null;
-let _mobChartAnim = null;
-
-function mobSwitchTab(tab) {
-  _mobActiveTab = tab;
-  document.querySelectorAll('.mob-tab').forEach(b => b.classList.remove('active'));
-  document.querySelectorAll('.mob-tab-pane').forEach(p => p.classList.remove('active'));
-  const btn  = document.getElementById('mobtab-' + tab);
-  const pane = document.getElementById('mob-pane-' + tab);
-  if (btn)  btn.classList.add('active');
-  if (pane) pane.classList.add('active');
-  if (tab === 'chart') mobDrawChart();
-  if (tab === 'signal') mobUpdateSignal();
-  if (tab === 'scanner') mobUpdateScanner();
-}
-
-// ── Sync mobile selects with desktop state ──
-function mobSyncSelects() {
-  const ms = document.getElementById('mob-symbol-select');
-  const mt = document.getElementById('mob-tf-select');
-  if (ms) ms.value = currentSymbol;
-  if (mt) mt.value = String(currentTF);
-}
-
-// ── Status dot ──
-function mobUpdateStatus() {
-  const dot = document.getElementById('mob-status-dot');
-  const btn = document.getElementById('mob-connect-btn');
-  if (!dot) return;
-  if (isConnected) {
-    dot.className = 'live';
-    if (btn) btn.textContent = 'LIVE';
-    if (btn) btn.style.color = 'var(--bull)';
-  } else {
-    dot.className = 'error';
-    if (btn) btn.textContent = 'CONNECT';
-    if (btn) btn.style.color = 'var(--accent)';
-  }
-}
-
-// ── Price bar update (called from runAnalysis patch) ──
-function mobUpdatePrice(price, chgPct, bias) {
-  const dp = getDP(currentSymbol);
-  const pel = document.getElementById('mob-price');
-  const cel = document.getElementById('mob-chg');
-  const bel = document.getElementById('mob-bias-badge');
-  if (pel) pel.textContent = price ? price.toFixed(dp) : '—';
-  if (cel) {
-    const pct = chgPct || 0;
-    cel.textContent = (pct >= 0 ? '+' : '') + pct.toFixed(2) + '%';
-    cel.style.color = pct >= 0 ? 'var(--bull)' : 'var(--bear)';
-  }
-  if (bel) {
-    bel.textContent = bias === 'bull' ? '▲ LONG' : bias === 'bear' ? '▼ SHORT' : 'NEUTRAL';
-    bel.className   = 'mob-bias-badge ' + (bias || '');
-  }
-}
-
-// ── Chart tab: draw from main candles array ──
-function mobDrawChart() {
-  if (_mobActiveTab !== 'chart') return;
-  const canvas = document.getElementById('mob-chart-canvas');
-  if (!canvas || !candles || candles.length < 2) {
-    // Draw placeholder
-    const canvas2 = document.getElementById('mob-chart-canvas');
-    if (!canvas2) return;
-    const W = window.innerWidth, H = window.innerHeight - 48 - 40 - 56;
-    canvas2.width = W; canvas2.height = H;
-    canvas2.style.width = W + 'px'; canvas2.style.height = H + 'px';
-    const ctx2 = canvas2.getContext('2d');
-    ctx2.fillStyle = '#0d1a22';
-    ctx2.fillRect(0,0,W,H);
-    ctx2.fillStyle = '#4a6272';
-    ctx2.font = '12px Share Tech Mono, monospace';
-    ctx2.textAlign = 'center';
-    ctx2.fillText('No data — connect to load chart', W/2, H/2);
-    return;
-  }
-  const dpr = window.devicePixelRatio || 1;
-  const pane = canvas.parentElement;
-  const W = pane.clientWidth  || window.innerWidth;
-  const H = pane.clientHeight || (window.innerHeight - 48 - 40 - 56);
-  canvas.width  = W * dpr;
-  canvas.height = H * dpr;
-  canvas.style.width  = W + 'px';
-  canvas.style.height = H + 'px';
-  const ctx = canvas.getContext('2d');
-  ctx.scale(dpr, dpr);
-
-  const bars = candles.slice(-120); // last 120 bars
-  const highs  = bars.map(b => b.high);
-  const lows   = bars.map(b => b.low);
-  const hi = Math.max(...highs);
-  const lo = Math.min(...lows);
-  const range = hi - lo || 1;
-
-  const pad = { t: 20, b: 30, l: 6, r: 48 };
-  const cw = (W - pad.l - pad.r) / bars.length;
-  const ch = H - pad.t - pad.b;
-
-  const yOf = v => pad.t + ch - ((v - lo) / range) * ch;
-  const xOf = i => pad.l + i * cw;
-
-  // Background
-  ctx.fillStyle = 'rgba(5,10,14,0)';
-  ctx.fillRect(0, 0, W, H);
-
-  // Grid lines
-  ctx.strokeStyle = 'rgba(15,37,53,0.8)';
-  ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = pad.t + (ch / 4) * i;
-    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
-    const v = hi - (range / 4) * i;
-    ctx.fillStyle = 'rgba(74,98,114,0.8)';
-    ctx.font = '9px Share Tech Mono, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(v.toFixed(getDP(currentSymbol)), W - pad.r + 4, y + 3);
-  }
-
-  // Candles
-  bars.forEach((b, i) => {
-    const bull = b.close >= b.open;
-    const x = xOf(i) + cw * 0.1;
-    const bw = Math.max(1, cw * 0.8);
-    const cy1 = yOf(Math.max(b.open, b.close));
-    const cy2 = yOf(Math.min(b.open, b.close));
-    const bh  = Math.max(1, cy2 - cy1);
-    ctx.fillStyle = bull ? 'rgba(0,229,160,0.85)' : 'rgba(255,61,90,0.85)';
-    ctx.fillRect(x, cy1, bw, bh);
-    // Wick
-    ctx.strokeStyle = bull ? 'rgba(0,229,160,0.6)' : 'rgba(255,61,90,0.6)';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.moveTo(x + bw / 2, yOf(b.high));
-    ctx.lineTo(x + bw / 2, yOf(b.low));
-    ctx.stroke();
-  });
-
-  // Last price line
-  if (bars.length > 0) {
-    const lp = bars[bars.length - 1].close;
-    const ly = yOf(lp);
-    ctx.setLineDash([3, 3]);
-    ctx.strokeStyle = 'rgba(0,229,255,0.5)';
-    ctx.lineWidth = 1;
-    ctx.beginPath(); ctx.moveTo(pad.l, ly); ctx.lineTo(W - pad.r, ly); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle = 'var(--cyan)';
-    ctx.font = 'bold 10px Share Tech Mono, monospace';
-    ctx.textAlign = 'left';
-    ctx.fillText(lp.toFixed(getDP(currentSymbol)), W - pad.r + 4, ly + 3);
-  }
-}
-
-// ── Signal tab ──
-function mobUpdateSignal() {
-  if (_mobActiveTab !== 'signal') return;
-  const noEl   = document.getElementById('mob-no-signal');
-  const cardEl = document.getElementById('mob-signal-card');
-  if (!noEl || !cardEl) return;
-
-  const r = (typeof analysisResult !== 'undefined') ? analysisResult : null;
-  const t = (typeof _lockedTrade !== 'undefined') ? _lockedTrade : (r ? calcSLTP(r) : null);
-  const dp = getDP(currentSymbol);
-
-  if (!r || !t) {
-    noEl.style.display   = 'block';
-    cardEl.style.display = 'none';
-    noEl.textContent = isConnected ? 'Analysing…' : 'Connect to load signal';
-    return;
-  }
-
-  noEl.style.display   = 'none';
-  cardEl.style.display = 'block';
-
-  if (t.blocked) {
-    const reasons = (t.failReasons || []).map(f =>
-      '<div class="mob-gate-item fail">✕ ' + f + '</div>'
-    ).join('');
-    const warns = (t.warnReasons || []).filter(w => w.startsWith('WARN')).map(w =>
-      '<div class="mob-gate-item warn">⚠ ' + w + '</div>'
-    ).join('');
-    cardEl.innerHTML = `
-      <div class="mob-signal-card blocked">
-        <div class="mob-card-header">
-          <div class="mob-dir-label blocked">NO TRADE</div>
-          <div style="font-family:var(--font-mono);font-size:10px;color:var(--text-dim)">${currentSymbol} ${tfLabel(currentTF)}</div>
-        </div>
-        <div class="mob-gates-list">${reasons}${warns}</div>
-      </div>`;
-    // clear badge
-    const badge = document.getElementById('mob-signal-badge');
-    if (badge) { badge.textContent = ''; badge.classList.remove('show'); }
-    return;
-  }
-
-  const isBull = t.dir === 'LONG';
-  const cls    = isBull ? 'bull' : 'bear';
-  const warns  = (t.warnReasons || []).filter(w => w.startsWith('WARN')).map(w =>
-    '<div class="mob-gate-item warn">⚠ ' + w + '</div>'
-  ).join('');
-  const notes  = (t.warnReasons || []).filter(w => w.startsWith('NOTE')).map(w =>
-    '<div class="mob-gate-item pass">· ' + w.replace('NOTE: ','').replace('NOTE ','') + '</div>'
-  ).join('');
-
-  cardEl.innerHTML = `
-    <div class="mob-signal-card ${cls}">
-      <div class="mob-card-header">
-        <div class="mob-dir-label ${cls}">${isBull ? '▲ LONG' : '▼ SHORT'}</div>
-        <div class="mob-conf-ring">${t.confluence}%</div>
-      </div>
-      <div style="font-family:var(--font-mono);font-size:9px;color:var(--text-dim);margin-bottom:10px">${currentSymbol} · ${tfLabel(currentTF)}</div>
-      <div class="mob-sltp-grid">
-        <div class="mob-sltp-cell">
-          <div class="mob-sltp-cell-label">ENTRY</div>
-          <div class="mob-sltp-cell-val">${t.entry.toFixed(dp)}</div>
-        </div>
-        <div class="mob-sltp-cell">
-          <div class="mob-sltp-cell-label">SL</div>
-          <div class="mob-sltp-cell-val sl">${t.sl.toFixed(dp)}</div>
-        </div>
-        <div class="mob-sltp-cell">
-          <div class="mob-sltp-cell-label">TP</div>
-          <div class="mob-sltp-cell-val tp">${t.tp.toFixed(dp)}</div>
-        </div>
-      </div>
-      <div class="mob-rr-bar">
-        <span>Risk: $${(t.dollarRisk||0).toFixed(2)}</span>
-        <span class="mob-rr-val">${t.rr.toFixed(2)}:1 RR</span>
-        <span>Profit: $${(t.potentialProfit||0).toFixed(2)}</span>
-      </div>
-      <div class="mob-gates-list">${warns}${notes}</div>
-    </div>`;
-
-  // Signal badge on tab
-  const badge = document.getElementById('mob-signal-badge');
-  if (badge && !t.blocked) {
-    badge.textContent = isBull ? '▲' : '▼';
-    badge.style.background = isBull ? 'var(--bull)' : 'var(--bear)';
-    badge.classList.add('show');
-  }
-}
-
-// ── Scanner tab ──
-function mobUpdateScanner() {
-  if (_mobActiveTab !== 'scanner') return;
-  const el = document.getElementById('mob-scan-results');
-  if (!el) return;
-
-  const results = (typeof _scanResults !== 'undefined') ? _scanResults : [];
-  const valid = results.filter(r => r.t && !r.t.blocked).sort((a,b) => (b.t.confluence||0) - (a.t.confluence||0));
-
-  if (valid.length === 0) {
-    el.innerHTML = '<div class="mob-no-signal">No setups found — run scan</div>';
-    const badge = document.getElementById('mob-scan-badge');
-    if (badge) { badge.textContent = ''; badge.classList.remove('show'); }
-    return;
-  }
-
-  el.innerHTML = valid.map(item => {
-    const isBull = item.t.dir === 'LONG';
-    const cls = isBull ? 'bull' : 'bear';
-    const dp = getDP(item.sym);
-    return `<div class="mob-scan-item ${cls}" onclick="onSymbolChange('${item.sym}');document.getElementById('mob-symbol-select').value='${item.sym}';mobSwitchTab('signal')">
-      <div class="mob-scan-left">
-        <div class="mob-scan-sym">${item.name}</div>
-        <div class="mob-scan-sub">${tfLabel(item.tf)} · ${item.t.entry ? item.t.entry.toFixed(dp) : '—'}</div>
-      </div>
-      <div class="mob-scan-right">
-        <div class="mob-scan-conf">${item.t.confluence}%</div>
-        <div class="mob-scan-dir ${cls}">${isBull ? '▲ LONG' : '▼ SHORT'}</div>
-      </div>
-    </div>`;
-  }).join('');
-
-  const badge = document.getElementById('mob-scan-badge');
-  if (badge) {
-    badge.textContent = String(valid.length);
-    badge.style.background = 'var(--accent)';
-    badge.classList.add('show');
-  }
-}
-
-// ── Patch runAnalysis to update mobile UI ──
-const _origRunAnalysis = (typeof runAnalysis === 'function') ? runAnalysis : null;
-// Hook into the ohlc / candle update to refresh mobile
-function _mobAfterAnalysis() {
-  // price
-  if (candles && candles.length > 1) {
-    const last = candles[candles.length - 1];
-    const prev = candles[0];
-    const chg = prev.close > 0 ? ((last.close - prev.close) / prev.close * 100) : 0;
-    const bias = (typeof analysisResult !== 'undefined' && analysisResult)
-      ? (analysisResult.recentBull > analysisResult.recentBear ? 'bull' : analysisResult.recentBull < analysisResult.recentBear ? 'bear' : '')
-      : '';
-    mobUpdatePrice(last.close, chg, bias);
-  }
-  mobUpdateStatus();
-  if (_mobActiveTab === 'chart')   mobDrawChart();
-  if (_mobActiveTab === 'signal')  mobUpdateSignal();
-  if (_mobActiveTab === 'scanner') mobUpdateScanner();
-}
-
-// Poll every 2s to keep mobile in sync with background processing
-setInterval(_mobAfterAnalysis, 2000);
-
-// Init on load
-window.addEventListener('load', () => {
-  setTimeout(() => {
-    mobSyncSelects();
-    const tok = sessionStorage.getItem('msb_tg_token');
-    const cid = sessionStorage.getItem('msb_tg_chatid');
-    const tidEl = document.getElementById('mob-tg-token');
-    const cidEl = document.getElementById('mob-tg-chatid');
-    if (tidEl && tok) tidEl.placeholder = '••••••• (set)';
-    if (cidEl && cid) cidEl.value = cid;
-    const bal = document.getElementById('accountBalance');
-    const rsk = document.getElementById('riskPct');
-    const mbal = document.getElementById('mob-balance');
-    const mrsk = document.getElementById('mob-risk');
-    if (bal && mbal) mbal.value = bal.value;
-    if (rsk && mrsk) mrsk.value = rsk.value;
-    mobDrawChart();
-    mobUpdateStatus();
-  }, 800);
-});
-
-// Also try immediately in case load already fired
-setTimeout(() => { mobDrawChart(); mobUpdateStatus(); mobSyncSelects(); }, 1200);
-
-// Redraw chart on orientation change
-window.addEventListener('resize', () => {
-  if (_mobActiveTab === 'chart') mobDrawChart();
-});
-</script>
 </body>
 </html>
